@@ -4,8 +4,9 @@
 
 import pytest
 
-from astroid import extract_node
+from astroid import extract_node, parse
 from astroid.const import PY312_PLUS, PY313_PLUS
+from astroid.exceptions import AttributeInferenceError
 from astroid.nodes import (
     AssignName,
     List,
@@ -14,6 +15,7 @@ from astroid.nodes import (
     Subscript,
     Tuple,
     TypeAlias,
+    TypeParamScope,
     TypeVar,
     TypeVarTuple,
 )
@@ -136,3 +138,103 @@ def test_get_children() -> None:
     class_node = extract_node("class MyClass[T]: ...")
     class_children = tuple(class_node.get_children())
     assert isinstance(class_children[0], TypeVar)
+
+
+def test_type_param_bound_forward_reference_class() -> None:
+    """A type parameter bound may forward-reference a later class.
+
+    Regression test for the pylint false ``used-before-assignment``.
+    """
+    module = parse("""
+        class Container[T: Item]:
+            value: T
+
+        class Item:
+            pass
+        """)
+    bound = module.body[0].type_params[0].bound
+    assert bound.lookup("Item")[1] == [module.body[1]]
+
+
+def test_type_param_bound_forward_reference_function() -> None:
+    module = parse("""
+        def func[T: Item](x: T) -> T:
+            return x
+
+        class Item:
+            pass
+        """)
+    bound = module.body[0].type_params[0].bound
+    assert bound.lookup("Item")[1] == [module.body[1]]
+
+
+def test_type_param_bound_sibling_reference() -> None:
+    for code in ("class C[T, U: T]: ...", "def f[T, U: T](): ..."):
+        node = extract_node(code)
+        assert node.type_params[1].bound.lookup("T")[1] == [node.type_params[0].name]
+
+
+def test_type_param_does_not_leak_into_owner() -> None:
+    """Type parameters are not attributes/locals of the owner."""
+    class_node = extract_node("class C[T]: ...")
+    assert "T" not in class_node.locals
+    with pytest.raises(AttributeInferenceError):
+        class_node.getattr("T")
+
+    func_node = extract_node("def f[T](): ...")
+    assert "T" not in func_node.locals
+
+
+def test_type_param_visible_in_method_body() -> None:
+    module = parse("""
+        class C[T]:
+            def meth(self) -> T:
+                ...
+        """)
+    returns = module.body[0].body[0].returns
+    assert returns.lookup("T")[1] == [module.body[0].type_params[0].name]
+
+
+def test_type_param_bound_resolves_outer_name() -> None:
+    module = parse("""
+        X = int
+        class C[T: X]: ...
+        """)
+    bound = module.body[1].type_params[0].bound
+    assert bound.lookup("X")[1] == [module.body[0].targets[0]]
+
+
+def test_type_alias_forward_reference_and_value() -> None:
+    module = parse("""
+        type Alias[T: Item] = list[T]
+
+        class Item:
+            pass
+        """)
+    alias = module.body[0]
+    assert alias.type_params[0].bound.lookup("Item")[1] == [module.body[1]]
+    # The value is evaluated in the type parameter scope, so ``T`` resolves.
+    assert alias.value.slice.lookup("T")[1] == [alias.type_params[0].name]
+    assert isinstance(alias.type_params[0].scope(), TypeParamScope)
+
+
+def test_type_param_scope_and_frame() -> None:
+    cls = extract_node("class C[T]: ...")
+    type_var = cls.type_params[0]
+    assert isinstance(cls.type_param_scope, TypeParamScope)
+    assert type_var.scope() is cls.type_param_scope
+    # The scope is not a frame; it is transparent for frames and qnames.
+    assert type_var.frame() is cls
+    assert cls.type_param_scope.qname() == cls.qname()
+
+
+@pytest.mark.skipif(not PY313_PLUS, reason="Requires Python 3.13 or higher")
+def test_type_param_default_forward_reference() -> None:
+    module = parse("""
+        class C[T = Item]: ...
+
+        class Item:
+            pass
+        """)
+    default = module.body[0].type_params[0].default_value
+    assert default.lookup("Item")[1] == [module.body[1]]

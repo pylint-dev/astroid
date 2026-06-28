@@ -4098,6 +4098,9 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     type_params: list[TypeVar | ParamSpec | TypeVarTuple]
     value: NodeNG
 
+    type_param_scope: nodes.TypeParamScope | None = None
+    """The PEP 695 type parameter scope, if this alias is generic."""
+
     def __init__(
         self,
         lineno: int,
