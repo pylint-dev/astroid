@@ -49,7 +49,7 @@ jobs:
           pip install .
 
       - name: Run in-process benchmarks
-        uses: CodSpeedHQ/action@v4.17.6
+        uses: CodSpeedHQ/action@v4.18.1
         with:
           mode: simulation
           # Skip cold_lint here — it shells out to a subprocess that
