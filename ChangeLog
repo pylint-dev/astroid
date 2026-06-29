@@ -24,6 +24,20 @@ Refs #3107
 
   Closes #3091
 
+* Add inference for ``t``-strings (:class:`TemplateStr`): a t-string is now
+  inferred as an instance of ``string.templatelib.Template`` and an
+  interpolation field as an instance of ``string.templatelib.Interpolation``.
+  Their members are reconstructed from the actual template contents, so
+  ``Template.strings`` / ``values`` / ``interpolations`` and
+  ``Interpolation.value`` / ``expression`` / ``conversion`` / ``format_spec``
+  infer to the same values as at runtime. The standard library defines those
+  classes via ``type(t"...")``, which is not statically inferable, so a brain
+  plugin rebuilds the real classes from the live objects. ``as_string`` now
+  also doubles literal braces in the constant parts of a t-string so the
+  rendered code round-trips.
+
+  Closes #2789
+
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
   ``getattr(obj, alias)`` in ``InspectBuilder.object_build``. PyPy 7.3.22

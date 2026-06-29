@@ -687,7 +687,12 @@ class AsStringVisitor:
                 case nodes.Interpolation():
                     string += "{" + value.accept(self) + "}"
                 case _:
-                    string += value.accept(self)[1:-1]
+                    # Use repr on the string literal parts to get proper
+                    # escapes (e.g. \n, \\, \") but strip the surrounding
+                    # quotes, and double literal braces to escape them.
+                    string += (
+                        repr(value.value)[1:-1].replace("{", "{{").replace("}", "}}")
+                    )
         for quote in ("'", '"', '"""', "'''"):
             if quote not in string:
                 break
