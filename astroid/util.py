@@ -67,9 +67,8 @@ def format_spec_too_large(format_spec: str) -> bool:
     Used to avoid materializing a multi-gigabyte string while inferring a tiny
     literal such as ``"{:>2000000000}".format("x")`` or ``f"{1.5:.2e9f}"``.
     """
+    # Every group in _FORMAT_SPEC_SIZE is optional, so match is never None.
     match = _FORMAT_SPEC_SIZE.match(format_spec)
-    if match is None:  # pragma: no cover
-        return False
     return any(
         size is not None and int(size) > MAX_FORMATTED_SIZE
         for size in match.group("width", "precision")
