@@ -231,6 +231,7 @@ class Module(LocalsDictNodeNG):
         "package",
         "pure_python",
         "future_imports",
+        "is_stub",
     )
     _other_other_fields = ("locals", "globals")
 
@@ -241,6 +242,7 @@ class Module(LocalsDictNodeNG):
         path: Sequence[str] | None = None,
         package: bool = False,
         pure_python: bool = True,
+        is_stub: bool = False,
     ) -> None:
         self.name = name
         """The name of the module."""
@@ -259,6 +261,9 @@ class Module(LocalsDictNodeNG):
 
         self.pure_python = pure_python
         """Whether the ast was built from source."""
+
+        self.is_stub = is_stub
+        """Whether the module was loaded from a ``.pyi`` stub file."""
 
         self.globals: dict[str, list[InferenceResult]]
         """A map of the name of a global variable to the node defining the global."""
@@ -1617,6 +1622,15 @@ class FunctionDef(
 
         first_return = next(returns, None)
         if not first_return:
+            if not self.body and self.root().is_stub:  # pylint: disable=no-member
+                if self.returns is not None:
+                    yield from protocols.infer_instance_from_annotation(
+                        self.returns, ctx=context
+                    )
+                else:
+                    yield util.Uninferable
+                return
+
             if self.body:
                 if self.is_abstract(pass_is_abstract=True, any_raise_is_abstract=True):
                     yield util.Uninferable
@@ -2378,8 +2392,11 @@ class ClassDef(
         for value in values:
             if isinstance(value, node_classes.AssignName):
                 stmt = value.statement()
-                # Ignore AnnAssigns without value, which are not attributes in the purest sense.
-                if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
+                if (
+                    isinstance(stmt, node_classes.AnnAssign)
+                    and stmt.value is None
+                    and not self.root().is_stub  # pylint: disable=no-member
+                ):
                     continue
             result.append(value)
 
