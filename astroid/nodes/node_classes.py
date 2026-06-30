@@ -4707,6 +4707,12 @@ class FormattedValue(NodeNG):
                 value_to_format = value
                 if isinstance(value, Const):
                     value_to_format = value.value
+                if isinstance(format_spec.value, str) and util.format_spec_too_large(
+                    format_spec.value
+                ):
+                    yield util.Uninferable
+                    uninferable_already_generated = True
+                    continue
                 try:
                     formatted = format(value_to_format, format_spec.value)
                     yield Const(

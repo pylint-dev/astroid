@@ -16,6 +16,14 @@ Release date: TBA
 
 Refs #3107
 
+* Avoid materializing a multi-gigabyte string while inferring a small literal
+  such as ``"{:>2000000000}".format("x")`` or ``f"{1.5:.2000000000f}"``.
+  ``_infer_str_format_call`` and ``FormattedValue._infer`` now yield
+  ``Uninferable`` when a format spec asks for a width or precision over 1e8,
+  mirroring the sequence/repetition caps in ``astroid.protocols``.
+
+Refs #3108
+
 * Fix uncaught ``IndentationError`` when parsing code whose lines end in
   ``\r``: the slice of source tokenized to compute a class or function
   ``position`` is split on ``\n`` only and could be misaligned with the AST
