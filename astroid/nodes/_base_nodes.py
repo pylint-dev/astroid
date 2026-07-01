@@ -143,7 +143,10 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
     """
 
     def _infer_name(self, frame, name):
-        return name
+        try:
+            return self.real_name(name)
+        except AttributeInferenceError:
+            return None
 
     def do_import_module(self, modname: str | None = None) -> nodes.Module:
         """Return the ast for a module whose name is <modname> imported by <self>."""
