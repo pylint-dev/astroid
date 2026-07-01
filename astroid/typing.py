@@ -7,7 +7,6 @@ from __future__ import annotations
 from collections.abc import Callable, Generator
 from typing import (
     TYPE_CHECKING,
-    Any,
     Generic,
     Protocol,
     TypedDict,
@@ -86,7 +85,6 @@ class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
         self,
         node: _SuccessfulInferenceResultT_contra,
         context: InferenceContext | None = None,
-        **kwargs: Any,
     ) -> Iterator[InferenceResult]: ...  # pragma: no cover
 
 
