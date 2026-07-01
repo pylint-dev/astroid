@@ -7233,3 +7233,138 @@ def test_joined_str_uninferable() -> None:
     assert formatted_value.value.as_string() == "hey()"
     inferred = next(joined_str.infer())
     assert inferred is util.Uninferable
+
+
+def test_bool_call_in_or_does_not_recurse() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/878.
+
+    Inferring ``v = bool() or 1`` used to bounce between
+    ``_infer_method_result_truth`` and ``bool_value`` until ``RecursionError``.
+    Run under a tight recursion limit to guard against regression.
+    """
+    original_limit = sys.getrecursionlimit()
+    sys.setrecursionlimit(1000)
+    try:
+        node = extract_node("v = bool() or 1  #@").value
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 1
+    finally:
+        sys.setrecursionlimit(original_limit)
+
+
+def test_tuple_unpack_from_dict_return_not_str() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1006.
+
+    astroid 2.5.7 mis-inferred the second element of
+    ``_, mylist = self.check(self.load())`` as a ``str`` (a dict key type
+    leaking through the tuple unpack), triggering a false ``E1101`` on
+    ``mylist.append(...)``. Current behavior infers ``Uninferable``, which is
+    enough to avoid the false positive.
+    """
+    code = textwrap.dedent("""
+        def S_OK(value=None):
+            return {'OK': True, 'Value': value}
+
+
+        class FooBar:
+            def __init__(self):
+                self.__initStatus = S_OK()
+
+            def check(self, result):
+                return result["Value"]
+
+            def load(self):
+                if not self.__initStatus['OK']:
+                    return self.__initStatus
+                return S_OK((None, ["Hello"]))
+
+            def connect(self):
+                _, mylist = self.check(self.load())
+                mylist  #@
+    """)
+    node = extract_node(code)
+    for item in node.inferred():
+        if isinstance(item, nodes.Const):
+            assert not isinstance(item.value, str), (
+                "mylist must not be inferred as a str — that was the historical "
+                "false-positive trigger for E1101."
+            )
+        if isinstance(item, Instance):
+            assert (
+                item.pytype() != "builtins.str"
+            ), "mylist must not be inferred as a str instance."
+
+
+def test_re_compile_not_inferred_as_str() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/520.
+
+    ``re.compile(r"f")`` used to infer to ``[Uninferable, Const.str]``, and the
+    spurious ``str`` member triggered a ``no-member`` false positive on
+    subsequent ``.match()`` calls. The current behavior is ``[Uninferable]``;
+    in particular, no inferred value may be a string.
+    """
+    node = extract_node("""
+        import re
+        _ENCODING_RGX = re.compile(r"f")
+        _ENCODING_RGX  #@
+    """)
+    for value in node.inferred():
+        if isinstance(value, nodes.Const):
+            assert not isinstance(value.value, str)
+        if isinstance(value, Instance):
+            assert value.pytype() != "builtins.str"
+
+
+def test_dict_returning_method_through_inheritance() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1017.
+
+    A method that returns a dict literal, called on an instance of a class
+    that inherits from a base whose same-named method returns ``None``, used
+    to infer as the base class's instance (the schema object). The override
+    must win, so the call result is a ``Dict``.
+    """
+    node = extract_node("""
+        class SchemaNode:
+            def deserialize(self, value): pass
+
+
+        class ExtendedSchemaNode(SchemaNode):
+            pass
+
+
+        class GetJobsQueries(ExtendedSchemaNode):
+            def deserialize(self, value):
+                return {"detail": True}
+
+
+        obj = GetJobsQueries()
+        filters = obj.deserialize({"data": 1})
+        filters  #@
+    """)
+    inferred = node.inferred()
+    assert any(isinstance(item, nodes.Dict) for item in inferred)
+
+
+def test_redefined_method_uses_last_definition() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1683.
+
+    When a method is redefined in the same class body, calling it on an
+    instance must infer to the *last* definition. The bug caused inference to
+    pick the first (no-return) definition, triggering false
+    ``assignment-from-no-return`` in pylint.
+    """
+    node = extract_node("""
+        class Test:
+            def test(self):
+                pass
+
+            def test(self):
+                return True
+
+        Test().test()  #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value is True

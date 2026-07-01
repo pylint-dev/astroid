@@ -586,3 +586,27 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``DuplicateBasesError``.
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
+
+    def test_dataclass_enum_exposes_members(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/2317.
+
+        A class decorated with ``@dataclass`` that also inherits from ``Enum``
+        must still expose ``__members__`` (the dataclass transform should not
+        strip the enum metaclass attributes).
+        """
+        ast_node = builder.extract_node("""
+        from dataclasses import dataclass
+        from enum import Enum
+
+
+        @dataclass
+        class Something(str, Enum):
+            A = "a"
+            B = "b"
+
+        Something.__members__  #@
+        """)
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        member_names = [key.value for key, _ in inferred.items]
+        assert member_names == ["A", "B"]
