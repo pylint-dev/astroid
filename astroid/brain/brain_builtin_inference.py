@@ -9,7 +9,7 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from functools import partial
-from typing import TYPE_CHECKING, Any, NoReturn, cast
+from typing import TYPE_CHECKING, NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -199,7 +199,7 @@ def register_builtin_transform(
     """
 
     def _transform_wrapper(
-        node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+        node: nodes.Call, context: InferenceContext | None = None
     ) -> Iterator:
         result = transform(node, context=context)
         if result:
@@ -710,7 +710,8 @@ def infer_slice(node, context: InferenceContext | None = None):
 
 
 def _infer_object__new__decorator(
-    node: nodes.ClassDef, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.ClassDef,
+    context: InferenceContext | None = None,
 ) -> Iterator[Instance]:
     # Instantiate class immediately
     # since that's what @object.__new__ does
@@ -977,7 +978,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
 
 
 def _infer_copy_method(
-    node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[CopyResult]:
     assert isinstance(node.func, nodes.Attribute)
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
@@ -1006,7 +1007,7 @@ def _is_str_format_call(node: nodes.Call) -> bool:
 
 
 def _infer_str_format_call(
-    node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[ConstFactoryResult | util.UninferableBase]:
     """Return a Const node based on the template and passed arguments."""
     call = arguments.CallSite.from_call(node, context=context)

@@ -7,6 +7,7 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Removed the `**kwargs` argument from al `infer` functions.
 
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
