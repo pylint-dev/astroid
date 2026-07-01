@@ -291,6 +291,12 @@ def _container_generic_transform(
             for item in arg.items
         ]
     elif isinstance(arg, nodes.Const) and isinstance(arg.value, (str, bytes)):
+        # Building one Const node per character would blow up the same way an
+        # oversized sequence repetition does in _multiply_seq_by_int. A string
+        # constant is only bounded by the source, and concatenation ("a" + "b")
+        # is not size-capped, so decline instead of materializing it.
+        if len(arg.value) > 1e8:
+            return None
         elts = arg.value
     else:
         return None
@@ -958,6 +964,11 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
+        # Same guard as the container builders: a str/bytes constant would
+        # produce one key node per character, so fall back rather than
+        # materializing an oversized dict.
+        if len(inferred_values.value) > 1e8:
+            return _build_dict_with_elements([])
         elements_with_value = [
             (nodes.Const(element), default) for element in inferred_values.value
         ]
