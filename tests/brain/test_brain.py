@@ -1587,6 +1587,30 @@ def test_infer_dict_from_keys() -> None:
         assert sorted(actual_values) == ["a", "b", "c"]
 
 
+def test_container_transform_oversized_str_declines() -> None:
+    """list/set/tuple/frozenset must not build one Const per character for a
+    huge str/bytes constant."""
+    for builtin in ("list", "set", "tuple", "frozenset"):
+        node = astroid.extract_node(f'{builtin}(("A" * 10 ** 8) + "B")')
+        inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+
+    # Small strings still infer their exact contents.
+    node = astroid.extract_node('list("abc")')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [elem.value for elem in inferred.elts] == ["a", "b", "c"]
+
+
+def test_infer_dict_fromkeys_oversized_str_declines() -> None:
+    """dict.fromkeys must not build one key per character for a huge str/bytes
+    constant."""
+    node = astroid.extract_node('dict.fromkeys(("A" * 10 ** 8) + "B")')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Dict)
+    assert inferred.items == []
+
+
 class TestFunctoolsPartial:
     @staticmethod
     def test_infer_partial() -> None:
