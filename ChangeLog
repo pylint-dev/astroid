@@ -23,6 +23,14 @@ Release date: TBA
 
   Refs #3107
 
+* Bound the field width and precision when inferring ``str.format`` calls.
+  A template such as ``"{:>2000000000}".format("x")`` (or a width/precision
+  supplied through a nested ``{}`` field) previously built the padded
+  multi-gigabyte string eagerly during inference; such calls now infer as
+  ``Uninferable`` when the field size would be oversized.
+
+  Refs #3131
+
 * Remove the ``asname`` keyword argument from ``Import._infer`` and
   ``ImportFrom._infer``. The alias-to-real-name translation that
   ``asname=True`` performed is now hoisted into ``ImportNode._infer_name``,

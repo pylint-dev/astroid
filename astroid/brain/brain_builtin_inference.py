@@ -7,6 +7,8 @@
 from __future__ import annotations
 
 import itertools
+import re
+import string
 from collections.abc import Callable, Iterable, Iterator
 from functools import partial
 from typing import TYPE_CHECKING, Any, NoReturn, cast
@@ -42,6 +44,33 @@ BuiltContainers = type[tuple] | type[list] | type[set] | type[frozenset]
 CopyResult = nodes.Dict | nodes.List | nodes.Set | objects.FrozenSet
 
 OBJECT_DUNDER_NEW = "object.__new__"
+
+# Largest field width/precision we are willing to materialize when inferring a
+# str.format() call. A crafted template such as "{:>2000000000}" would otherwise
+# eagerly build a multi-gigabyte string during inference.
+_MAX_FORMAT_FIELD_SIZE = int(1e8)
+_FORMAT_SPEC_RE = re.compile(
+    r"(?:.?[<>=^])?[-+ ]?z?#?0?(?P<width>\d+)?[_,]?(?:\.(?P<precision>\d+))?.?$"
+)
+
+
+class _BoundedFormatter(string.Formatter):
+    """A ``str.format`` implementation that refuses oversized width/precision.
+
+    Nested replacement fields inside a format spec ("{:>{}}") are already
+    resolved by ``Formatter`` before ``format_field`` runs, so the check here
+    also covers widths supplied through arguments.
+    """
+
+    def format_field(self, value: object, format_spec: str) -> str:
+        match = _FORMAT_SPEC_RE.match(format_spec)
+        if match:
+            for field in ("width", "precision"):
+                size = match.group(field)
+                if size is not None and int(size) > _MAX_FORMAT_FIELD_SIZE:
+                    raise ValueError("format field size exceeds inference limit")
+        return cast(str, super().format_field(value, format_spec))
+
 
 STR_CLASS = """
 class whatever(object):
@@ -1048,7 +1077,9 @@ def _infer_str_format_call(
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
     try:
-        formatted_string = format_template.format(*pos_values, **keyword_values)
+        formatted_string = _BoundedFormatter().format(
+            format_template, *pos_values, **keyword_values
+        )
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
         # AttributeError: named field in format string was not found in the arguments
         # IndexError: there are too few arguments to interpolate
