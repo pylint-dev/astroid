@@ -8,6 +8,16 @@ What's New in astroid 4.2.0?
 Release date: TBA
 
 
+* Bound oversized old-style (``%``) string/bytes formatting during inference.
+  A tiny literal such as ``"%1000000000d" % 1`` made
+  ``_infer_old_style_string_formatting`` eagerly build a multi-gigabyte
+  ``Const`` while inferring otherwise untrusted source. The width and
+  precision are now read out of the conversion specifiers (including ``*``
+  fields) and the interpolation infers as ``Uninferable`` past ``1e8``,
+  mirroring the repetition, concatenation and ``str.format`` caps. Bytes
+  ``%`` formatting is routed through the same handler so it is bounded too;
+  small format strings keep inferring their exact value.
+
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
   ``multiprocessing`` module.

@@ -7203,6 +7203,22 @@ class TestOldStyleStringFormatting:
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
 
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            '"%1000000000d" % 1',
+            '"%-1000000000s" % "x"',
+            '"%.1000000000f" % 1.0',
+            '"%*s" % (1000000000, "x")',
+            '"%(x)1000000000s" % {"x": "y"}',
+            'b"%1000000000d" % 1',
+        ],
+    )
+    def test_old_style_string_formatting_oversized(self, format_string: str) -> None:
+        # A tiny literal must not materialize a multi-gigabyte string.
+        node: nodes.Call = _extract_single_node(format_string)
+        assert next(node.infer()) is util.Uninferable
+
 
 def test_sys_argv_uninferable() -> None:
     """Regression test for https://github.com/pylint-dev/pylint/issues/7710."""
