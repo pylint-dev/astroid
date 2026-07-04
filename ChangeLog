@@ -7,7 +7,6 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
-
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
   ``multiprocessing`` module.
@@ -47,6 +46,18 @@ Release date: TBA
   already done when ``tokenize`` raises ``TokenError``.
 
   Closes #3091
+
+* Support PEP 810 explicit lazy imports (new in Python 3.15). ``Import`` and
+  ``ImportFrom`` nodes gain a ``lazy`` boolean attribute (``False`` before
+  3.15 and for eager imports), set from CPython's ``is_lazy`` AST field, and
+  ``as_string`` renders the ``lazy`` prefix. Name binding and inference are
+  unchanged from eager imports.
+
+* Support PEP 798 dict-comprehension unpacking (``{**d for d in dicts}``,
+  new in Python 3.15). The rebuilder previously crashed because CPython
+  stores the unpacked mapping in ``DictComp.key`` and leaves ``value`` as
+  ``None``; astroid now mirrors the ``{**d}`` ``Dict`` representation with a
+  ``DictUnpack`` key, and ``as_string`` round-trips the construct.
 
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from

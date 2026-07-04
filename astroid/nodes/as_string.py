@@ -245,11 +245,13 @@ class AsStringVisitor:
 
     def visit_dictcomp(self, node: nodes.DictComp) -> str:
         """return an nodes.DictComp node as string"""
-        return "{{{}: {} {}}}".format(
-            node.key.accept(self),
-            node.value.accept(self),
-            " ".join(n.accept(self) for n in node.generators),
-        )
+        key = node.key.accept(self)
+        value = node.value.accept(self)
+        generators = " ".join(n.accept(self) for n in node.generators)
+        if key == "**":
+            # PEP 798 dict-comprehension unpacking, e.g. ``{**d for d in dicts}``.
+            return f"{{{key}{value} {generators}}}"
+        return f"{{{key}: {value} {generators}}}"
 
     def visit_expr(self, node: nodes.Expr) -> str:
         """return an nodes.Expr node as string"""
@@ -285,8 +287,9 @@ class AsStringVisitor:
 
     def visit_importfrom(self, node: nodes.ImportFrom) -> str:
         """return an nodes.ImportFrom node as string"""
-        return "from {} import {}".format(
-            "." * (node.level or 0) + node.modname, _import_string(node.names)
+        lazy = "lazy " if node.lazy else ""
+        return "{}from {} import {}".format(
+            lazy, "." * (node.level or 0) + node.modname, _import_string(node.names)
         )
 
     def visit_joinedstr(self, node: nodes.JoinedStr) -> str:
@@ -401,7 +404,8 @@ class AsStringVisitor:
 
     def visit_import(self, node: nodes.Import) -> str:
         """return an nodes.Import node as string"""
-        return f"import {_import_string(node.names)}"
+        lazy = "lazy " if node.lazy else ""
+        return f"{lazy}import {_import_string(node.names)}"
 
     def visit_keyword(self, node: nodes.Keyword) -> str:
         """return an nodes.Keyword node as string"""
