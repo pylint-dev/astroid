@@ -33,6 +33,31 @@ def _populated_context() -> InferenceContext:
     return ctx
 
 
+class TestInferenceContextInit:
+    """``__init__`` slow path — no longer exercised by ``clone()``."""
+
+    def test_init_with_explicit_nodes_inferred(self) -> None:
+        """An explicitly passed counter cell is adopted, not copied.
+
+        The old ``clone()`` used this parameter to share the counter;
+        the fast path writes the slot directly, so this keeps the
+        ``__init__`` contract covered for external callers.
+        """
+        cell = [7]
+        ctx = InferenceContext(nodes_inferred=cell)
+        assert ctx._nodes_inferred is cell
+        assert ctx.nodes_inferred == 7
+        ctx.nodes_inferred = 42
+        assert cell[0] == 42
+
+    def test_init_default_nodes_inferred(self) -> None:
+        """Without the parameter, each context gets its own zeroed cell."""
+        ctx = InferenceContext()
+        other = InferenceContext()
+        assert ctx.nodes_inferred == 0
+        assert ctx._nodes_inferred is not other._nodes_inferred
+
+
 class TestInferenceContextClone:
     """The clone() fast-path must preserve the semantics of the slow path."""
 
