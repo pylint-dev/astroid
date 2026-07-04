@@ -16,7 +16,7 @@ import os
 import sys
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn
+from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn
 
 from astroid import bases, protocols, util
 from astroid.context import (
@@ -601,9 +601,7 @@ class Module(LocalsDictNodeNG):
         """
         return self
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Module]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[Module]:
         yield self
 
 
@@ -1059,9 +1057,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return found_attrs
         raise AttributeInferenceError(target=self, attribute=name)
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Lambda]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[Lambda]:
         yield self
 
     def _get_yield_nodes_skip_functions(self):
@@ -1519,7 +1515,7 @@ class FunctionDef(
         return bool(yields_without_lambdas & yields_without_functions)
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[objects.Property | FunctionDef, None, InferenceErrorInfo]:
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
@@ -2968,7 +2964,5 @@ class ClassDef(
         """
         return self
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[ClassDef]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[ClassDef]:
         yield self
