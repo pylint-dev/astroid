@@ -13,6 +13,7 @@ import random
 import sys
 import textwrap
 import unittest
+import unittest.mock
 import warnings
 from typing import Any
 
@@ -2269,6 +2270,31 @@ class TestTemplateString:
         assert [elt.value for elt in strings.elts] == ["just text"]
         assert instance.getattr("values")[0].elts == []
         assert instance.getattr("interpolations")[0].elts == []
+
+    @staticmethod
+    def test_template_string_inference_template_class_missing() -> None:
+        # If ``string.templatelib`` does not provide the expected classes
+        # (e.g. the module failed to build), inference falls back to
+        # Uninferable instead of raising.
+        node = builder.extract_node('t"{1}"')
+        empty_module = astroid.parse("")
+        with unittest.mock.patch.dict(
+            astroid.MANAGER.astroid_cache, {"string.templatelib": empty_module}
+        ):
+            assert list(node.infer()) == [Uninferable]
+            assert list(node.values[0].infer()) == [Uninferable]
+
+    @staticmethod
+    def test_template_string_inference_template_not_a_class() -> None:
+        # If the ``Template`` / ``Interpolation`` names do not resolve to
+        # classes, inference falls back to Uninferable instead of raising.
+        node = builder.extract_node('t"{1}"')
+        fake_module = astroid.parse("Template = 1\nInterpolation = 1")
+        with unittest.mock.patch.dict(
+            astroid.MANAGER.astroid_cache, {"string.templatelib": fake_module}
+        ):
+            assert list(node.infer()) == [Uninferable]
+            assert list(node.values[0].infer()) == [Uninferable]
 
 
 @pytest.mark.parametrize(
