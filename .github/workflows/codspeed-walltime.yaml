@@ -37,7 +37,7 @@ jobs:
 
       - name: Set up Python 3.14
         id: python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: "3.14"
           check-latest: true
@@ -53,7 +53,7 @@ jobs:
           pip install .
 
       - name: Run cold-start benchmarks
-        uses: CodSpeedHQ/action@v4.17.6
+        uses: CodSpeedHQ/action@v4.18.1
         with:
           mode: walltime
           run: pytest tests/benchmarks/ --codspeed -k "cold_lint"

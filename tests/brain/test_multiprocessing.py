@@ -10,6 +10,7 @@ import unittest
 
 import astroid
 from astroid import builder, nodes
+from astroid.manager import AstroidManager
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -107,3 +108,23 @@ class MultiprocessingBrainTest(unittest.TestCase):
         # Verify that we have these attributes
         self.assertTrue(manager.getattr("start"))
         self.assertTrue(manager.getattr("shutdown"))
+
+
+def test_multiprocessing_shadowed_by_local_package(tmp_path, monkeypatch) -> None:
+    """When a local package named ``multiprocessing`` shadows the stdlib one,
+    ``multiprocessing.context`` cannot be resolved and inference yields
+    ``Uninferable``. The brain must not crash trying to iterate its locals.
+    """
+    pkg = tmp_path / "multiprocessing"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("")
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    manager = AstroidManager()
+    # drop any cached stdlib ``multiprocessing``
+    manager.clear_cache()
+    try:
+        module = manager.ast_from_module_name("multiprocessing")
+        assert isinstance(module, nodes.Module)
+    finally:
+        manager.clear_cache()
