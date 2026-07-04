@@ -49,26 +49,22 @@ OBJECT_DUNDER_NEW = "object.__new__"
 # str.format() call. A crafted template such as "{:>2000000000}" would otherwise
 # eagerly build a multi-gigabyte string during inference.
 _MAX_FORMAT_FIELD_SIZE = int(1e8)
-_FORMAT_SPEC_RE = re.compile(
-    r"(?:.?[<>=^])?[-+ ]?z?#?0?(?P<width>\d+)?[_,]?(?:\.(?P<precision>\d+))?.?$"
-)
 
 
 class _BoundedFormatter(string.Formatter):
     """A ``str.format`` implementation that refuses oversized width/precision.
 
-    Nested replacement fields inside a format spec ("{:>{}}") are already
-    resolved by ``Formatter`` before ``format_field`` runs, so the check here
-    also covers widths supplied through arguments.
+    The only multi-digit numbers in a format spec are the width and the
+    precision, so bailing when any digit run exceeds the limit covers both.
+    Nested replacement fields ("{:>{}}") are already resolved by ``Formatter``
+    before ``format_field`` runs, so this also catches sizes passed as
+    arguments.
     """
 
     def format_field(self, value: object, format_spec: str) -> str:
-        match = _FORMAT_SPEC_RE.match(format_spec)
-        if match:
-            for field in ("width", "precision"):
-                size = match.group(field)
-                if size is not None and int(size) > _MAX_FORMAT_FIELD_SIZE:
-                    raise ValueError("format field size exceeds inference limit")
+        for size in re.findall(r"\d+", format_spec):
+            if int(size) > _MAX_FORMAT_FIELD_SIZE:
+                raise ValueError("format field size exceeds inference limit")
         return cast(str, super().format_field(value, format_spec))
 
 
