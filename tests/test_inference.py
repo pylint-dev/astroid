@@ -7207,6 +7207,19 @@ def test_str_format_oversized_width_uninferable(code: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "code",
+    [
+        '"{".format()',
+        '"}{".format()',
+    ],
+)
+def test_str_format_malformed_template_uninferable(code: str) -> None:
+    """A template Formatter().parse() rejects must stay Uninferable."""
+    node = _extract_single_node(code)
+    assert next(node.infer()) is util.Uninferable
+
+
+@pytest.mark.parametrize(
     "source, expected",
     [
         (
