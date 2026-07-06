@@ -928,6 +928,16 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         new_node.postinit(elements)
         return new_node
 
+    def _unique_const_keys(keys: Iterable[nodes.Const]) -> list[nodes.Const]:
+        # dict.fromkeys deduplicates its keys, so keep only the first Const seen
+        # for a given value. Emitting one entry per element is wrong
+        # (dict.fromkeys("aab") has keys "a", "b") and lets a repeated string
+        # balloon the inferred dict.
+        seen: dict[object, nodes.Const] = {}
+        for key in keys:
+            seen.setdefault(key.value, key)
+        return list(seen.values())
+
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
@@ -954,13 +964,19 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in elements]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(elements)
+        ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
+        # Deduplicate the characters/bytes before building Const nodes so that a
+        # compact but large string, e.g. dict.fromkeys("x" * 10**8), doesn't
+        # materialize one node per character for what is a single-key dict.
         elements_with_value = [
-            (nodes.Const(element), default) for element in inferred_values.value
+            (nodes.Const(element), default)
+            for element in dict.fromkeys(inferred_values.value)
         ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Dict):
@@ -970,7 +986,9 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in keys]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(keys)
+        ]
         return _build_dict_with_elements(elements_with_value)
 
     # Fallback to an empty dictionary
