@@ -11,6 +11,12 @@ Release date: TBA
   Users upgrading their `astroid` versions should ensure they do no pass values other than
   `context` to `infer`.
 
+* Deduplicate keys when inferring ``dict.fromkeys``. ``dict.fromkeys("aab")``
+  now infers a dict with keys ``"a"``, ``"b"`` instead of ``"a"``, ``"a"``,
+  ``"b"``, matching the runtime. This also stops ``dict.fromkeys`` from
+  materializing one ``Const`` node per character for a repeated string such as
+  ``dict.fromkeys("x" * 10 ** 8)``, which is a single-key dict.
+
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
   ``multiprocessing`` module.
