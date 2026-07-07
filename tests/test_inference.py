@@ -7210,14 +7210,25 @@ class TestOldStyleStringFormatting:
             '"%-1000000000s" % "x"',
             '"%.1000000000f" % 1.0',
             '"%*s" % (1000000000, "x")',
+            '"%*s" % (-1000000000, "x")',
+            '"%.*f" % (1000000000, 1.0)',
             '"%(x)1000000000s" % {"x": "y"}',
+            '"%((x))1000000000s" % {"(x)": "y"}',
             'b"%1000000000d" % 1',
+            'x = "%1000000000d"\nx %= 1\nx',
         ],
     )
     def test_old_style_string_formatting_oversized(self, format_string: str) -> None:
         # A tiny literal must not materialize a multi-gigabyte string.
-        node: nodes.Call = _extract_single_node(format_string)
+        node = _extract_single_node(format_string)
         assert next(node.infer()) is util.Uninferable
+
+    def test_old_style_string_formatting_star_not_width(self) -> None:
+        # Only arguments consumed by a * width/precision count toward the cap.
+        node = _extract_single_node('"%*d %d" % (5, 7, 200000001)')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "    7 200000001"
 
 
 def test_sys_argv_uninferable() -> None:

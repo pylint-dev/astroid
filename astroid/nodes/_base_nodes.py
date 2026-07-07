@@ -10,7 +10,6 @@ Previously these were called Mixin nodes.
 from __future__ import annotations
 
 import itertools
-import re
 from collections.abc import Callable, Generator, Iterator
 from functools import cached_property, lru_cache, partial
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -44,13 +43,6 @@ if TYPE_CHECKING:
         ],
         list[partial[Generator[InferenceResult]]],
     ]
-
-
-# A single ``%`` conversion specifier, capturing its width and precision so an
-# oversized field can be detected before the interpolation is materialized.
-_OLD_STYLE_FORMAT_SPEC = re.compile(
-    r"%(?:\([^)]*\))?[#0\- +]*(\*|\d+)?(?:\.(\*|\d+))?[hlL]?[diouxXeEfFgGcrsab%]"
-)
 
 
 class Statement(NodeNG):
@@ -418,40 +410,16 @@ class OperatorNode(NodeNG):
         else:
             return (util.Uninferable,)
 
-        if OperatorNode._old_style_format_too_large(instance.value, values):
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.protocols import _old_style_format_too_large
+
+        if _old_style_format_too_large(instance.value, values):
             return (util.Uninferable,)
 
         try:
             return (nodes.const_factory(instance.value % values),)
         except (TypeError, KeyError, ValueError):
             return (util.Uninferable,)
-
-    @staticmethod
-    def _old_style_format_too_large(template: str | bytes, values: object) -> bool:
-        """Whether ``template % values`` would build an oversized string.
-
-        A tiny literal like ``"%1000000000d" % 1`` interpolates to a multi-
-        gigabyte string, so the field width and precision are read out of the
-        conversion specifiers (including ``*`` fields taken from the argument
-        tuple) and compared against the same 1e8 cap the repetition and
-        concatenation paths use, before the result is materialized.
-        """
-        if isinstance(template, bytes):
-            template = template.decode("latin-1")
-        has_star = False
-        for width, precision in _OLD_STYLE_FORMAT_SPEC.findall(template):
-            for field in (width, precision):
-                if field == "*":
-                    has_star = True
-                elif field and (len(field) > 9 or int(field) > 1e8):
-                    # len > 9 already exceeds the cap, and avoids int() choking
-                    # on an absurdly long digit run.
-                    return True
-        if has_star:
-            candidates = values if isinstance(values, tuple) else (values,)
-            if any(isinstance(v, int) and v > 1e8 for v in candidates):
-                return True
-        return False
 
     @staticmethod
     def _invoke_binop_inference(
