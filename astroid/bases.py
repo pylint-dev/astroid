@@ -146,7 +146,7 @@ class Proxy:
         return getattr(self._proxied, name)
 
     def infer(  # type: ignore[return]
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> collections.abc.Generator[InferenceResult, None, InferenceErrorInfo | None]:
         yield self
 

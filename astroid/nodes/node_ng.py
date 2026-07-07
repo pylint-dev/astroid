@@ -10,7 +10,6 @@ from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     TypeVar,
     cast,
@@ -120,7 +119,7 @@ class NodeNG:
         """
 
     def infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         """Get a generator of the inferred values.
 
@@ -144,7 +143,6 @@ class NodeNG:
                 for result in self._explicit_inference(
                     self,  # type: ignore[arg-type]
                     context,
-                    **kwargs,
                 ):
                     context.nodes_inferred += 1
                     yield result
@@ -162,7 +160,7 @@ class NodeNG:
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
         limit = AstroidManager().max_inferable_values
-        for i, result in enumerate(self._infer(context=context, **kwargs)):
+        for i, result in enumerate(self._infer(context=context)):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
                 results.append(util.Uninferable)
                 yield util.Uninferable
@@ -555,7 +553,7 @@ class NodeNG:
         pass
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """We don't know how to resolve a statement by default."""
         # this method is overridden by most concrete classes

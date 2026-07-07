@@ -148,9 +148,12 @@ class TreeRebuilder:
                 start_token = None
             else:
                 return None
-        except TokenError:
-            # Malformed source can make ``generate_tokens`` raise (e.g. an
-            # unterminated bracket on Python < 3.12); no position info then.
+        except (TokenError, SyntaxError):
+            # ``generate_tokens`` can raise on input it cannot tokenize, e.g.
+            # ``TokenError`` for an unterminated bracket on Python < 3.12, or
+            # ``IndentationError`` when ``\r``-terminated lines make the slice
+            # of ``self._data`` (split on ``\n`` only) misaligned with the AST
+            # line numbers; no position info then.
             return None
 
         return Position(

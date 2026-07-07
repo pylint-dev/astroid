@@ -26,11 +26,11 @@ jobs:
     steps:
       - &checkout
         name: Check out code from GitHub
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
       - &setup-python-default
         name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
           check-latest: true
@@ -43,7 +43,7 @@ jobs:
       - &cache-python
         name: Restore Python virtual environment
         id: cache-venv
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: venv
           key: >-
@@ -63,7 +63,7 @@ jobs:
             hashFiles('.pre-commit-config.yaml') }}" >> $GITHUB_OUTPUT
       - name: Restore pre-commit environment
         id: cache-precommit
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: ${{ env.PRE_COMMIT_CACHE }}
           key: >-
@@ -93,7 +93,7 @@ jobs:
       - *checkout
       - name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
@@ -147,7 +147,7 @@ jobs:
       - &setup-python-matrix
         name: Set up Python ${{ matrix.python-version }}
         id: python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true

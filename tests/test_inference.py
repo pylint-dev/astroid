@@ -29,7 +29,14 @@ from astroid import (
 )
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
-from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
+from astroid.bases import (
+    BoundMethod,
+    Generator,
+    Instance,
+    UnboundMethod,
+    UnionType,
+    _infer_stmts,
+)
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS
 from astroid.context import CallContext, InferenceContext
@@ -1022,6 +1029,43 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             manager.AstroidManager, "file_from_module_name", side_effect=AssertionError
         ):
             import_node.do_import_module()
+
+    def test_import_alias_shadowing_module(self) -> None:
+        """An ``import x.y as x`` alias shadowing the head of its own dotted
+        name must not poison the inference cache.
+
+        Regression test for pylint-dev/pylint#10193: inferring the alias
+        name through ``_infer_stmts`` (which yields the real module ``x.y``)
+        used to share a cache key with a direct ``Import._infer`` call
+        (which is meant to resolve to the raw alias ``x``). The two
+        distinct semantics were collapsed because the cache key omitted
+        the differentiating kwarg, so the second call returned the cached
+        module from the first regardless of which one ran first.
+
+        After hoisting the ``real_name`` translation into
+        ``ImportNode._infer_name``, the two flows use distinct lookup
+        names and therefore distinct cache keys.
+        """
+        import_node = extract_node("import os.path as os")
+
+        # _infer_stmts is the path used when resolving a Name reference. It
+        # invokes ``_infer_name`` which now translates the alias before
+        # ``_infer`` runs, so the result is the aliased module ``os.path``.
+        translated_ctx = InferenceContext()
+        translated_ctx.lookupname = "os"
+        translated = list(_infer_stmts([import_node], translated_ctx))
+        self.assertEqual(len(translated), 1)
+        self.assertEqual(translated[0].name, "os.path")
+
+        # Direct ``Import._infer`` (the path pylint's
+        # ``_infer_name_module`` uses) resolves the lookup name as-is,
+        # yielding the raw stdlib ``os`` module. Pre-fix, this returned the
+        # cached ``os.path`` from the previous call.
+        raw_ctx = InferenceContext()
+        raw_ctx.lookupname = "os"
+        raw = list(import_node.infer(raw_ctx))
+        self.assertEqual(len(raw), 1)
+        self.assertEqual(raw[0].name, "os")
 
     def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())

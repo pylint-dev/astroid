@@ -30,9 +30,7 @@ def path_wrapper(func):
     """
 
     @functools.wraps(func)
-    def wrapped(
-        node, context: InferenceContext | None = None, _func=func, **kwargs
-    ) -> Generator:
+    def wrapped(node, context: InferenceContext | None = None, _func=func) -> Generator:
         """Wrapper function handling context."""
         if context is None:
             context = InferenceContext()
@@ -41,7 +39,7 @@ def path_wrapper(func):
 
         yielded = set()
 
-        for res in _func(node, context, **kwargs):
+        for res in _func(node, context):
             # unproxy only true instance, not const, tuple, dict...
             if res.__class__.__name__ == "Instance":
                 ares = res._proxied

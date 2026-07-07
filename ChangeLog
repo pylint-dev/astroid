@@ -12,6 +12,49 @@ Release date: TBA
   ``numpy.ndarray`` instead of ``Uninferable``.
 
   Closes #600
+* Removed the `**kwargs` argument from all `infer` functions.
+  Users upgrading their `astroid` versions should ensure they do no pass values other than
+  `context` to `infer`.
+
+* Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
+  ``multiprocessing`` brain when a local package shadows the stdlib
+  ``multiprocessing`` module.
+
+  Closes pylint-dev/pylint#10014
+
+* Bound string/bytes multiplication (``"x" * n``) and integer left shifts
+  (``1 << n``) in ``const_infer_binary_op`` the same way list/tuple
+  multiplication and ``**`` already are. Inferring a constant such as
+  ``"A" * 10 ** 10`` previously materialized the multi-gigabyte result
+  eagerly; these operations now infer as ``Uninferable`` when the result
+  would be oversized.
+
+  Refs #3107
+
+* Remove the ``asname`` keyword argument from ``Import._infer`` and
+  ``ImportFrom._infer``. The alias-to-real-name translation that
+  ``asname=True`` performed is now hoisted into ``ImportNode._infer_name``,
+  which runs in ``_infer_stmts`` before ``_infer`` is dispatched. Direct
+  callers of ``Import.infer`` / ``ImportFrom.infer`` (previously the
+  ``asname=False`` path) now consistently resolve the lookup name as-is.
+
+  The two flows used to collapse into a single inference cache entry
+  because the ``asname`` kwarg was not part of the cache key, so the
+  second call returned the cached result of the first regardless of
+  which one ran. With the translation hoisted upstream, the two flows
+  set different ``lookupname`` values and therefore land on distinct
+  cache keys, eliminating the collision.
+
+  Refs pylint-dev/pylint#10193
+  Closes #3007
+
+* Fix uncaught ``IndentationError`` when parsing code whose lines end in
+  ``\r``: the slice of source tokenized to compute a class or function
+  ``position`` is split on ``\n`` only and could be misaligned with the AST
+  line numbers. Such nodes now simply have no position information, as
+  already done when ``tokenize`` raises ``TokenError``.
+
+  Closes #3091
 
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
@@ -34,6 +77,19 @@ Release date: TBA
   than a simple name.
 
   Closes #2646
+
+* Fix ``AttributeError`` crash in the ``Arguments`` ``assigned_stmts``
+  protocol when called without an inference context (the public
+  ``assigned_stmts`` API defaults ``context`` to ``None``). Resolving a
+  function's first parameter dereferenced ``context.boundnode`` while the
+  matching ``context and ...`` guard a few lines below was missing; it now
+  degrades to Uninferable.
+
+* Fix ``AttributeError`` crash in ``ClassDef.infer_call_result`` when called
+  through the public API without a context (it defaults to ``None``) for a
+  class whose metaclass defines ``__call__``: the callee was assigned to
+  ``context.callcontext.callee`` without checking that a call context exists.
+  It is now guarded, matching the surrounding code.
 
 * Wrap assignment expressions (``:=``) in parentheses when emitting
   ``as_string`` output so the rendered code remains syntactically valid in

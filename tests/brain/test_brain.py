@@ -1607,6 +1607,30 @@ class TestFunctoolsPartial:
         assert partial.doc_node.value == "Docstring"
         assert partial.lineno == 3
         assert partial.col_offset == 0
+        assert partial.end_lineno == 5
+        assert partial.end_col_offset == 16
+
+    @staticmethod
+    def test_partial_descriptor_binding() -> None:
+        ast_nodes = astroid.extract_node("""
+        from functools import partial
+
+        def test(x):
+            return x
+
+        p = partial(test, x=1)
+        a = p.__get__({})
+        a #@
+        a() #@
+        """)
+        bound, result = ast_nodes
+        inferred_bound = next(bound.infer())
+        assert isinstance(inferred_bound, astroid.BoundMethod)
+        assert isinstance(inferred_bound._proxied._proxied, objects.PartialFunction)
+
+        inferred_result = next(result.infer())
+        assert isinstance(inferred_result, nodes.Const)
+        assert inferred_result.value == 1
 
     def test_invalid_functools_partial_calls(self) -> None:
         ast_nodes = astroid.extract_node("""
