@@ -142,9 +142,7 @@ def const_infer_binary_op(
         ):
             yield util.Uninferable
             return
-        # Concatenating str/bytes ("a" + "b") is not bounded by the repetition
-        # guard above: each side can sit just under the "*" cap, so chaining
-        # concatenations grows the result without limit. Don't materialize it.
+        # Don't materialize an overly large str/bytes concatenation.
         if (
             operator == "+"
             and isinstance(self.value, (str, bytes))
@@ -228,10 +226,7 @@ def tl_infer_binary_op(
     context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
-        # Concatenation is the additive analog of _multiply_seq_by_int: two
-        # sequences each just under the repetition cap combine past it, and
-        # chaining "+" grows the result without bound. _filter_uninferable_nodes
-        # below infers every element, so decline before walking them.
+        # Don't build (and infer every element of) an overly large sequence.
         if len(self.elts) + len(other.elts) > 1e8:
             yield util.Uninferable
             return

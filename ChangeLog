@@ -9,12 +9,6 @@ Release date: TBA
 
 
 * Bound str/bytes and list/tuple concatenation (``a + b``) during inference.
-  The repetition operators (``*``, ``<<``, ``**``) are size-capped, but
-  concatenation was not, so two operands each just under the cap combine past
-  it and chaining ``+`` grows the result without bound. ``const_infer_binary_op``
-  and ``tl_infer_binary_op`` now infer ``Uninferable`` once the combined length
-  exceeds ``1e8``, matching the repetition guards. The list/tuple path also
-  inferred every element of the concatenated sequence before the fix.
 
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib

@@ -376,7 +376,7 @@ class ProtocolTests(unittest.TestCase):
 
     @staticmethod
     def test_uninferable_string_concatenation() -> None:
-        """Each side sits under the "*" cap; the concatenation exceeds it."""
+        """The concatenated string would be prohibitively expensive to build."""
         parsed = extract_node('("a" * 60000000) + ("b" * 60000000)')
         assert parsed.inferred() == [Uninferable]
 
@@ -392,8 +392,7 @@ class ProtocolTests(unittest.TestCase):
 
     @staticmethod
     def test_uninferable_list_concatenation() -> None:
-        """Concatenating two sequences under the repetition cap builds a list
-        past it, and infers every element while doing so."""
+        """The concatenated list would be prohibitively expensive to build."""
         parsed = extract_node("([1] * 50000001) + ([1] * 50000001)")
         assert parsed.inferred() == [Uninferable]
 
