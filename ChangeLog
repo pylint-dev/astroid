@@ -7,6 +7,12 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Add ``qname()`` method to the ``Slice`` node class, returning
+  ``"builtins.slice"``, so that the node can be used in contexts
+  that require a qualified name (e.g. pylint's ``basic_checker``).
+
+  Closes #3115
+
 * Removed the `**kwargs` argument from all `infer` functions.
   Users upgrading their `astroid` versions should ensure they do no pass values other than
   `context` to `infer`.
