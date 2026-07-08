@@ -2316,3 +2316,11 @@ def test_str_large_int_getitem_no_crash() -> None:
     # Trigger the error path that formats the value
     with pytest.raises(AstroidTypeError, match=r"too large to display|int"):
         inferred.getitem(nodes.Const(0))
+
+
+def test_slice_qname() -> None:
+    """Test that Slice node has a qname method returning 'builtins.slice'."""
+    node = extract_node("f[1:2]")
+    assert isinstance(node, nodes.Subscript)
+    assert isinstance(node.slice, nodes.Slice)
+    assert node.slice.qname() == "builtins.slice"

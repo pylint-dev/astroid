@@ -7,6 +7,12 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Add ``qname()`` method to the ``Slice`` node class, returning
+  ``"builtins.slice"``, so that the node can be used in contexts
+  that require a qualified name (e.g. pylint's ``basic_checker``).
+
+  Closes #3115
+
 * Add brain tip for ``numpy.fromfile`` so that calls to
   ``np.fromfile(...)`` are correctly inferred as returning
   ``numpy.ndarray`` instead of ``Uninferable``.

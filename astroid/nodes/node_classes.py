@@ -3571,6 +3571,13 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
+    def qname(self) -> Literal["builtins.slice"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "builtins.slice"
+
     def display_type(self) -> Literal["Slice"]:
         """A human readable type of this node.
 
