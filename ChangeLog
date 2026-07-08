@@ -13,6 +13,12 @@ Release date: TBA
 
   Closes #3115
 
+* Add brain tip for ``numpy.fromfile`` so that calls to
+  ``np.fromfile(...)`` are correctly inferred as returning
+  ``numpy.ndarray`` instead of ``Uninferable``.
+
+  Closes #600
+
 * Removed the `**kwargs` argument from all `infer` functions.
   Users upgrading their `astroid` versions should ensure they do no pass values other than
   `context` to `infer`.
