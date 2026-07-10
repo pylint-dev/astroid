@@ -29,6 +29,12 @@ Release date: TBA
 
   Closes pylint-dev/pylint#10014
 
+* ``get_source_file()`` now prioritizes source files (``.py``, ``.pyi``, ``.pyw``)
+  over compiled extensions (``.pyc``, ``.pyo``). Previously, when a ``.pyc`` file
+  had a companion ``.pyi`` stub, the compiled file was returned instead of the stub.
+
+  Closes #3087
+
 * Bound string/bytes multiplication (``"x" * n``) and integer left shifts
   (``1 << n``) in ``const_infer_binary_op`` the same way list/tuple
   multiplication and ``**`` already are. Inferring a constant such as
