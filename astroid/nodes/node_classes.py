@@ -2843,7 +2843,9 @@ class ImportFrom(_base_nodes.ImportNode):
         self.modname: str | None = fromname  # can be None
         """The module that is being imported from.
 
-        This is ``None`` for relative imports.
+        Parsed relative imports without a module name, such as
+        ``from .. import name``, use an empty string. ``None`` is accepted when
+        constructing an :class:`ImportFrom` node directly.
         """
 
         self.names: list[tuple[str, str | None]] = names
