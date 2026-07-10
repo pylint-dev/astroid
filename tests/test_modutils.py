@@ -376,6 +376,51 @@ class GetSourceFileTest(unittest.TestCase):
             )
 
 
+
+    def test_pyc_prefers_pyi_stub(self) -> None:
+        """When a .pyc file has a companion .pyi stub, get_source_file()
+        should return the .pyi path, not the .pyc path."""
+        import tempfile
+        
+        package = resources.find("pyi_data/pyc_stub_test")
+        pyi_path = os.path.join(package, "stub_module.pyi")
+        
+        # Create a fake .pyc file (just needs to exist with .pyc extension)
+        pyc_path = os.path.join(package, "stub_module.pyc")
+        with open(pyc_path, 'wb') as f:
+            f.write(b'')  # Empty .pyc file
+        
+        try:
+            # get_source_file should prefer the .pyi over .pyc
+            result = modutils.get_source_file(pyc_path)
+            self.assertEqual(result, os.path.normpath(pyi_path))
+        finally:
+            # Cleanup
+            if os.path.exists(pyc_path):
+                os.unlink(pyc_path)
+
+    def test_pyc_no_source_raises(self) -> None:
+        """When a .pyc file has no .py or .pyi companion, get_source_file()
+        should raise NoSourceFile."""
+        import py_compile
+        import tempfile
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a temporary .py file to compile
+            tmp_py = os.path.join(tmpdir, "orphan.py")
+            with open(tmp_py, 'w') as f:
+                f.write("x = 1\n")
+            
+            # Compile to .pyc
+            pyc_path = py_compile.compile(tmp_py, cfile=os.path.join(tmpdir, "orphan.cpython-314.pyc"))
+            
+            # Remove the source
+            os.unlink(tmp_py)
+            
+            # get_source_file should raise since there's no source
+            self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, pyc_path)
+
+
 class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
     Return true if the module is path of the standard library
