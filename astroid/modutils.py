@@ -496,12 +496,21 @@ def get_source_file(
     filename = os.path.abspath(_path_from_filename(filename))
     base, orig_ext = os.path.splitext(filename)
     orig_ext = orig_ext.lstrip(".")
+    # When prefer_stubs is True, check for .pyi files first before
+    # returning the original file (e.g., .pyc). This ensures .pyi stubs
+    # take precedence over compiled bytecode files.
+    if prefer_stubs:
+        for ext in PY_SOURCE_EXTS_STUBS_FIRST:
+            source_path = f"{base}.{ext}"
+            if os.path.exists(source_path):
+                return source_path
     if orig_ext not in PY_SOURCE_EXTS and os.path.exists(f"{base}.{orig_ext}"):
         return f"{base}.{orig_ext}"
-    for ext in PY_SOURCE_EXTS_STUBS_FIRST if prefer_stubs else PY_SOURCE_EXTS:
-        source_path = f"{base}.{ext}"
-        if os.path.exists(source_path):
-            return source_path
+    if not prefer_stubs:
+        for ext in PY_SOURCE_EXTS:
+            source_path = f"{base}.{ext}"
+            if os.path.exists(source_path):
+                return source_path
     if include_no_ext and not orig_ext and os.path.exists(base):
         return base
     raise NoSourceFile(filename)
