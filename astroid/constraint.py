@@ -241,6 +241,106 @@ class EqualityConstraint(Constraint):
         return True
 
 
+class AndConstraint(Constraint):
+    """Represents a "x and y" constraint."""
+
+    def __init__(
+        self,
+        node: nodes.NodeNG,
+        negate: bool,
+        children: list[Constraint],
+    ) -> None:
+        super().__init__(node=node, negate=negate)
+        self.children = children
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches the
+        "x and y" pattern.
+
+        Return None if expr is not an "and" expression, or if any
+        operand does not match a constraint pattern.
+        """
+        if isinstance(expr, nodes.BoolOp) and expr.op == "and":
+            children: list[Constraint] = []
+            for value in expr.values:
+                matches = list(_match_constraint(node, value, negate))
+                if not matches:
+                    return None
+                children.extend(matches)
+            return cls(node=node, negate=negate, children=children)
+
+        return None
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for uninferable results, or depending on negate flag:
+
+        - negate=False: satisfied when all children constraints are satisfied.
+        - negate=True: satisfied when at least one child constraint is satisfied.
+        """
+        if isinstance(inferred, util.UninferableBase):
+            return True
+
+        children_satisfied = (
+            constraint.satisfied_by(inferred, context) for constraint in self.children
+        )
+        return any(children_satisfied) if self.negate else all(children_satisfied)
+
+
+class OrConstraint(Constraint):
+    """Represents a "x or y" constraint."""
+
+    def __init__(
+        self,
+        node: nodes.NodeNG,
+        negate: bool,
+        children: list[Constraint],
+    ) -> None:
+        super().__init__(node=node, negate=negate)
+        self.children = children
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches the
+        "x or y" pattern.
+
+        Return None if expr is not an "or" expression, or if any
+        operand does not match a constraint pattern.
+        """
+        if isinstance(expr, nodes.BoolOp) and expr.op == "or":
+            children: list[Constraint] = []
+            for value in expr.values:
+                matches = list(_match_constraint(node, value, negate))
+                if not matches:
+                    return None
+                children.extend(matches)
+            return cls(node=node, negate=negate, children=children)
+
+        return None
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for uninferable results, or depending on negate flag:
+
+        - negate=False: satisfied when at least one child constraint is satisfied.
+        - negate=True: satisfied when all children constraints are satisfied.
+        """
+        if isinstance(inferred, util.UninferableBase):
+            return True
+
+        children_satisfied = (
+            constraint.satisfied_by(inferred, context) for constraint in self.children
+        )
+        return all(children_satisfied) if self.negate else any(children_satisfied)
+
+
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
 ) -> dict[nodes.If | nodes.IfExp, set[Constraint]]:
@@ -277,6 +377,8 @@ ALL_CONSTRAINT_CLASSES = frozenset(
         BooleanConstraint,
         TypeConstraint,
         EqualityConstraint,
+        AndConstraint,
+        OrConstraint,
     )
 )
 """All supported constraint types."""
