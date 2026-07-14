@@ -885,11 +885,7 @@ class TreeRebuilder:
             ],
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
-            type_params=(
-                [self.visit(param, newnode) for param in node.type_params]
-                if PY312_PLUS
-                else []
-            ),
+            type_params=self._visit_type_params(node, newnode),
         )
         parent.set_local(newnode.name, newnode)
         return newnode
@@ -1188,11 +1184,7 @@ class TreeRebuilder:
             type_comment_args=type_comment_args,
             position=self._get_position_info(node, newnode),
             doc_node=self.visit(doc_ast_node, newnode),
-            type_params=(
-                [self.visit(param, newnode) for param in node.type_params]
-                if PY312_PLUS
-                else []
-            ),
+            type_params=self._visit_type_params(node, newnode),
         )
         self._global_names.pop()
         parent.set_local(newnode.name, newnode)
@@ -1690,12 +1682,46 @@ class TreeRebuilder:
             end_col_offset=node.end_col_offset,
             parent=parent,
         )
+        type_params = self._visit_type_params(node, newnode)
+        # The alias value is evaluated inside the type parameter scope, so that
+        # it can reference the type parameters and forward-reference names from
+        # the enclosing scope.
+        value_parent = newnode.type_param_scope or newnode
         newnode.postinit(
             name=self.visit(node.name, newnode),
-            type_params=[self.visit(p, newnode) for p in node.type_params],
-            value=self.visit(node.value, newnode),
+            type_params=type_params,
+            value=self.visit(node.value, value_parent),
         )
         return newnode
+
+    def _visit_type_params(
+        self,
+        node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef | ast.TypeAlias,
+        newnode: nodes.ClassDef | nodes.FunctionDef | nodes.TypeAlias,
+    ) -> list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]:
+        """Build the PEP 695 type parameter scope for a generic owner.
+
+        The type parameters live in a dedicated :class:`nodes.TypeParamScope`
+        that lexically wraps the owner, so that their bounds and defaults are
+        resolved lazily (forward references and sibling references are allowed)
+        and so that the type parameter names do not leak into the owner's own
+        namespace. Returns the list of type parameters (empty when the owner is
+        not generic), which the owner also keeps for convenience.
+        """
+        if not (PY312_PLUS and node.type_params):
+            return []
+        tp_scope = nodes.TypeParamScope(
+            lineno=node.type_params[0].lineno,
+            col_offset=node.type_params[0].col_offset,
+            end_lineno=node.type_params[-1].end_lineno,
+            end_col_offset=node.type_params[-1].end_col_offset,
+            parent=newnode,
+        )
+        type_params = [self.visit(param, tp_scope) for param in node.type_params]
+        newnode.type_param_scope = tp_scope
+        # ``newnode.type_params`` is assigned by the caller's ``postinit``; the
+        # scope exposes the same list through its ``type_params`` property.
+        return type_params
 
     def visit_typevar(self, node: ast.TypeVar, parent: nodes.NodeNG) -> nodes.TypeVar:
         """Visit a TypeVar node by returning a fresh instance of it."""
