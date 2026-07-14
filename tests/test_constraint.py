@@ -33,6 +33,8 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (f"{node} != 3", None, 3),
             (f"3 == {node}", 3, None),
             (f"3 != {node}", None, 3),
+            (f"isinstance({node}, int) and {node} == 3", 3, 5),
+            (f"isinstance({node}, str) or {node} == 3", 3, None),
         ),
     )
 
@@ -1141,3 +1143,148 @@ def test_equality_fractions():
         assert isinstance(inferred[0], Instance), msg
         assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
         assert inferred[0]._proxied.name == "Fraction", msg
+
+
+@pytest.mark.parametrize(
+    ("condition", "satisfy_val", "fail_val"),
+    (
+        pytest.param(
+            "x is not None and (isinstance(x, int) and x == 3)",
+            3,
+            5,
+            id="nested-and",
+        ),
+        pytest.param(
+            "x is not None and x and isinstance(x, int) and x == 3",
+            3,
+            0,
+            id="and-with-multiple-operands",
+        ),
+        pytest.param(
+            "x is None or (isinstance(x, str) or x == 3)",
+            3,
+            5,
+            id="nested-or",
+        ),
+        pytest.param(
+            "x is None or not x or isinstance(x, str) or x == 3",
+            0,
+            5,
+            id="or-with-multiple-operands",
+        ),
+        pytest.param(
+            "x is not None and (isinstance(x, bool) or x == 3)",
+            True,
+            5,
+            id="and-with-nested-or",
+        ),
+        pytest.param(
+            "x is None or (isinstance(x, int) and x == 3)",
+            3,
+            5,
+            id="or-with-nested-and",
+        ),
+        pytest.param(
+            "x == 3 or isinstance(x, int) and x == 5",
+            3,
+            None,
+            id="and-precedence-over-or",
+        ),
+    ),
+)
+def test_compound_constraint(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test compound constraints in both the body and else branch of an if."""
+    n1, n2, n3, n4 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        if {condition}:
+            x  #@
+        else:
+            x  #@
+
+    def f2(x = {satisfy_val}):
+        if {condition}:
+            x  #@
+        else:
+            x  #@
+    """)
+
+    for node in (n1, n4):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 1, msg
+        assert inferred[0] is Uninferable, msg
+
+    for node, expected in ((n2, fail_val), (n3, satisfy_val)):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 2, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == expected, msg
+        assert inferred[1] is Uninferable, msg
+
+
+@pytest.mark.parametrize(
+    "condition",
+    (
+        pytest.param("isinstance(x, classinfo) and x == 3", id="and"),
+        pytest.param("isinstance(x, classinfo) or x == 5", id="or"),
+    ),
+)
+def test_compound_constraint_with_uninferable_child(condition: str) -> None:
+    """Test that inference remains conservative when a child constraint is unknown."""
+    n1, n2 = builder.extract_node(f"""
+    def f(classinfo, x = 3):
+        if {condition}:
+            x  #@
+        else:
+            x  #@
+    """)
+
+    for node in (n1, n2):
+        msg = node_info(node)
+        inferred = node.inferred()
+        assert len(inferred) == 2, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
+        assert inferred[1].value is Uninferable, msg
+
+
+@pytest.mark.parametrize(
+    ("condition", "value"),
+    (
+        pytest.param("not x and y", 3, id="and"),
+        pytest.param(
+            "x is not None and (not x and y)",
+            3,
+            id="nested-and-inner",
+        ),
+        pytest.param(
+            "x is not None and (not x and y)",
+            None,
+            id="nested-and-outer",
+        ),
+        pytest.param("not x or y", 3, id="or"),
+        pytest.param(
+            "x is None or (not x or y)",
+            3,
+            id="nested-or",
+        ),
+    ),
+)
+def test_expression_with_non_constraint_is_ignored(
+    condition: str, value: int | None
+) -> None:
+    """Test that an expression is ignored when an operand does not constrain the target variable."""
+    node = builder.extract_node(f"""
+    x, y = {value}, None
+
+    if {condition}:
+        x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == value
