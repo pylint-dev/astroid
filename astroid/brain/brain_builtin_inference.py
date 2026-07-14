@@ -473,12 +473,36 @@ def infer_super(
     assert cls is not None
     if not node.args:
         mro_pointer = cls
+        # When context.boundnode is set (e.g. a subclass called this method),
+        # use it as mro_type so that super() resolves against the actual
+        # calling class rather than the lexical class.  This is critical for
+        # three-level (or deeper) inheritance chains where typing.Self must
+        # propagate through super() calls.
+        effective_cls = cls
+        if context is not None and context.boundnode is not None:
+            from astroid.bases import (  # pylint: disable=import-outside-toplevel
+                Instance,
+            )
+
+            bound = context.boundnode
+            if isinstance(bound, Instance):
+                bound_cls = bound._proxied
+            elif isinstance(bound, nodes.ClassDef):
+                bound_cls = bound
+            else:
+                bound_cls = None
+            if bound_cls is not None:
+                try:
+                    if cls in bound_cls.mro():
+                        effective_cls = bound_cls
+                except (MroError, ValueError):
+                    pass
         # In we are in a classmethod, the interpreter will fill
         # automatically the class as the second argument, not an instance.
         if scope.type == "classmethod":
-            mro_type = cls
+            mro_type = effective_cls
         else:
-            mro_type = cls.instantiate_class()
+            mro_type = effective_cls.instantiate_class()
     else:
         try:
             mro_pointer = next(node.args[0].infer(context=context))
