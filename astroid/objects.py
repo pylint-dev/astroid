@@ -261,6 +261,96 @@ class DictInstance(bases.Instance):
     special_attributes = objectmodel.DictModel()
 
 
+class TemplateStrInstance(bases.Instance):
+    """Instance of ``string.templatelib.Template`` (a t-string result).
+
+    It carries the originating :class:`TemplateStr` node so that the
+    ``strings``, ``values`` and ``interpolations`` members can be inferred
+    from the actual template contents, mirroring PEP 750 runtime semantics.
+    """
+
+    special_attributes = objectmodel.TemplateStrModel()
+
+    def __init__(self, proxied: scoped_nodes.ClassDef, node: node_classes.TemplateStr):
+        super().__init__(proxied)
+        self._node = node
+
+    def _tuple(self, elts: list) -> node_classes.Tuple:
+        tuple_node = node_classes.Tuple(parent=self._node)
+        tuple_node.postinit(elts=elts)
+        return tuple_node
+
+    def template_strings(self) -> node_classes.Tuple:
+        # ``strings`` is the constant segments around each interpolation, with
+        # an empty string inserted wherever interpolations are adjacent or at
+        # an edge, so that ``len(strings) == len(interpolations) + 1``.
+        strings: list[str] = []
+        buffer = ""
+        for value in self._node.values:
+            if isinstance(value, node_classes.Interpolation):
+                strings.append(buffer)
+                buffer = ""
+            elif isinstance(value, node_classes.Const):
+                buffer += str(value.value)
+        strings.append(buffer)
+        return self._tuple([node_classes.Const(string) for string in strings])
+
+    def template_interpolations(self) -> node_classes.Tuple:
+        elts: list = []
+        for value in self._node.values:
+            if isinstance(value, node_classes.Interpolation):
+                inferred = util.safe_infer(value)
+                elts.append(inferred if inferred is not None else util.Uninferable)
+        return self._tuple(elts)
+
+    def template_values(self) -> node_classes.Tuple:
+        elts: list = []
+        for value in self._node.values:
+            if isinstance(value, node_classes.Interpolation):
+                inferred = util.safe_infer(value.value)
+                elts.append(inferred if inferred is not None else util.Uninferable)
+        return self._tuple(elts)
+
+
+class InterpolationInstance(bases.Instance):
+    """Instance of ``string.templatelib.Interpolation``.
+
+    It carries the originating :class:`Interpolation` node so that ``value``,
+    ``expression``, ``conversion`` and ``format_spec`` can be inferred.
+    """
+
+    special_attributes = objectmodel.InterpolationModel()
+
+    def __init__(
+        self, proxied: scoped_nodes.ClassDef, node: node_classes.Interpolation
+    ):
+        super().__init__(proxied)
+        self._node = node
+
+    def interpolation_value(self) -> InferenceResult:
+        inferred = util.safe_infer(self._node.value)
+        return inferred if inferred is not None else util.Uninferable
+
+    def interpolation_expression(self) -> node_classes.Const:
+        return node_classes.Const(self._node.str)
+
+    def interpolation_conversion(self) -> node_classes.Const:
+        # ``conversion`` is ``None`` at runtime when no ``!r``/``!s``/``!a`` is
+        # used (the AST stores ``-1``), otherwise the conversion character.
+        conversion = self._node.conversion
+        if conversion == -1:
+            return node_classes.Const(None)
+        return node_classes.Const(chr(conversion))
+
+    def interpolation_format_spec(self) -> InferenceResult:
+        # ``format_spec`` is an empty string at runtime when absent, otherwise
+        # the rendered spec (itself a JoinedStr that infers to a ``str``).
+        if self._node.format_spec is None:
+            return node_classes.Const("")
+        inferred = util.safe_infer(self._node.format_spec)
+        return inferred if inferred is not None else util.Uninferable
+
+
 # Custom objects tailored for dictionaries, which are used to
 # disambiguate between the types of Python 2 dict's method returns
 # and Python 3 (where they return set like objects).
