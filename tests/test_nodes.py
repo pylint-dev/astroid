@@ -303,6 +303,15 @@ everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
         "be undone in a finally block without polluting other tests on PyPy.",
     )
     def test_recursion_error_trapped() -> None:
+        # Force-load every brain so the long chain reliably exhausts the
+        # stack via the inference attempts performed inside the brain
+        # transforms' predicates. With lazy brain loading those predicates
+        # are not registered until their target modules are imported.
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.brain.helpers import register_all_brains
+
+        register_all_brains(astroid.MANAGER)
+
         with pytest.warns(UserWarning, match="unable to transform"):
             ast = abuilder.string_build(LONG_CHAINED_METHOD_CALL)
 

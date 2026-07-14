@@ -174,6 +174,16 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
         # Visit the transforms
         if self._apply_transforms:
+            # Lazy-register any brains keyed on this module's imports so the
+            # corresponding transforms exist by the time visit_transforms runs.
+            # pylint: disable-next=import-outside-toplevel
+            from astroid.brain.helpers import load_brains_for_modname
+
+            for from_node, _ in builder._import_from_nodes:
+                load_brains_for_modname(self._manager, from_node.modname)
+            for imp in module.nodes_of_class(nodes.Import):
+                for name, _ in imp.names:
+                    load_brains_for_modname(self._manager, name)
             module = self._manager.visit_transforms(module)
         return module
 
