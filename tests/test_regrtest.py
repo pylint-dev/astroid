@@ -309,6 +309,16 @@ def test(val):
         inferred = next(node.infer())
         self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
 
+    def test_decorator_names_skip_inferred_nodes_without_qname(self) -> None:
+        node = extract_node("""
+        @slice(0)
+        def f(): #@
+            pass
+        """)
+
+        self.assertEqual(node.decoratornames(), set())
+        self.assertIs(next(node.infer()), node)
+
     def test_recursive_property_method(self) -> None:
         node = extract_node("""
         class APropert():
