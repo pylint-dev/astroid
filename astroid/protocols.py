@@ -867,9 +867,15 @@ def starred_assigned_stmts(  # noqa: C901
         last_element_index, last_element_length = lookups[-1]
         is_starred_last = last_element_index == (last_element_length - 1)
 
+        # The elements after the starred one are counted back from the end of the
+        # iterable, whose length is unrelated to the target's.
         lookup_slice = slice(
             last_element_index,
-            None if is_starred_last else (last_element_length - last_element_index),
+            (
+                None
+                if is_starred_last
+                else -(last_element_length - last_element_index - 1)
+            ),
         )
         last_lookup = lookup_slice
 
