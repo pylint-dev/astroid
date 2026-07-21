@@ -29,6 +29,13 @@ Release date: TBA
 
   Closes pylint-dev/pylint#10014
 
+* Bound the number of nodes built when inferring ``list``/``set``/``tuple``/
+  ``frozenset`` and ``dict.fromkeys`` from a ``str``/``bytes`` constant. These
+  built one ``Const`` node per character with no cap, so ``list(("a" * 10 ** 8)
+  + "b")`` (concatenation is not size-bounded) materialized hundreds of millions
+  of nodes. They now fall back to the default inference past ``1e8`` characters,
+  matching the sequence-repetition guard.
+
 * Bound string/bytes multiplication (``"x" * n``) and integer left shifts
   (``1 << n``) in ``const_infer_binary_op`` the same way list/tuple
   multiplication and ``**`` already are. Inferring a constant such as
