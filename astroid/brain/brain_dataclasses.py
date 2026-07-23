@@ -29,6 +29,7 @@ from astroid.exceptions import (
 )
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
+from astroid.protocols import infer_instance_from_annotation
 from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
@@ -423,7 +424,7 @@ def infer_dataclass_attribute(
     if value is not None:
         yield from value.infer(context=ctx)
     if annotation is not None:
-        yield from _infer_instance_from_annotation(annotation, ctx=ctx)
+        yield from infer_instance_from_annotation(annotation, ctx=ctx)
     else:
         yield Uninferable
 
@@ -602,45 +603,6 @@ def _is_init_var(node: nodes.NodeNG) -> bool:
         return False
 
     return getattr(inferred, "name", "") == "InitVar"
-
-
-# Allowed typing classes for which we support inferring instances
-_INFERABLE_TYPING_TYPES = frozenset(
-    (
-        "Dict",
-        "FrozenSet",
-        "List",
-        "Set",
-        "Tuple",
-    )
-)
-
-
-def _infer_instance_from_annotation(
-    node: nodes.NodeNG, ctx: context.InferenceContext | None = None
-) -> Iterator[UninferableBase | bases.Instance]:
-    """Infer an instance corresponding to the type annotation represented by node.
-
-    Currently has limited support for the typing module.
-    """
-    klass = None
-    try:
-        klass = next(node.infer(context=ctx))
-    except (InferenceError, StopIteration):
-        yield Uninferable
-    if not isinstance(klass, nodes.ClassDef):
-        yield Uninferable
-    elif klass.root().name in {
-        "typing",
-        "_collections_abc",
-        "",
-    }:  # "" because of synthetic nodes in brain_typing.py
-        if klass.name in _INFERABLE_TYPING_TYPES:
-            yield klass.instantiate_class()
-        else:
-            yield Uninferable
-    else:
-        yield klass.instantiate_class()
 
 
 def register(manager: AstroidManager) -> None:
