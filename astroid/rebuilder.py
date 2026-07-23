@@ -554,12 +554,16 @@ class TreeRebuilder:
         defaults = [self.visit(child, newnode) for child in node.defaults]
         varargannotation: nodes.NodeNG | None = None
         kwargannotation: nodes.NodeNG | None = None
+        type_comment_vararg: nodes.NodeNG | None = None
+        type_comment_kwarg: nodes.NodeNG | None = None
         if node.vararg:
             vararg = node.vararg.arg
             varargannotation = self.visit(node.vararg.annotation, newnode)
+            type_comment_vararg = self.check_type_comment(node.vararg, parent=newnode)
         if node.kwarg:
             kwarg = node.kwarg.arg
             kwargannotation = self.visit(node.kwarg.annotation, newnode)
+            type_comment_kwarg = self.check_type_comment(node.kwarg, parent=newnode)
 
         kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         kw_defaults = [self.visit(child, newnode) for child in node.kw_defaults]
@@ -596,6 +600,8 @@ class TreeRebuilder:
             type_comment_args=type_comment_args,
             type_comment_kwonlyargs=type_comment_kwonlyargs,
             type_comment_posonlyargs=type_comment_posonlyargs,
+            type_comment_vararg=type_comment_vararg,
+            type_comment_kwarg=type_comment_kwarg,
         )
         if start_end_lineno_pairs := [
             (arg.lineno, arg.end_lineno)

@@ -638,6 +638,8 @@ class Arguments(
         "type_comment_args",
         "type_comment_kwonlyargs",
         "type_comment_posonlyargs",
+        "type_comment_vararg",
+        "type_comment_kwarg",
     )
 
     _other_fields = ("vararg", "kwarg")
@@ -693,6 +695,12 @@ class Arguments(
     the value for that argument will be None.
     """
 
+    type_comment_vararg: NodeNG | None
+    """The type annotation, passed by a type comment, of the variable length arguments."""
+
+    type_comment_kwarg: NodeNG | None
+    """The type annotation, passed by a type comment, of the variable length keyword arguments."""
+
     varargannotation: NodeNG | None
     """The type annotation for the variable length arguments."""
 
@@ -747,6 +755,8 @@ class Arguments(
         type_comment_args: list[NodeNG | None] | None = None,
         type_comment_kwonlyargs: list[NodeNG | None] | None = None,
         type_comment_posonlyargs: list[NodeNG | None] | None = None,
+        type_comment_vararg: NodeNG | None = None,
+        type_comment_kwarg: NodeNG | None = None,
     ) -> None:
         self.args = args
         self.defaults = defaults
@@ -769,6 +779,8 @@ class Arguments(
         if type_comment_posonlyargs is None:
             type_comment_posonlyargs = []
         self.type_comment_posonlyargs = type_comment_posonlyargs
+        self.type_comment_vararg = type_comment_vararg
+        self.type_comment_kwarg = type_comment_kwarg
 
     assigned_stmts = protocols.arguments_assigned_stmts
     """Returns the assigned statement (non inferred) according to the assignment type.
