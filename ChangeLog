@@ -34,6 +34,8 @@ Release date: TBA
   materializing one ``Const`` node per character for a repeated string such as
   ``dict.fromkeys("x" * 10 ** 8)``, which is a single-key dict.
 
+* Bound str/bytes and list/tuple concatenation (``a + b``) during inference.
+
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
   ``multiprocessing`` module.

@@ -142,6 +142,15 @@ def const_infer_binary_op(
         ):
             yield util.Uninferable
             return
+        # Don't materialize an overly large str/bytes concatenation.
+        if (
+            operator == "+"
+            and isinstance(self.value, (str, bytes))
+            and isinstance(other.value, type(self.value))
+            and len(self.value) + len(other.value) > 1e8
+        ):
+            yield util.Uninferable
+            return
         try:
             impl = BIN_OP_IMPL[operator]
             try:
@@ -217,6 +226,10 @@ def tl_infer_binary_op(
     context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
+        # Don't build (and infer every element of) an overly large sequence.
+        if len(self.elts) + len(other.elts) > 1e8:
+            yield util.Uninferable
+            return
         node = self.__class__(parent=opnode)
         node.elts = list(
             itertools.chain(
