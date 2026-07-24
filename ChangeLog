@@ -7,6 +7,12 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Add ``type_comment_vararg`` and ``type_comment_kwarg`` fields to
+  ``Arguments`` nodes so that inline PEP 484 type comments on ``*args`` and
+  ``**kwargs`` can be accessed.
+
+  Closes #1508
+
 * Fix inference of a starred target that is not last in a ``for`` loop, such as
   ``for a, *b, c in ...``. The elements following the starred one were counted
   from the target's own arity rather than from the end of the iterable, so

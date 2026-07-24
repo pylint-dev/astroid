@@ -1632,6 +1632,43 @@ def test_type_comments_posonly_arguments() -> None:
                 assert actual_arg.as_string() == expected_arg
 
 
+def test_type_comments_vararg_and_kwarg_arguments() -> None:
+    module = builder.parse("""
+    def annotated(
+        *args,  # type: str
+        **kwargs,  # type: int
+    ):
+        pass
+    def unannotated(*args, **kwargs):
+        pass
+    """)
+
+    annotated_arguments = module["annotated"].args
+    assert isinstance(annotated_arguments.type_comment_vararg, nodes.Name)
+    assert annotated_arguments.type_comment_vararg.name == "str"
+    assert isinstance(annotated_arguments.type_comment_kwarg, nodes.Name)
+    assert annotated_arguments.type_comment_kwarg.name == "int"
+    assert (
+        annotated_arguments.locate_child(annotated_arguments.type_comment_vararg)[0]
+        == "type_comment_vararg"
+    )
+    assert (
+        annotated_arguments.locate_child(annotated_arguments.type_comment_kwarg)[0]
+        == "type_comment_kwarg"
+    )
+
+    for type_comment in (
+        annotated_arguments.type_comment_vararg,
+        annotated_arguments.type_comment_kwarg,
+    ):
+        assert isinstance(type_comment.parent, nodes.Expr)
+        assert type_comment.parent.parent is annotated_arguments
+
+    unannotated_arguments = module["unannotated"].args
+    assert unannotated_arguments.type_comment_vararg is None
+    assert unannotated_arguments.type_comment_kwarg is None
+
+
 def test_correct_function_type_comment_parent() -> None:
     data = """
         def f(a):
