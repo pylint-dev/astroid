@@ -191,6 +191,8 @@ Release date: TBA
 
   Closes #3068
 
+* Fix detecting static/class methods and inspecting IntFlag types in
+  GObject-based libraries (GLib, Gtk etc)
 
 What's New in astroid 4.1.2?
 ============================
