@@ -45,6 +45,25 @@ def test_inference_parents_subscript_index() -> None:
         assert inferred[0].qname() == "pathlib.Path"
 
 
+def test_inference_parents_assigned_to_name_subscript_index() -> None:
+    """Test ``parents`` assigned to a name, then accessed by index."""
+    path = astroid.extract_node("""
+    from pathlib import Path
+
+    current_path = Path().resolve()
+    path_parents = current_path.parents
+    path_parents[2]  #@
+    """)
+
+    inferred = path.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    if PY313:
+        assert inferred[0].qname() == "pathlib._local.Path"
+    else:
+        assert inferred[0].qname() == "pathlib.Path"
+
+
 def test_inference_parents_subscript_slice() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by slice."""
     name_node = astroid.extract_node("""

@@ -19,10 +19,30 @@ Path
 """
 
 
+def _looks_like_parents_value(node: nodes.NodeNG) -> bool:
+    """Whether ``node`` refers to a ``.parents`` attribute access.
+
+    A name is accepted when it is assigned such an attribute access, so that
+    ``parents = path.parents`` followed by ``parents[0]`` is recognised too.
+    """
+    if isinstance(node, nodes.Attribute) and node.attrname == "parents":
+        return True
+
+    if isinstance(node, nodes.Name):
+        _, assignments = node.lookup(node.name)
+        return any(
+            isinstance(assignment, nodes.AssignName)
+            and isinstance(assignment.parent, nodes.Assign)
+            and isinstance(assignment.parent.value, nodes.Attribute)
+            and assignment.parent.value.attrname == "parents"
+            for assignment in assignments
+        )
+
+    return False
+
+
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
-    if not (
-        isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents"
-    ):
+    if not _looks_like_parents_value(node.value):
         return False
 
     try:
