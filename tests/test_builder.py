@@ -877,6 +877,25 @@ def test_arguments_of_signature() -> None:
     assert all(i.args.args is None for i in classdef.getattr("__dir__"))
 
 
+def test_extract_node_docstring() -> None:
+    """A selector on a docstring line extracts the docstring node itself."""
+    for code in (
+        """
+        class A:
+            "cls doc"  #@
+            pass
+        """,
+        """
+        def f():
+            "fn doc"  #@
+            pass
+        """,
+    ):
+        node = builder.extract_node(code)
+        assert isinstance(node, nodes.Const)
+        assert node.value.endswith("doc")
+
+
 class HermeticInterpreterTest(unittest.TestCase):
     """Modeled on https://github.com/pylint-dev/astroid/pull/1207#issuecomment-951455588."""
 

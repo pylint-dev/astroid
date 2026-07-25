@@ -381,6 +381,12 @@ def _find_statement_by_line(node: nodes.NodeNG, line: int) -> nodes.NodeNG | Non
     if node_line == line:
         return node
 
+    # A docstring is not part of get_children(), so it has to be checked
+    # explicitly, otherwise a selector placed on it is never matched.
+    doc_node = getattr(node, "doc_node", None)
+    if doc_node is not None and doc_node.lineno == line:
+        return doc_node
+
     for child in node.get_children():
         result = _find_statement_by_line(child, line)
         if result:
