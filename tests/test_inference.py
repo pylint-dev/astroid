@@ -7277,3 +7277,32 @@ def test_joined_str_uninferable() -> None:
     assert formatted_value.value.as_string() == "hey()"
     inferred = next(joined_str.infer())
     assert inferred is util.Uninferable
+
+
+def test_overloaded_dunder_uses_implementation() -> None:
+    """Overload stubs must not shadow the real dunder implementation.
+
+    https://github.com/pylint-dev/astroid/issues/2448
+    """
+    code = """
+    from typing import overload
+
+    class Fraction:
+        @overload
+        def __truediv__(self, other: int) -> list: ...
+        @overload
+        def __truediv__(self, other: str) -> list: ...
+        def __truediv__(self, other):
+            return []
+
+        @overload
+        def __neg__(self) -> list: ...
+        def __neg__(self):
+            return []
+
+    Fraction() / 1  #@
+    -Fraction()  #@
+    """
+    binop, unaryop = extract_node(code)
+    assert isinstance(next(binop.infer()), nodes.List)
+    assert isinstance(next(unaryop.infer()), nodes.List)
