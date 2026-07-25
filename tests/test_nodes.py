@@ -13,6 +13,7 @@ import random
 import sys
 import textwrap
 import unittest
+import unittest.mock
 import warnings
 from typing import Any
 
@@ -2175,6 +2176,125 @@ class TestTemplateString:
         assert value.str == "place"
         assert value.conversion == ord("r")
         assert isinstance(value.format_spec, nodes.JoinedStr)
+
+    @staticmethod
+    def test_template_string_as_string() -> None:
+        code = textwrap.dedent("""
+        a = t'plain'
+        b = t''
+        c = t'{x}'
+        d = t'{x!r} {x!s} {x!a}'
+        e = t'{x:.3}'
+        f = t'{x:{width}.{precision}}'
+        g = t'{x!r:>{width}}'
+        h = t'prefix {x} infix {y} suffix'
+        i = t'{{ escaped }} {x}'
+        j = t'\\n\\t'
+        """).strip()
+        ast = abuilder.string_build(code)
+        assert ast.as_string().strip() == code
+
+    @staticmethod
+    def test_template_string_inference() -> None:
+        # A t-string evaluates to a ``string.templatelib.Template`` instance,
+        # not to a ``str`` (unlike an f-string).
+        node = builder.extract_node('t"{1} and {2}"')
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        instance = inferred[0]
+        assert isinstance(instance, bases.Instance)
+        assert instance.pytype() == "string.templatelib.Template"
+
+        # An interpolation field is a ``string.templatelib.Interpolation``.
+        interpolation = node.values[0]
+        assert isinstance(interpolation, nodes.Interpolation)
+        inferred_interp = list(interpolation.infer())
+        assert len(inferred_interp) == 1
+        assert isinstance(inferred_interp[0], bases.Instance)
+        assert inferred_interp[0].pytype() == "string.templatelib.Interpolation"
+
+    @staticmethod
+    def _member(instance, name):
+        """Return the single inferred value of ``instance.<name>``."""
+        attr = instance.getattr(name)
+        assert len(attr) == 1
+        return attr[0]
+
+    @staticmethod
+    def _const_tuple(tuple_node):
+        assert isinstance(tuple_node, nodes.Tuple)
+        return [elt.value for elt in tuple_node.elts]
+
+    def test_template_string_member_inference(self) -> None:
+        # The members are reconstructed from the actual template contents,
+        # matching the PEP 750 runtime semantics.
+        node = builder.extract_node(textwrap.dedent("""
+        name = "World"
+        t"a {name!r:>{5}} b {1} c"  #@
+        """))
+        instance = next(node.infer())
+        assert isinstance(instance, bases.Instance)
+        assert instance.pytype() == "string.templatelib.Template"
+
+        # strings: constant segments, len == len(interpolations) + 1
+        assert self._const_tuple(self._member(instance, "strings")) == [
+            "a ",
+            " b ",
+            " c",
+        ]
+        # values: the inferred interpolation values
+        assert self._const_tuple(self._member(instance, "values")) == ["World", 1]
+
+        interpolations = self._member(instance, "interpolations")
+        assert isinstance(interpolations, nodes.Tuple)
+        assert len(interpolations.elts) == 2
+
+        first = interpolations.elts[0]
+        assert first.pytype() == "string.templatelib.Interpolation"
+        assert self._member(first, "value").value == "World"
+        assert self._member(first, "expression").value == "name"
+        assert self._member(first, "conversion").value == "r"
+        assert self._member(first, "format_spec").value == ">5"
+
+        second = interpolations.elts[1]
+        assert self._member(second, "value").value == 1
+        assert self._member(second, "expression").value == "1"
+        assert self._member(second, "conversion").value is None
+        assert self._member(second, "format_spec").value == ""
+
+    @staticmethod
+    def test_template_string_plain_members() -> None:
+        node = builder.extract_node('t"just text"')
+        instance = next(node.infer())
+        strings = instance.getattr("strings")[0]
+        assert [elt.value for elt in strings.elts] == ["just text"]
+        assert instance.getattr("values")[0].elts == []
+        assert instance.getattr("interpolations")[0].elts == []
+
+    @staticmethod
+    def test_template_string_inference_template_class_missing() -> None:
+        # If ``string.templatelib`` does not provide the expected classes
+        # (e.g. the module failed to build), inference falls back to
+        # Uninferable instead of raising.
+        node = builder.extract_node('t"{1}"')
+        empty_module = astroid.parse("")
+        with unittest.mock.patch.dict(
+            astroid.MANAGER.astroid_cache, {"string.templatelib": empty_module}
+        ):
+            assert list(node.infer()) == [Uninferable]
+            assert list(node.values[0].infer()) == [Uninferable]
+
+    @staticmethod
+    def test_template_string_inference_template_not_a_class() -> None:
+        # If the ``Template`` / ``Interpolation`` names do not resolve to
+        # classes, inference falls back to Uninferable instead of raising.
+        node = builder.extract_node('t"{1}"')
+        fake_module = astroid.parse("Template = 1\nInterpolation = 1")
+        with unittest.mock.patch.dict(
+            astroid.MANAGER.astroid_cache, {"string.templatelib": fake_module}
+        ):
+            assert list(node.infer()) == [Uninferable]
+            assert list(node.values[0].infer()) == [Uninferable]
 
 
 @pytest.mark.parametrize(

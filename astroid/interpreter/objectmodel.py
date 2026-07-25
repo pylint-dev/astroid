@@ -1067,3 +1067,44 @@ class PropertyModel(ObjectModel):
         return self._init_function("getter")
 
     # pylint: enable=import-outside-toplevel
+
+
+class TemplateStrModel(ObjectModel):
+    """Object model for ``string.templatelib.Template`` instances (t-strings).
+
+    The ``strings``, ``values`` and ``interpolations`` members are
+    reconstructed from the originating :class:`TemplateStr` node, mirroring
+    the runtime PEP 750 semantics.
+    """
+
+    @property
+    def attr_strings(self):
+        return self._instance.template_strings()
+
+    @property
+    def attr_values(self):
+        return self._instance.template_values()
+
+    @property
+    def attr_interpolations(self):
+        return self._instance.template_interpolations()
+
+
+class InterpolationModel(ObjectModel):
+    """Object model for ``string.templatelib.Interpolation`` instances."""
+
+    @property
+    def attr_value(self):
+        return self._instance.interpolation_value()
+
+    @property
+    def attr_expression(self):
+        return self._instance.interpolation_expression()
+
+    @property
+    def attr_conversion(self):
+        return self._instance.interpolation_conversion()
+
+    @property
+    def attr_format_spec(self):
+        return self._instance.interpolation_format_spec()
