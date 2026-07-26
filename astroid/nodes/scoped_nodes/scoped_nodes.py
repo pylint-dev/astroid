@@ -205,11 +205,7 @@ class Module(LocalsDictNodeNG):
     """The string/bytes that this ast was built from."""
 
     file_encoding: str | None = None
-    """The encoding of the source file.
-
-    This is used to get unicode out of a source file.
-    Python 2 only.
-    """
+    """The encoding of the source file."""
 
     special_attributes = ModuleModel()
     """The names of special attributes that this module has."""
