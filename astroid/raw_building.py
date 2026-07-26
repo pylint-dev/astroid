@@ -363,7 +363,6 @@ def _base_class_object_build(
     name = getattr(member, "__name__", "<no-name>")
     doc = member.__doc__ if isinstance(member.__doc__, str) else None
     klass = build_class(name, node, basenames, doc)
-    klass._newstyle = isinstance(member, type)
     try:
         # limit the instantiation trick since it's too dangerous
         # (such as infinite test execution...)
