@@ -1397,11 +1397,10 @@ class TreeRebuilder:
         """Visit a Keyword node by returning a fresh instance of it."""
         newnode = nodes.Keyword(
             arg=node.arg,
-            # position attributes added in 3.9
-            lineno=getattr(node, "lineno", None),
-            col_offset=getattr(node, "col_offset", None),
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(self.visit(node.value, newnode))
@@ -1603,11 +1602,10 @@ class TreeRebuilder:
     def visit_slice(self, node: ast.Slice, parent: nodes.Subscript) -> nodes.Slice:
         """Visit a Slice node by returning a fresh instance of it."""
         newnode = nodes.Slice(
-            # position attributes added in 3.9
-            lineno=getattr(node, "lineno", None),
-            col_offset=getattr(node, "col_offset", None),
-            end_lineno=getattr(node, "end_lineno", None),
-            end_col_offset=getattr(node, "end_col_offset", None),
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            end_lineno=node.end_lineno,
+            end_col_offset=node.end_col_offset,
             parent=parent,
         )
         newnode.postinit(
