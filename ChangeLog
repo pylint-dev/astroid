@@ -47,11 +47,8 @@ Release date: TBA
 
   Closes #3091
 
-* Support PEP 810 explicit lazy imports (new in Python 3.15). ``Import`` and
-  ``ImportFrom`` nodes gain a ``lazy`` boolean attribute (``False`` before
-  3.15 and for eager imports), set from CPython's ``is_lazy`` AST field, and
-  ``as_string`` renders the ``lazy`` prefix. Name binding and inference are
-  unchanged from eager imports.
+ Support PEP 810 lazy imports (new in Python 3.15). ``Import`` and
+  ``ImportFrom`` nodes gain a ``lazy`` boolean attribute.
 
 * Support PEP 798 comprehension unpacking (``{**d for d in dicts}``,
   new in Python 3.15).
