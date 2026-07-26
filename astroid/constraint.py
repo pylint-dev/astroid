@@ -171,6 +171,12 @@ class TypeConstraint(Constraint):
         if inferred is util.Uninferable:
             return True
 
+        # This method is called once per inferred value, with the same context.
+        # Use a clone: inferring the classinfo pushes it onto the context's
+        # inference path but only its first value is consumed, so nothing is
+        # cached and a reused context would make the classinfo uninferable
+        # from the second call on.
+        context = context.clone()
         try:
             types = helpers.class_or_tuple_to_container(self.classinfo, context)
             matches_checked_types = helpers.object_isinstance(inferred, types, context)

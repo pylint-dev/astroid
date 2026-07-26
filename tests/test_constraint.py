@@ -1141,3 +1141,46 @@ def test_equality_fractions():
         assert isinstance(inferred[0], Instance), msg
         assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
         assert inferred[0]._proxied.name == "Fraction", msg
+
+
+def test_isinstance_multiple_inferred_values() -> None:
+    """Test that an isinstance() constraint filters every inferred value.
+
+    Checking a value must not pollute the inference context used to check
+    the following ones.
+    """
+    node = builder.extract_node("""
+    def f(y):
+        x = 2 if y else "a"
+        if isinstance(x, int):
+            return (
+                x  #@
+            )
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 2
+
+
+def test_equality_multiple_inferred_values() -> None:
+    """Test that an equality constraint with a name operand filters every
+    inferred value.
+
+    Checking a value must not pollute the inference context used to check
+    the following ones.
+    """
+    node = builder.extract_node("""
+    y = 1
+
+    def f(cond):
+        x = 1 if cond else 2
+        if x == y:
+            return (
+                x  #@
+            )
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
