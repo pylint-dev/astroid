@@ -58,14 +58,11 @@ class NodeNG:
 
     is_statement: ClassVar[bool] = False
     """Whether this node indicates a statement."""
-    optional_assign: ClassVar[bool] = (
-        False  # True for For (and for Comprehension if py <3.0)
-    )
+    optional_assign: ClassVar[bool] = False  # True for For
     """Whether this node optionally assigns a variable.
 
     This is for loop assignments because loop won't necessarily perform an
     assignment if the loop has no iterations.
-    This is also the case from comprehensions in Python 2.
     """
     is_function: ClassVar[bool] = False  # True for FunctionDef nodes
     """Whether this node indicates a function."""
