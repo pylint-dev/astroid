@@ -43,8 +43,6 @@ class UninferableBase:
     def __bool__(self) -> Literal[False]:
         return False
 
-    __nonzero__ = __bool__
-
     def accept(self, visitor):
         return visitor.visit_uninferable(self)
 
