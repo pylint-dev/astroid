@@ -670,7 +670,6 @@ class BoundMethod(UnboundMethod):
             bases=bases.elts,
             body=[empty],
             decorators=None,
-            newstyle=True,
             metaclass=mcs,
             keywords=[],
         )

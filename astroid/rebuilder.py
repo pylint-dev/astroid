@@ -855,7 +855,7 @@ class TreeRebuilder:
         return newnode
 
     def visit_classdef(
-        self, node: ast.ClassDef, parent: nodes.NodeNG, newstyle: bool = True
+        self, node: ast.ClassDef, parent: nodes.NodeNG
     ) -> nodes.ClassDef:
         """Visit a ClassDef node to become astroid."""
         node, doc_ast_node = self._get_doc(node)
@@ -877,9 +877,8 @@ class TreeRebuilder:
             [self.visit(child, newnode) for child in node.bases],
             [self.visit(child, newnode) for child in node.body],
             decorators,
-            newstyle,
-            metaclass,
-            [
+            metaclass=metaclass,
+            keywords=[
                 self.visit(kwd, newnode)
                 for kwd in node.keywords
                 if kwd.arg != "metaclass"
