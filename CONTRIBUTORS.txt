@@ -76,6 +76,7 @@ Contributors
 - Enji Cooper <yaneurabeya@gmail.com>
 - Dani Alcala <112832187+clavedeluna@users.noreply.github.com>
 - Adrien Di Mascio <Adrien.DiMascio@logilab.fr>
+- Vincent Gao <gaobing1230@gmail.com>
 - tristanlatr <19967168+tristanlatr@users.noreply.github.com>
 - grayjk <grayjk@gmail.com>
 - emile@crater.logilab.fr <emile@crater.logilab.fr>
@@ -124,6 +125,7 @@ Contributors
 - mathieui <mathieui@users.noreply.github.com>
 - markmcclain <markmcclain@users.noreply.github.com>
 - jkmnt <git@firewood.fastmail.com>
+- Sai Asish Y <say.apm35@gmail.com>
 - ioanatia <ioanatia@users.noreply.github.com>
 - alm <alonme@users.noreply.github.com>
 - adam-grant-hendry <59346180+adam-grant-hendry@users.noreply.github.com>
@@ -223,6 +225,14 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+- nanookclaw <nanook@agentmail.to>
+- SAY-5 <say.apm35@gmail.com>
+- Omkar Kabde <omkarkabde@gmail.com>
+- MJSHANG <shangmengjiajiajia@gmail.com>
+- Kyle D Kavanagh <kkavanagh@jumptrading.com>
+- KALI 834X <kali834x@gmail.com>
+- June <kimjune01@gmail.com>
+- Jam Balaya <jambalaya.pyoncafe@outlook.jp>
 
 Co-Author
 ---------

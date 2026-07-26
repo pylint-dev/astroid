@@ -7,6 +7,33 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix inference of a starred target that is not last in a ``for`` loop, such as
+  ``for a, *b, c in ...``. The elements following the starred one were counted
+  from the target's own arity rather than from the end of the iterable, so
+  ``b`` was truncated whenever the iterable was longer than the target.
+
+* Add ``qname()`` method to the ``Slice`` node class, returning
+  ``"builtins.slice"``, so that the node can be used in contexts
+  that require a qualified name (e.g. pylint's ``basic_checker``).
+
+  Closes #3115
+
+* Add brain tip for ``numpy.fromfile`` so that calls to
+  ``np.fromfile(...)`` are correctly inferred as returning
+  ``numpy.ndarray`` instead of ``Uninferable``.
+
+  Closes #600
+
+* Removed the `**kwargs` argument from all `infer` functions.
+  Users upgrading their `astroid` versions should ensure they do no pass values other than
+  `context` to `infer`.
+
+* Deduplicate keys when inferring ``dict.fromkeys``. ``dict.fromkeys("aab")``
+  now infers a dict with keys ``"a"``, ``"b"`` instead of ``"a"``, ``"a"``,
+  ``"b"``, matching the runtime. This also stops ``dict.fromkeys`` from
+  materializing one ``Const`` node per character for a repeated string such as
+  ``dict.fromkeys("x" * 10 ** 8)``, which is a single-key dict.
+
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
   ``multiprocessing`` module.
@@ -170,6 +197,8 @@ Release date: TBA
 
   Closes #3068
 
+* Fix detecting static/class methods and inspecting IntFlag types in
+  GObject-based libraries (GLib, Gtk etc)
 
 What's New in astroid 4.1.2?
 ============================

@@ -9,7 +9,7 @@ from __future__ import annotations
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from functools import partial
-from typing import TYPE_CHECKING, Any, NoReturn, cast
+from typing import TYPE_CHECKING, NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
 from astroid.builder import AstroidBuilder
@@ -199,7 +199,7 @@ def register_builtin_transform(
     """
 
     def _transform_wrapper(
-        node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+        node: nodes.Call, context: InferenceContext | None = None
     ) -> Iterator:
         result = transform(node, context=context)
         if result:
@@ -710,7 +710,8 @@ def infer_slice(node, context: InferenceContext | None = None):
 
 
 def _infer_object__new__decorator(
-    node: nodes.ClassDef, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.ClassDef,
+    context: InferenceContext | None = None,
 ) -> Iterator[Instance]:
     # Instantiate class immediately
     # since that's what @object.__new__ does
@@ -927,6 +928,16 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         new_node.postinit(elements)
         return new_node
 
+    def _unique_const_keys(keys: Iterable[nodes.Const]) -> list[nodes.Const]:
+        # dict.fromkeys deduplicates its keys, so keep only the first Const seen
+        # for a given value. Emitting one entry per element is wrong
+        # (dict.fromkeys("aab") has keys "a", "b") and lets a repeated string
+        # balloon the inferred dict.
+        seen: dict[object, nodes.Const] = {}
+        for key in keys:
+            seen.setdefault(key.value, key)
+        return list(seen.values())
+
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
@@ -953,13 +964,19 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in elements]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(elements)
+        ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
+        # Deduplicate the characters/bytes before building Const nodes so that a
+        # compact but large string, e.g. dict.fromkeys("x" * 10**8), doesn't
+        # materialize one node per character for what is a single-key dict.
         elements_with_value = [
-            (nodes.Const(element), default) for element in inferred_values.value
+            (nodes.Const(element), default)
+            for element in dict.fromkeys(inferred_values.value)
         ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Dict):
@@ -969,7 +986,9 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in keys]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(keys)
+        ]
         return _build_dict_with_elements(elements_with_value)
 
     # Fallback to an empty dictionary
@@ -977,7 +996,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
 
 
 def _infer_copy_method(
-    node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[CopyResult]:
     assert isinstance(node.func, nodes.Attribute)
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
@@ -1006,7 +1025,7 @@ def _is_str_format_call(node: nodes.Call) -> bool:
 
 
 def _infer_str_format_call(
-    node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[ConstFactoryResult | util.UninferableBase]:
     """Return a Const node based on the template and passed arguments."""
     call = arguments.CallSite.from_call(node, context=context)

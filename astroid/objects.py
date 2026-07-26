@@ -16,7 +16,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
-from typing import Any, Literal, NoReturn
+from typing import Literal, NoReturn
 
 from astroid import bases, util
 from astroid.context import InferenceContext
@@ -43,7 +43,7 @@ class FrozenSet(node_classes.BaseContainer):
     def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
+    def _infer(self, context: InferenceContext | None = None):
         yield self
 
     @cached_property
@@ -88,7 +88,7 @@ class Super(node_classes.NodeNG):
             end_col_offset=scope.end_col_offset,
         )
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
+    def _infer(self, context: InferenceContext | None = None):
         yield self
 
     def super_mro(self):
@@ -380,7 +380,5 @@ class Property(scoped_nodes.FunctionDef):
     ) -> NoReturn:
         raise InferenceError("Properties are not callable")
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Self]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[Self]:
         yield self

@@ -339,11 +339,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         yield from self.elts
 
     @decorators.raise_if_nothing_inferred
-    def _infer(
-        self,
-        context: InferenceContext | None = None,
-        **kwargs: Any,
-    ) -> Iterator[Self]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[Self]:
         has_starred_named_expr = any(
             isinstance(e, (Starred, NamedExpr)) for e in self.elts
         )
@@ -446,7 +442,7 @@ class AssignName(
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer an AssignName: need to inspect the RHS part of the
         assign node.
@@ -459,7 +455,7 @@ class AssignName(
 
     @decorators.raise_if_nothing_inferred
     def infer_lhs(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer a Name: use name lookup rules.
 
@@ -574,7 +570,7 @@ class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer a Name: use name lookup rules
 
@@ -1036,7 +1032,7 @@ class Arguments(
 
     @decorators.raise_if_nothing_inferred
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         # pylint: disable-next=import-outside-toplevel
         from astroid.protocols import _arguments_infer_argname
@@ -1088,9 +1084,7 @@ def _format_args(
 
 
 def _infer_attribute(
-    node: nodes.AssignAttr | nodes.Attribute,
-    context: InferenceContext | None = None,
-    **kwargs: Any,
+    node: nodes.AssignAttr | nodes.Attribute, context: InferenceContext | None = None
 ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
     """Infer an AssignAttr/Attribute node by using getattr on the associated object."""
     # pylint: disable=import-outside-toplevel
@@ -1179,7 +1173,7 @@ class AssignAttr(_base_nodes.LookupMixIn, _base_nodes.ParentAssignNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer an AssignAttr: need to inspect the RHS part of the
         assign node.
@@ -1193,9 +1187,9 @@ class AssignAttr(_base_nodes.LookupMixIn, _base_nodes.ParentAssignNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def infer_lhs(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
-        return _infer_attribute(self, context, **kwargs)
+        return _infer_attribute(self, context)
 
 
 class Assert(_base_nodes.Statement):
@@ -1455,7 +1449,7 @@ class AugAssign(
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_augassign, context, util.BadBinaryOperationMessage
@@ -1540,7 +1534,7 @@ class BinOp(_base_nodes.OperatorNode):
         return self.op != "**"
 
     def _infer_binop(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         """Binary operation inference logic."""
         left = self.left
@@ -1570,7 +1564,7 @@ class BinOp(_base_nodes.OperatorNode):
     @decorators.yes_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         return self._filter_operation_errors(
             self._infer_binop, context, util.BadBinaryOperationMessage
@@ -1647,7 +1641,7 @@ class BoolOp(NodeNG):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Infer a boolean operation (and / or / not).
 
@@ -1758,7 +1752,7 @@ class Call(NodeNG):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
         """Infer a Call node by trying to guess what the function returns."""
         callcontext = copy_context(context)
@@ -1919,7 +1913,7 @@ class Compare(NodeNG):
         return retval  # it was all the same value
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[nodes.Const | util.UninferableBase]:
         """Chained comparison inference logic."""
         retval: bool | util.UninferableBase = True
@@ -2192,9 +2186,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             return util.Uninferable if PY314_PLUS else True
         return bool(self.value)
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[Const]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[Const]:
         yield self
 
 
@@ -2466,9 +2458,7 @@ class Dict(NodeNG, Instance):
         """
         return bool(self.items)
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[nodes.Dict]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[nodes.Dict]:
         if not any(isinstance(k, DictUnpack) for k, _ in self.items):
             yield self
         else:
@@ -2595,7 +2585,7 @@ class EmptyNode(_base_nodes.NoChildrenNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         if not self.has_underlying_object():
             yield util.Uninferable
@@ -2890,9 +2880,7 @@ class ImportFrom(_base_nodes.ImportNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self,
-        context: InferenceContext | None = None,
-        **kwargs: Any,
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         """Infer a ImportFrom node: return the imported module/object."""
         context = context or InferenceContext()
@@ -2953,9 +2941,9 @@ class Attribute(NodeNG):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
-        return _infer_attribute(self, context, **kwargs)
+        return _infer_attribute(self, context)
 
 
 class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
@@ -3011,7 +2999,7 @@ class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         if context is None or context.lookupname is None:
             raise InferenceError(node=self, context=context)
@@ -3114,7 +3102,7 @@ class IfExp(NodeNG):
 
     @decorators.raise_if_nothing_inferred
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         """Support IfExp inference.
 
@@ -3220,7 +3208,6 @@ class Import(_base_nodes.ImportNode):
     def _infer(
         self,
         context: InferenceContext | None = None,
-        **kwargs: Any,
     ) -> Generator[nodes.Module]:
         """Infer an Import node: return the imported module/object."""
         context = context or InferenceContext()
@@ -3440,9 +3427,7 @@ class ParamSpec(_base_nodes.AssignTypeNode):
         self.name = name
         self.default_value = default_value
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[ParamSpec]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[ParamSpec]:
         yield self
 
     assigned_stmts = protocols.generic_type_assigned_stmts
@@ -3604,6 +3589,13 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
+    def qname(self) -> Literal["builtins.slice"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "builtins.slice"
+
     def display_type(self) -> Literal["Slice"]:
         """A human readable type of this node.
 
@@ -3642,9 +3634,7 @@ class Slice(NodeNG):
         if self.step is not None:
             yield self.step
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[Slice]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[Slice]:
         yield self
 
 
@@ -3746,7 +3736,7 @@ class Subscript(NodeNG):
         yield self.slice
 
     def _infer_subscript(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """Inference for subscripts.
 
@@ -3806,12 +3796,12 @@ class Subscript(NodeNG):
 
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
-        return self._infer_subscript(context, **kwargs)
+    def _infer(self, context: InferenceContext | None = None):
+        return self._infer_subscript(context)
 
     @decorators.raise_if_nothing_inferred
-    def infer_lhs(self, context: InferenceContext | None = None, **kwargs: Any):
-        return self._infer_subscript(context, **kwargs)
+    def infer_lhs(self, context: InferenceContext | None = None):
+        return self._infer_subscript(context)
 
 
 class Try(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
@@ -4133,9 +4123,7 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.type_params = type_params
         self.value = value
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[TypeAlias]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeAlias]:
         yield self
 
     assigned_stmts: ClassVar[
@@ -4193,9 +4181,7 @@ class TypeVar(_base_nodes.AssignTypeNode):
         self.bound = bound
         self.default_value = default_value
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[TypeVar]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeVar]:
         yield self
 
     assigned_stmts = protocols.generic_type_assigned_stmts
@@ -4240,9 +4226,7 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
         self.name = name
         self.default_value = default_value
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Iterator[TypeVarTuple]:
+    def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeVarTuple]:
         yield self
 
     assigned_stmts = protocols.generic_type_assigned_stmts
@@ -4329,7 +4313,7 @@ class UnaryOp(_base_nodes.OperatorNode):
         return super().op_precedence()
 
     def _infer_unaryop(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[
         InferenceResult | util.BadUnaryOperationMessage, None, InferenceErrorInfo
     ]:
@@ -4395,7 +4379,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     @decorators.raise_if_nothing_inferred
     @decorators.path_wrapper
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo]:
         """Infer what an UnaryOp should return when evaluated."""
         yield from self._filter_operation_errors(
@@ -4697,17 +4681,17 @@ class FormattedValue(NodeNG):
             yield self.format_spec
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         format_specs = Const("") if self.format_spec is None else self.format_spec
         uninferable_already_generated = False
-        for format_spec in format_specs.infer(context, **kwargs):
+        for format_spec in format_specs.infer(context):
             if not isinstance(format_spec, Const):
                 if not uninferable_already_generated:
                     yield util.Uninferable
                     uninferable_already_generated = True
                 continue
-            for value in self.value.infer(context, **kwargs):
+            for value in self.value.infer(context):
                 if value is util.Uninferable:
                     yield util.Uninferable
                     return
@@ -4796,7 +4780,7 @@ class JoinedStr(NodeNG):
         yield from self.values
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         if self.values:
             yield from self._infer_with_values(context)
@@ -4804,7 +4788,7 @@ class JoinedStr(NodeNG):
             yield Const("")
 
     def _infer_with_values(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         uninferable_already_generated = False
         for inferred in self._infer_from_values(self.values, context):
@@ -4820,19 +4804,19 @@ class JoinedStr(NodeNG):
 
     @classmethod
     def _infer_from_values(
-        cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Any
+        cls, nodes: list[NodeNG], context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         if not nodes:
             return
         if len(nodes) == 1:
-            for node in cls._safe_infer_from_node(nodes[0], context, **kwargs):
+            for node in cls._safe_infer_from_node(nodes[0], context):
                 if isinstance(node, Const):
                     yield node
                     continue
                 yield Const(UNINFERABLE_VALUE)
             return
-        for prefix in cls._safe_infer_from_node(nodes[0], context, **kwargs):
-            for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):
+        for prefix in cls._safe_infer_from_node(nodes[0], context):
+            for suffix in cls._infer_from_values(nodes[1:], context):
                 result = ""
                 for node in (prefix, suffix):
                     if isinstance(node, Const):
@@ -4843,10 +4827,10 @@ class JoinedStr(NodeNG):
 
     @classmethod
     def _safe_infer_from_node(
-        cls, node: NodeNG, context: InferenceContext | None = None, **kwargs: Any
+        cls, node: NodeNG, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         try:
-            yield from node._infer(context, **kwargs)
+            yield from node._infer(context)
         except InferenceError:
             yield util.Uninferable
 
@@ -4999,7 +4983,7 @@ class Unknown(_base_nodes.AssignTypeNode):
     def qname(self) -> Literal["Unknown"]:
         return "Unknown"
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs):
+    def _infer(self, context: InferenceContext | None = None):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
 
@@ -5036,7 +5020,7 @@ class EvaluatedObject(NodeNG):
         )
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[NodeNG | util.UninferableBase]:
         yield self.value
 

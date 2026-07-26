@@ -1587,6 +1587,28 @@ def test_infer_dict_from_keys() -> None:
         assert sorted(actual_values) == ["a", "b", "c"]
 
 
+def test_infer_dict_from_keys_deduplicates() -> None:
+    # dict.fromkeys drops duplicate keys, so the inferred dict must too. As a
+    # side effect a repeated string no longer materializes one key per
+    # character (dict.fromkeys("x" * 10**8) is a single-key dict).
+    nodes_with_dupes = astroid.extract_node("""
+    dict.fromkeys("aab") #@
+    dict.fromkeys(b"aab") #@
+    dict.fromkeys([1, 1, 2]) #@
+    dict.fromkeys((1, 2, 1)) #@
+    """)
+    expected = [["a", "b"], [97, 98], [1, 2], [1, 2]]
+    for node, keys in zip(nodes_with_dupes, expected):
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        assert [elem.value for elem in inferred.itered()] == keys
+
+    repeated = astroid.extract_node('dict.fromkeys("x" * 1000)')
+    inferred = next(repeated.infer())
+    assert isinstance(inferred, nodes.Dict)
+    assert [elem.value for elem in inferred.itered()] == ["x"]
+
+
 class TestFunctoolsPartial:
     @staticmethod
     def test_infer_partial() -> None:
