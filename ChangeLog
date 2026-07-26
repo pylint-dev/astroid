@@ -53,11 +53,8 @@ Release date: TBA
   ``as_string`` renders the ``lazy`` prefix. Name binding and inference are
   unchanged from eager imports.
 
-* Support PEP 798 dict-comprehension unpacking (``{**d for d in dicts}``,
-  new in Python 3.15). The rebuilder previously crashed because CPython
-  stores the unpacked mapping in ``DictComp.key`` and leaves ``value`` as
-  ``None``; astroid now mirrors the ``{**d}`` ``Dict`` representation with a
-  ``DictUnpack`` key, and ``as_string`` round-trips the construct.
+* Support PEP 798 comprehension unpacking (``{**d for d in dicts}``,
+  new in Python 3.15).
 
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
