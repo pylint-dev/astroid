@@ -2641,11 +2641,8 @@ class ClassDef(
     ) -> SuccessfulInferenceResult | None:
         """Return the explicit declared metaclass for the current class.
 
-        An explicit declared metaclass is defined
-        either by passing the ``metaclass`` keyword argument
-        in the class definition line (Python 3) or (Python 2) by
-        having a ``__metaclass__`` class attribute, or if there are
-        no explicit bases but there is a global ``__metaclass__`` variable.
+        An explicit declared metaclass is defined by passing the
+        ``metaclass`` keyword argument in the class definition line.
 
         :returns: The metaclass of this class,
             or None if one could not be found.
@@ -2661,7 +2658,6 @@ class ClassDef(
                 pass
 
         if self._metaclass:
-            # Expects this from Py3k TreeRebuilder
             try:
                 return next(
                     node

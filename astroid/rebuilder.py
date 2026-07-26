@@ -962,7 +962,6 @@ class TreeRebuilder:
         # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
 
-        # Set the line number of the first decorator for Python 3.8+.
         lineno = node.decorator_list[0].lineno
         end_lineno = node.decorator_list[-1].end_lineno
         end_col_offset = node.decorator_list[-1].end_col_offset
@@ -1169,9 +1168,8 @@ class TreeRebuilder:
 
         lineno = node.lineno
         if node.decorator_list:
-            # Python 3.8 sets the line number of a decorated function
-            # to be the actual line number of the function, but the
-            # previous versions expected the decorator's line number instead.
+            # The ast parser of python < 3.8 incorrectly set the line number of
+            # a decorated function to the line of its first decorator.
             # We reset the function's line number to that of the
             # first decorator to maintain backward compatibility.
             # It's not ideal but this discrepancy was baked into

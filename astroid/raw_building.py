@@ -397,8 +397,7 @@ def _build_from_function(
     try:
         code = member.__code__  # type: ignore[union-attr]
     except AttributeError:
-        # Some implementations don't provide the code object,
-        # such as Jython.
+        # Some implementations don't provide the code object
         code = None
     filename = getattr(code, "co_filename", None)
     if filename is None:
@@ -522,8 +521,8 @@ class InspectBuilder:
                     continue
                 child = nodes.const_factory(member)
             elif inspect.isroutine(member):
-                # This should be called for Jython, where some builtin
-                # methods aren't caught by isbuiltin branch.
+                # Callables not caught by the isfunction/isbuiltin branches
+                # above, e.g. some method descriptors.
                 child = _build_from_function(node, member, self._module)
             elif _safe_has_attribute(member, "__all__"):
                 child: nodes.NodeNG = build_module(alias)
@@ -547,9 +546,7 @@ class InspectBuilder:
             modname = None
         if modname is None:
             if name in {"__new__", "__subclasshook__"}:
-                # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
-                # >>> print object.__new__.__module__
-                # None
+                # Some builtins have no __module__, e.g. object.__new__
                 modname = builtins.__name__
             else:
                 attach_dummy_node(node, name, member)
