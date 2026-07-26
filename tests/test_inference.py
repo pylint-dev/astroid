@@ -7277,3 +7277,19 @@ def test_joined_str_uninferable() -> None:
     assert formatted_value.value.as_string() == "hey()"
     inferred = next(joined_str.infer())
     assert inferred is util.Uninferable
+
+
+def test_decimal_inference():
+    """
+    Test we can infer the Decimal class from both the decimal and _pydecimal modules.
+
+    decimal uses _decimal by default, but that can be unavailable. The fallback can't be inferred
+    by default so we have a brain.
+    """
+    code = """
+    from decimal import Decimal #@
+    from _pydecimal import Decimal #@
+    """
+    for node in extract_node(code):
+        module = node.do_import_module(node.modname)
+        module.getattr(node.names[0][0])
