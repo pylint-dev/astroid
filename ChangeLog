@@ -24,6 +24,8 @@ Release date: TBA
 
   Closes #600
 
+* Add brain for `decimal` that gets applied if `_decimal` isn't available.
+
 * Removed the `**kwargs` argument from all `infer` functions.
   Users upgrading their `astroid` versions should ensure they do no pass values other than
   `context` to `infer`.
