@@ -1281,3 +1281,38 @@ def test_equality_multiple_inferred_values() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == 1
+
+
+def test_comprehension_condition_nested_in_call() -> None:
+    """Test that comprehension conditions constrain a name nested inside a call."""
+    node = builder.extract_node("[f(x) for x in [None, 1] if x is not None]")
+    inferred = node.elt.args[0].inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+
+    node = builder.extract_node(
+        "[y for x in [None, 1] if x is not None for y in make_iter(x)]"
+    )
+    inferred = node.generators[1].iter.args[0].inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+
+
+def test_comprehension_condition_nested_comprehension() -> None:
+    """Test that comprehension conditions constrain a name used inside an inner
+    comprehension.
+    """
+    node = builder.extract_node(
+        "[[y for y in x] for x in [None, [1]] if x is not None]"
+    )
+    inner = node.elt
+
+    inferred = inner.generators[0].iter.inferred()
+    assert [iterable.as_string() for iterable in inferred] == ["[1]"]
+
+    inferred = inner.elt.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1

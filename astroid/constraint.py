@@ -273,10 +273,14 @@ def get_constraints(
 
             if constraints:
                 constraints_mapping[parent] = constraints
-        elif isinstance(parent, nodes.Comprehension) and current_node in parent.ifs:
-            # Preceding conditions of the same generator guard this condition.
-            index = parent.ifs.index(current_node)
-            _add_ifs_constraints(expr, parent.ifs[:index], constraints_mapping)
+        elif isinstance(parent, nodes.Comprehension):
+            try:
+                index = parent.ifs.index(current_node)
+            except ValueError:
+                pass
+            else:
+                # Preceding conditions of the same generator guard this condition.
+                _add_ifs_constraints(expr, parent.ifs[:index], constraints_mapping)
         elif isinstance(
             parent, (nodes.ListComp, nodes.SetComp, nodes.DictComp, nodes.GeneratorExp)
         ):
