@@ -18,6 +18,12 @@ Release date: TBA
   a variable: checking a value made the ``isinstance`` classinfo uninferable
   for the checks of the following values.
 
+* Remove Python 2 era dead code and outdated comments.
+  Notably: the internal ``TreeRebuilder`` constructor no longer takes a
+  ``parser_module`` argument.
+
+  Refs #3154
+
 * Fix inference of a starred target that is not last in a ``for`` loop, such as
   ``for a, *b, c in ...``. The elements following the starred one were counted
   from the target's own arity rather than from the end of the iterable, so
