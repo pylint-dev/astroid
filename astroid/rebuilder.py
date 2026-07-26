@@ -18,7 +18,14 @@ from tokenize import TokenError, TokenInfo, generate_tokens
 from typing import TYPE_CHECKING, Final, TypeVar, cast, overload
 
 from astroid import nodes
-from astroid._ast import ParserModule, get_parser_module, parse_function_type_comment
+from astroid._ast import (
+    BIN_OP_CLASSES,
+    BOOL_OP_CLASSES,
+    CMP_OP_CLASSES,
+    CONTEXT_CLASSES,
+    UNARY_OP_CLASSES,
+    parse_function_type_comment,
+)
 from astroid.const import PY312_PLUS, PY313_PLUS, Context
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceResult
@@ -56,7 +63,6 @@ class TreeRebuilder:
     def __init__(
         self,
         manager: AstroidManager,
-        parser_module: ParserModule | None = None,
         data: str | None = None,
     ) -> None:
         self._manager = manager
@@ -67,11 +73,6 @@ class TreeRebuilder:
         self._visit_meths: dict[
             type[ast.AST], Callable[[ast.AST, nodes.NodeNG], nodes.NodeNG]
         ] = {}
-
-        if parser_module is None:
-            self._parser_module = get_parser_module()
-        else:
-            self._parser_module = parser_module
 
     def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | None]:
         """Return the doc ast node."""
@@ -99,7 +100,7 @@ class TreeRebuilder:
             | ast.Tuple
         ),
     ) -> Context:
-        return self._parser_module.context_classes.get(type(node.ctx), Context.Load)
+        return CONTEXT_CLASSES.get(type(node.ctx), Context.Load)
 
     def _get_position_info(
         self,
@@ -646,7 +647,7 @@ class TreeRebuilder:
             return None
 
         try:
-            type_comment_ast = self._parser_module.parse(node.type_comment)
+            type_comment_ast = ast.parse(node.type_comment, type_comments=True)
         except (SyntaxError, ValueError, MemoryError, RecursionError):
             # Invalid type comment, just skip it. ``ast.parse`` may raise
             # ``MemoryError``/``RecursionError``/``ValueError`` on pathological
@@ -787,7 +788,7 @@ class TreeRebuilder:
     ) -> nodes.AugAssign:
         """Visit a AugAssign node by returning a fresh instance of it."""
         newnode = nodes.AugAssign(
-            op=self._parser_module.bin_op_classes[type(node.op)] + "=",
+            op=BIN_OP_CLASSES[type(node.op)] + "=",
             lineno=node.lineno,
             col_offset=node.col_offset,
             end_lineno=node.end_lineno,
@@ -802,7 +803,7 @@ class TreeRebuilder:
     def visit_binop(self, node: ast.BinOp, parent: nodes.NodeNG) -> nodes.BinOp:
         """Visit a BinOp node by returning a fresh instance of it."""
         newnode = nodes.BinOp(
-            op=self._parser_module.bin_op_classes[type(node.op)],
+            op=BIN_OP_CLASSES[type(node.op)],
             lineno=node.lineno,
             col_offset=node.col_offset,
             end_lineno=node.end_lineno,
@@ -817,7 +818,7 @@ class TreeRebuilder:
     def visit_boolop(self, node: ast.BoolOp, parent: nodes.NodeNG) -> nodes.BoolOp:
         """Visit a BoolOp node by returning a fresh instance of it."""
         newnode = nodes.BoolOp(
-            op=self._parser_module.bool_op_classes[type(node.op)],
+            op=BOOL_OP_CLASSES[type(node.op)],
             lineno=node.lineno,
             col_offset=node.col_offset,
             end_lineno=node.end_lineno,
@@ -919,7 +920,7 @@ class TreeRebuilder:
             self.visit(node.left, newnode),
             [
                 (
-                    self._parser_module.cmp_op_classes[op.__class__],
+                    CMP_OP_CLASSES[op.__class__],
                     self.visit(expr, newnode),
                 )
                 for (op, expr) in zip(node.ops, node.comparators)
@@ -1760,7 +1761,7 @@ class TreeRebuilder:
     def visit_unaryop(self, node: ast.UnaryOp, parent: nodes.NodeNG) -> nodes.UnaryOp:
         """Visit a UnaryOp node by returning a fresh instance of it."""
         newnode = nodes.UnaryOp(
-            op=self._parser_module.unary_op_classes[node.op.__class__],
+            op=UNARY_OP_CLASSES[node.op.__class__],
             lineno=node.lineno,
             col_offset=node.col_offset,
             end_lineno=node.end_lineno,
