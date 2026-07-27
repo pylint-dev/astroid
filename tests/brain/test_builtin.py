@@ -120,6 +120,11 @@ class TestStringNodes:
             daniel_age = 12
             "My name is {0.name}".format(daniel_age)
             """,
+            pytest.param(""""{:>2000000000}".format("x")""", id="oversized-width"),
+            pytest.param(""""{:.2000000000f}".format(1.0)""", id="oversized-precision"),
+            pytest.param(
+                """"{:>{}}".format("x", 2000000000)""", id="oversized-nested-width"
+            ),
         ],
     )
     def test_string_format_uninferable(self, format_string: str) -> None:
