@@ -1091,6 +1091,15 @@ def _infer_str_format_call(
 
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
+    import string  # pylint: disable=import-outside-toplevel
+
+    try:
+        fields = list(string.Formatter().parse(format_template))
+    except ValueError:
+        return iter([util.Uninferable])
+    if any(spec and util.format_spec_too_large(spec) for _, _, spec, _ in fields):
+        return iter([util.Uninferable])
+
     try:
         formatted_string = _BoundedFormatter().format(
             format_template, *pos_values, **keyword_values
