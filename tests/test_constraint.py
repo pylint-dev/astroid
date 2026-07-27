@@ -1141,3 +1141,178 @@ def test_equality_fractions():
         assert isinstance(inferred[0], Instance), msg
         assert isinstance(inferred[0]._proxied, nodes.ClassDef), msg
         assert inferred[0]._proxied.name == "Fraction", msg
+
+
+@common_params(node="x")
+def test_comprehension_condition(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test constraint for a comprehension target used in the element expression."""
+    node = builder.extract_node(
+        f"[x for x in [{satisfy_val}, {fail_val}] if {condition}]"
+    )
+    inferred = node.elt.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+
+
+def test_comprehension_condition_all_comprehension_types() -> None:
+    """Test that comprehension conditions apply in every type of comprehension."""
+    list_comp, set_comp, gen_exp, dict_comp = builder.extract_node("""
+    [x for x in [None, 3] if x is not None]  #@
+    {x for x in [None, 3] if x is not None}  #@
+    (x for x in [None, 3] if x is not None)  #@
+    {x: x for x in [None, 3] if x is not None}  #@
+    """)
+    for comp in (list_comp, set_comp, gen_exp):
+        msg = node_info(comp)
+        inferred = comp.elt.inferred()
+        assert len(inferred) == 1, msg
+        assert isinstance(inferred[0], nodes.Const), msg
+        assert inferred[0].value == 3, msg
+
+    for expr in (dict_comp.key, dict_comp.value):
+        inferred = expr.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 3
+
+
+def test_comprehension_condition_unsupported_pattern() -> None:
+    """Test that a condition matching no supported constraint doesn't filter."""
+    node = builder.extract_node("[L for L in [[1, 2], [3, 4]] if sum(L) == 3]")
+    inferred = node.elt.inferred()
+    assert [elt.as_string() for elt in inferred] == ["[1, 2]", "[3, 4]"]
+
+
+def test_comprehension_condition_multiple_conditions() -> None:
+    """Test that all conditions apply to the element expression and that earlier
+    conditions also guard later ones.
+    """
+    node = builder.extract_node("[x for x in [None, 3, 4] if x is not None if x == 3]")
+    inferred = node.elt.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
+
+    # ``x`` in the second condition is only guarded by the first condition.
+    second_condition = node.generators[0].ifs[1]
+    inferred = second_condition.left.inferred()
+    assert [const.value for const in inferred] == [3, 4]
+
+
+def test_comprehension_condition_guards_later_generators() -> None:
+    """Test that a generator's conditions guard the iterables of later generators."""
+    node = builder.extract_node("[y for x in [None, [3]] if x is not None for y in x]")
+    inferred = node.elt.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
+
+
+def test_comprehension_condition_does_not_guard_same_generator() -> None:
+    """Test that a generator's conditions don't constrain its own target, iterable
+    or the element of a preceding generator.
+    """
+    node = builder.extract_node("""
+    def f(y = None):
+        return [x for x in [y] if y is not None]  #@
+    """)
+    # ``y`` in the iterable is not constrained by the condition.
+    iter_elt = node.value.generators[0].iter.elts[0]
+    inferred = iter_elt.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+    assert inferred[1] is Uninferable
+
+
+def test_comprehension_condition_outer_name() -> None:
+    """Test that comprehension conditions constrain names from outer scopes
+    used in the element expression.
+    """
+    node = builder.extract_node("""
+    def f(y = None):
+        return [y for x in [1, 2] if y is not None]  #@
+    """)
+    inferred = node.value.elt.inferred()
+    assert inferred == [Uninferable]
+
+
+def test_isinstance_multiple_inferred_values() -> None:
+    """Test that an isinstance() constraint filters every inferred value.
+
+    Checking a value must not pollute the inference context used to check
+    the following ones.
+    """
+    node = builder.extract_node("""
+    def f(y):
+        x = 2 if y else "a"
+        if isinstance(x, int):
+            return (
+                x  #@
+            )
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 2
+
+
+def test_equality_multiple_inferred_values() -> None:
+    """Test that an equality constraint with a name operand filters every
+    inferred value.
+
+    Checking a value must not pollute the inference context used to check
+    the following ones.
+    """
+    node = builder.extract_node("""
+    y = 1
+
+    def f(cond):
+        x = 1 if cond else 2
+        if x == y:
+            return (
+                x  #@
+            )
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+
+
+def test_comprehension_condition_nested_in_call() -> None:
+    """Test that comprehension conditions constrain a name nested inside a call."""
+    node = builder.extract_node("[f(x) for x in [None, 1] if x is not None]")
+    inferred = node.elt.args[0].inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+
+    node = builder.extract_node(
+        "[y for x in [None, 1] if x is not None for y in make_iter(x)]"
+    )
+    inferred = node.generators[1].iter.args[0].inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+
+
+def test_comprehension_condition_nested_comprehension() -> None:
+    """Test that comprehension conditions constrain a name used inside an inner
+    comprehension.
+    """
+    node = builder.extract_node(
+        "[[y for y in x] for x in [None, [1]] if x is not None]"
+    )
+    inner = node.elt
+
+    inferred = inner.generators[0].iter.inferred()
+    assert [iterable.as_string() for iterable in inferred] == ["[1]"]
+
+    inferred = inner.elt.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
