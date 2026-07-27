@@ -1136,8 +1136,7 @@ class TreeRebuilder:
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
-            # ``is_lazy`` is a PEP 810 field only present on Python 3.15+.
-            lazy=bool(getattr(node, "is_lazy", False)),
+            lazy=bool(node.is_lazy) if sys.version_info >= (3, 15) else False,
         )
         # store From names to add them to locals after building
         self._import_from_nodes.append(
@@ -1340,8 +1339,7 @@ class TreeRebuilder:
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
-            # ``is_lazy`` is a PEP 810 field only present on Python 3.15+.
-            lazy=bool(getattr(node, "is_lazy", False)),
+            lazy=bool(node.is_lazy) if sys.version_info >= (3, 15) else False,
         )
         # save import names in parent's locals:
         for name, asname in newnode.names:
