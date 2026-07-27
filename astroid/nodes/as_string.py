@@ -287,7 +287,7 @@ class AsStringVisitor:
 
     def visit_importfrom(self, node: nodes.ImportFrom) -> str:
         """return an nodes.ImportFrom node as string"""
-        lazy = "lazy " if node.lazy else ""
+        lazy = "lazy " if node.is_lazy else ""
         return "{}from {} import {}".format(
             lazy, "." * (node.level or 0) + node.modname, _import_string(node.names)
         )
@@ -404,7 +404,7 @@ class AsStringVisitor:
 
     def visit_import(self, node: nodes.Import) -> str:
         """return an nodes.Import node as string"""
-        lazy = "lazy " if node.lazy else ""
+        lazy = "lazy " if node.is_lazy else ""
         return f"{lazy}import {_import_string(node.names)}"
 
     def visit_keyword(self, node: nodes.Keyword) -> str:
