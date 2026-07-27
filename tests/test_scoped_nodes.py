@@ -472,7 +472,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                     pass
         """)
         assert isinstance(method, nodes.FunctionDef)
-        assert method.decoratornames() == set()
+        assert method.decoratornames() == {".C.T"}
 
     # def test_raises(self):
     #     method = self.module2["AbstractClass"]["to_override"]

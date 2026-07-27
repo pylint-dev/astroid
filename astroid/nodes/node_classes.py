@@ -4187,6 +4187,18 @@ class TypeVar(_base_nodes.AssignTypeNode):
         self.bound = bound
         self.default_value = default_value
 
+    def qname(self) -> str:
+        """Get the 'qualified' name of the node.
+
+        For example: module.class.T
+        """
+        if self.parent is None:
+            return self.name.name
+        try:
+            return f"{self.parent.frame().qname()}.{self.name.name}"
+        except ParentMissingError:
+            return self.name.name
+
     def _infer(
         self, context: InferenceContext | None = None, **kwargs: Any
     ) -> Iterator[TypeVar]:
