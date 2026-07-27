@@ -2807,7 +2807,7 @@ class ImportFrom(_base_nodes.ImportNode):
     <ImportFrom l.1 at 0x7f23b2e415c0>
     """
 
-    _other_fields = ("modname", "names", "level")
+    _other_fields = ("modname", "names", "level", "lazy")
 
     def __init__(
         self,
@@ -2820,6 +2820,7 @@ class ImportFrom(_base_nodes.ImportNode):
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
+        lazy: bool = False,
     ) -> None:
         """
         :param fromname: The module that is being imported from.
@@ -2827,6 +2828,8 @@ class ImportFrom(_base_nodes.ImportNode):
         :param names: What is being imported from the module.
 
         :param level: The level of relative import.
+
+        :param lazy: Whether this is a PEP 810 lazy import (``lazy from ...``).
 
         :param lineno: The line that this node appears on in the source code.
 
@@ -2858,6 +2861,12 @@ class ImportFrom(_base_nodes.ImportNode):
 
         Essentially this is the number of dots in the import.
         This is ``None`` for absolute imports.
+        """
+
+        self.lazy: bool = lazy
+        """Whether this is a PEP 810 lazy import (``lazy from ... import ...``).
+
+        Always ``False`` before Python 3.15.
         """
 
         super().__init__(
@@ -3143,7 +3152,7 @@ class Import(_base_nodes.ImportNode):
     <Import l.1 at 0x7f23b2e4e5c0>
     """
 
-    _other_fields = ("names",)
+    _other_fields = ("names", "lazy")
 
     def __init__(
         self,
@@ -3154,9 +3163,12 @@ class Import(_base_nodes.ImportNode):
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
+        lazy: bool = False,
     ) -> None:
         """
         :param names: The names being imported.
+
+        :param lazy: Whether this is a PEP 810 lazy import (``lazy import ...``).
 
         :param lineno: The line that this node appears on in the source code.
 
@@ -3175,6 +3187,12 @@ class Import(_base_nodes.ImportNode):
 
         Each entry is a :class:`tuple` of the name being imported,
         and the alias that the name is assigned to (if any).
+        """
+
+        self.lazy: bool = lazy
+        """Whether this is a PEP 810 lazy import (``lazy import ...``).
+
+        Always ``False`` before Python 3.15.
         """
 
         super().__init__(

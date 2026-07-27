@@ -87,6 +87,12 @@ Release date: TBA
 
   Closes #3091
 
+* Support PEP 810 lazy imports (new in Python 3.15). ``Import`` and
+  ``ImportFrom`` nodes gain a ``lazy`` boolean attribute.
+
+* Support PEP 798 comprehension unpacking (``{**d for d in dicts}``,
+  new in Python 3.15).
+
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
   ``getattr(obj, alias)`` in ``InspectBuilder.object_build``. PyPy 7.3.22

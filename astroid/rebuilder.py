@@ -1034,9 +1034,26 @@ class TreeRebuilder:
             end_col_offset=node.end_col_offset,
             parent=parent,
         )
+        key: nodes.NodeNG
+        if node.value is None:
+            # PEP 798 dict-comprehension unpacking, e.g. ``{**d for d in dicts}``.
+            # CPython stores the unpacked mapping in ``key`` and leaves
+            # ``value`` as ``None``. Mirror the ``ast.Dict`` representation of
+            # ``{**d}``: a ``DictUnpack`` key together with the real value.
+            value = self.visit(node.key, newnode)
+            key = nodes.DictUnpack(
+                lineno=value.lineno,
+                col_offset=value.col_offset,
+                end_lineno=value.end_lineno,
+                end_col_offset=value.end_col_offset,
+                parent=newnode,
+            )
+        else:
+            key = self.visit(node.key, newnode)
+            value = self.visit(node.value, newnode)
         newnode.postinit(
-            self.visit(node.key, newnode),
-            self.visit(node.value, newnode),
+            key,
+            value,
             [self.visit(child, newnode) for child in node.generators],
         )
         return newnode
@@ -1119,6 +1136,8 @@ class TreeRebuilder:
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
+            # ``is_lazy`` is a PEP 810 field only present on Python 3.15+.
+            lazy=bool(getattr(node, "is_lazy", False)),
         )
         # store From names to add them to locals after building
         self._import_from_nodes.append(
@@ -1321,6 +1340,8 @@ class TreeRebuilder:
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
+            # ``is_lazy`` is a PEP 810 field only present on Python 3.15+.
+            lazy=bool(getattr(node, "is_lazy", False)),
         )
         # save import names in parent's locals:
         for name, asname in newnode.names:

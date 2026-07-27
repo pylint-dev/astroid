@@ -38,7 +38,7 @@ from astroid.bases import (
     _infer_stmts,
 )
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS
+from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS, PY315_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -2109,6 +2109,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "builtins.frozenset")
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="frozendict builtin added in 3.15 (PEP 814)"
+    )
+    def test_frozendict_builtin_inference(self) -> None:
+        node = extract_node("frozendict(x=1, y=2)")
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.qname(), "builtins.frozendict")
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="sentinel builtin added in 3.15 (PEP 661)"
+    )
+    def test_sentinel_builtin_inference(self) -> None:
+        node = extract_node("sentinel('MISSING')")
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.qname(), "builtins.sentinel")
 
     def test_set_builtin_inference(self) -> None:
         code = """
