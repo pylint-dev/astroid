@@ -537,20 +537,20 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
     def test_lazy_import(self) -> None:
         node = extract_node("lazy import json")
         assert isinstance(node, nodes.Import)
-        assert node.lazy is True
+        assert node.is_lazy == 1
         self.assertEqual(node.as_string(), "lazy import json")
 
     @pytest.mark.skipif(not PY315_PLUS, reason="PEP 810 lazy imports, new in 3.15")
     def test_lazy_import_from(self) -> None:
         node = extract_node("lazy from pathlib import Path")
         assert isinstance(node, nodes.ImportFrom)
-        assert node.lazy is True
+        assert node.is_lazy == 1
         self.assertEqual(node.as_string(), "lazy from pathlib import Path")
 
     def test_eager_import_is_not_lazy(self) -> None:
-        # The ``lazy`` flag defaults to False on every supported version.
-        assert extract_node("import json").lazy is False
-        assert extract_node("from pathlib import Path").lazy is False
+        # The ``is_lazy`` flag defaults to 0 on every supported version.
+        assert extract_node("import json").is_lazy == 0
+        assert extract_node("from pathlib import Path").is_lazy == 0
 
     def test_import_self_resolve(self) -> None:
         myos = next(self.module2.igetattr("myos"))

@@ -88,7 +88,8 @@ Release date: TBA
   Closes #3091
 
 * Support PEP 810 lazy imports (new in Python 3.15). ``Import`` and
-  ``ImportFrom`` nodes gain a ``lazy`` boolean attribute.
+  ``ImportFrom`` nodes gain an ``is_lazy`` integer attribute, mirroring
+  the ``ast`` field of the same name.
 
 * Support PEP 798 comprehension unpacking (``{**d for d in dicts}``,
   new in Python 3.15).

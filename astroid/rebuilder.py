@@ -1136,7 +1136,7 @@ class TreeRebuilder:
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
-            lazy=bool(node.is_lazy) if sys.version_info >= (3, 15) else False,
+            is_lazy=node.is_lazy if sys.version_info >= (3, 15) else 0,
         )
         # store From names to add them to locals after building
         self._import_from_nodes.append(
@@ -1339,7 +1339,7 @@ class TreeRebuilder:
             end_lineno=node.end_lineno,
             end_col_offset=node.end_col_offset,
             parent=parent,
-            lazy=bool(node.is_lazy) if sys.version_info >= (3, 15) else False,
+            is_lazy=node.is_lazy if sys.version_info >= (3, 15) else 0,
         )
         # save import names in parent's locals:
         for name, asname in newnode.names:
