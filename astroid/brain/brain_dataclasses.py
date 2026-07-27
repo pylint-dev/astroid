@@ -103,7 +103,7 @@ def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef | None:
         node.locals["__init__"] = [init_node]
 
         root = node.root()
-        if DEFAULT_FACTORY not in root.locals:
+        if DEFAULT_FACTORY in init_str and DEFAULT_FACTORY not in root.locals:
             new_assign = parse(f"{DEFAULT_FACTORY} = object()").body[0]
             new_assign.parent = root
             root.locals[DEFAULT_FACTORY] = [new_assign.targets[0]]

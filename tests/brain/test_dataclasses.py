@@ -1332,3 +1332,34 @@ def test_dataclass_with_duplicate_bases_field_default():
     # Should not raise DuplicateBasesError in _get_previous_field_default
     inferred = next(node.infer())
     assert inferred is not None
+
+
+def test_dataclass_without_default_factory_does_not_leak_name():
+    """A dataclass with no default_factory should not add _HAS_DEFAULT_FACTORY.
+
+    The name is only needed by the generated ``__init__`` when a field uses
+    ``field(default_factory=...)``; adding it unconditionally leaked a module
+    global that does not exist at runtime.
+
+    See https://github.com/pylint-dev/astroid/issues/2808.
+    """
+    module = astroid.parse("""
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:
+        x: int = 1
+    """)
+    assert "_HAS_DEFAULT_FACTORY" not in module.locals
+
+
+def test_dataclass_with_default_factory_defines_name():
+    """_HAS_DEFAULT_FACTORY is still defined when a default_factory is used."""
+    module = astroid.parse("""
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class A:
+        x: list = field(default_factory=list)
+    """)
+    assert "_HAS_DEFAULT_FACTORY" in module.locals
