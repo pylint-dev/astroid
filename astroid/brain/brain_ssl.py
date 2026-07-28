@@ -56,14 +56,22 @@ def ssl_transform() -> nodes.Module:
     # to registering static dummy values. This allows code referencing
     # the old constants to still be parsed correctly and pass test suites.
     import ssl
+
     legacy_imports = []
     legacy_fallback = []
-    for name, val in [("PROTOCOL_SSLv23", 2), ("PROTOCOL_TLSv1", 3), ("PROTOCOL_TLSv1_1", 4), ("PROTOCOL_TLSv1_2", 5)]:
+    for name, val in [
+        ("PROTOCOL_SSLv23", 2),
+        ("PROTOCOL_TLSv1", 3),
+        ("PROTOCOL_TLSv1_1", 4),
+        ("PROTOCOL_TLSv1_2", 5),
+    ]:
         if hasattr(ssl, name):
             legacy_imports.append(name)
         else:
             legacy_fallback.append(f"{name} = {val}")
-    imports_str = f"from _ssl import {', '.join(legacy_imports)}" if legacy_imports else ""
+    imports_str = (
+        f"from _ssl import {', '.join(legacy_imports)}" if legacy_imports else ""
+    )
     fallback_str = "\n    ".join(legacy_fallback)
 
     return parse(f"""
