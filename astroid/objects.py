@@ -47,7 +47,7 @@ class FrozenSet(node_classes.BaseContainer):
         yield self
 
     @cached_property
-    def _proxied(self):  # pylint: disable=method-hidden
+    def _proxied(self):
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("frozenset")[0]
 
