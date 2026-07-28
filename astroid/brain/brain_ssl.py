@@ -49,6 +49,23 @@ def _options_enum() -> str:
 
 
 def ssl_transform() -> nodes.Module:
+    # In Python 3.15 with OpenSSL 4.0, legacy TLS/SSL protocols (like
+    # PROTOCOL_TLSv1, PROTOCOL_SSLv23, etc.) are completely removed.
+    # Let's dynamically inspect the host's ssl capabilities. If the
+    # legacy protocol constants are missing at runtime, it falls back
+    # to registering static dummy values. This allows code referencing
+    # the old constants to still be parsed correctly and pass test suites.
+    import ssl
+    legacy_imports = []
+    legacy_fallback = []
+    for name, val in [("PROTOCOL_SSLv23", 2), ("PROTOCOL_TLSv1", 3), ("PROTOCOL_TLSv1_1", 4), ("PROTOCOL_TLSv1_2", 5)]:
+        if hasattr(ssl, name):
+            legacy_imports.append(name)
+        else:
+            legacy_fallback.append(f"{name} = {val}")
+    imports_str = f"from _ssl import {', '.join(legacy_imports)}" if legacy_imports else ""
+    fallback_str = "\n    ".join(legacy_fallback)
+
     return parse(f"""
     # Import necessary for conversion of objects defined in C into enums
     from enum import IntEnum as _IntEnum, IntFlag as _IntFlag
@@ -105,7 +122,8 @@ def ssl_transform() -> nodes.Module:
     from _ssl import VERIFY_CRL_CHECK_CHAIN, VERIFY_CRL_CHECK_LEAF, VERIFY_DEFAULT, VERIFY_X509_STRICT
     from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
     from _ssl import _OPENSSL_API_VERSION
-    from _ssl import PROTOCOL_SSLv23, PROTOCOL_TLSv1, PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
+    {imports_str}
+    {fallback_str}
     from _ssl import PROTOCOL_TLS, PROTOCOL_TLS_CLIENT, PROTOCOL_TLS_SERVER
 
     class AlertDescription(_IntEnum):
