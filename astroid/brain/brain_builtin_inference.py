@@ -8,9 +8,8 @@ from __future__ import annotations
 
 import itertools
 import re
-import string
 from collections.abc import Callable, Iterable, Iterator
-from functools import partial
+from functools import lru_cache, partial
 from typing import TYPE_CHECKING, NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
@@ -51,21 +50,28 @@ OBJECT_DUNDER_NEW = "object.__new__"
 _MAX_FORMAT_FIELD_SIZE = int(1e8)
 
 
-class _BoundedFormatter(string.Formatter):
-    """A ``str.format`` implementation that refuses oversized width/precision.
+@lru_cache(maxsize=1)
+def _get_bounded_formatter():
+    """Build the formatter lazily: importing ``string`` is costly at import time."""
+    import string  # pylint: disable=import-outside-toplevel
 
-    The only multi-digit numbers in a format spec are the width and the
-    precision, so bailing when any digit run exceeds the limit covers both.
-    Nested replacement fields ("{:>{}}") are already resolved by ``Formatter``
-    before ``format_field`` runs, so this also catches sizes passed as
-    arguments.
-    """
+    class _BoundedFormatter(string.Formatter):
+        """A ``str.format`` implementation that refuses oversized width/precision.
 
-    def format_field(self, value: object, format_spec: str) -> str:
-        for size in re.findall(r"\d+", format_spec):
-            if int(size) > _MAX_FORMAT_FIELD_SIZE:
-                raise ValueError("format field size exceeds inference limit")
-        return cast(str, super().format_field(value, format_spec))
+        The only multi-digit numbers in a format spec are the width and the
+        precision, so bailing when any digit run exceeds the limit covers both.
+        Nested replacement fields ("{:>{}}") are already resolved by ``Formatter``
+        before ``format_field`` runs, so this also catches sizes passed as
+        arguments.
+        """
+
+        def format_field(self, value: object, format_spec: str) -> str:
+            for size in re.findall(r"\d+", format_spec):
+                if int(size) > _MAX_FORMAT_FIELD_SIZE:
+                    raise ValueError("format field size exceeds inference limit")
+            return cast(str, super().format_field(value, format_spec))
+
+    return _BoundedFormatter()
 
 
 STR_CLASS = """
@@ -1091,17 +1097,16 @@ def _infer_str_format_call(
 
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
-    import string  # pylint: disable=import-outside-toplevel
-
+    formatter = _get_bounded_formatter()
     try:
-        fields = list(string.Formatter().parse(format_template))
+        fields = list(formatter.parse(format_template))
     except ValueError:
         return iter([util.Uninferable])
     if any(spec and util.format_spec_too_large(spec) for _, _, spec, _ in fields):
         return iter([util.Uninferable])
 
     try:
-        formatted_string = _BoundedFormatter().format(
+        formatted_string = formatter.format(
             format_template, *pos_values, **keyword_values
         )
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
