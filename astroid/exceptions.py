@@ -111,8 +111,7 @@ class TooManyLevelsError(AstroidImportError):
 
     def __init__(
         self,
-        message: str = "Relative import with too many levels "
-        "({level}) for module {name!r}",
+        message: str = "Relative import with too many levels ({level}) for module {name!r}",
         level: int | None = None,
         name: str | None = None,
         **kws: Any,
@@ -166,9 +165,7 @@ class ResolveError(AstroidError):
         context: InferenceContext object.
     """
 
-    def __init__(
-        self, message: str = "", context: InferenceContext | None = None, **kws: Any
-    ) -> None:
+    def __init__(self, message: str = "", context: InferenceContext | None = None, **kws: Any) -> None:
         self.context = context
         super().__init__(message, **kws)
 
@@ -408,9 +405,7 @@ class StatementMissing(ParentMissingError):
     """
 
     def __init__(self, target: nodes.NodeNG) -> None:
-        super(ParentMissingError, self).__init__(
-            message=f"Statement not found on {target!r}"
-        )
+        super(ParentMissingError, self).__init__(message=f"Statement not found on {target!r}")
 
 
 SuperArgumentTypeError = SuperError

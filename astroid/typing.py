@@ -35,9 +35,7 @@ class AstroidManagerBrain(TypedDict):
     """Dictionary to store relevant information for a AstroidManager class."""
 
     astroid_cache: dict[str, nodes.Module]
-    _mod_file_cache: dict[
-        tuple[str, str | None], spec.ModuleSpec | exceptions.AstroidImportError
-    ]
+    _mod_file_cache: dict[tuple[str, str | None], spec.ModuleSpec | exceptions.AstroidImportError]
     _failed_import_hooks: list[Callable[[str], nodes.Module]]
     always_load_extensions: bool
     optimize_ast: bool
@@ -49,9 +47,7 @@ class AstroidManagerBrain(TypedDict):
 # pylint: disable=consider-alternative-union-syntax
 InferenceResult = Union["nodes.NodeNG", "util.UninferableBase", "bases.Proxy"]
 SuccessfulInferenceResult = Union["nodes.NodeNG", "bases.Proxy"]
-_SuccessfulInferenceResultT = TypeVar(
-    "_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult
-)
+_SuccessfulInferenceResultT = TypeVar("_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult)
 _SuccessfulInferenceResultT_contra = TypeVar(
     "_SuccessfulInferenceResultT_contra",
     bound=SuccessfulInferenceResult,

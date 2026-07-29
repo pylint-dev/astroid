@@ -65,6 +65,4 @@ def infer_type_sub(node, context: InferenceContext | None = None):
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(
-        nodes.Name, inference_tip(infer_type_sub), _looks_like_type_subscript
-    )
+    manager.register_transform(nodes.Name, inference_tip(infer_type_sub), _looks_like_type_subscript)

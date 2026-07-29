@@ -90,6 +90,4 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None =
 
 def register(manager: AstroidManager) -> None:
     register_module_extender(manager, "re", _re_transform)
-    manager.register_transform(
-        nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
-    )
+    manager.register_transform(nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match)

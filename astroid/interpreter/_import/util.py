@@ -44,9 +44,7 @@ def is_namespace(modname: str) -> bool:
         try:
             # Both the modname and the path are built iteratively, with the
             # path (e.g. ['a', 'a/b', 'a/b/c']) lagging the modname by one
-            found_spec = _find_spec_from_path(
-                working_modname, path=last_submodule_search_locations
-            )
+            found_spec = _find_spec_from_path(working_modname, path=last_submodule_search_locations)
         except AttributeError:
             return False
         except ValueError:
@@ -95,10 +93,7 @@ def is_namespace(modname: str) -> bool:
             # But immediately return False if we can detect we are in stdlib
             # or external lib (e.g site-packages)
             if any(
-                any(
-                    str(location).startswith(lib_dir)
-                    for lib_dir in STD_AND_EXT_LIB_DIRS
-                )
+                any(str(location).startswith(lib_dir) for lib_dir in STD_AND_EXT_LIB_DIRS)
                 for location in found_spec.submodule_search_locations
             ):
                 return False
@@ -108,7 +103,5 @@ def is_namespace(modname: str) -> bool:
         found_spec is not None
         and found_spec.submodule_search_locations is not None
         and found_spec.origin is None
-        and (
-            found_spec.loader is None or isinstance(found_spec.loader, NamespaceLoader)
-        )
+        and (found_spec.loader is None or isinstance(found_spec.loader, NamespaceLoader))
     )

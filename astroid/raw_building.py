@@ -267,9 +267,7 @@ def register_arguments(func: nodes.FunctionDef, args: list | None = None) -> Non
             register_arguments(func, arg.elts)
 
 
-def object_build_class(
-    node: nodes.Module | nodes.ClassDef, member: type
-) -> nodes.ClassDef:
+def object_build_class(node: nodes.Module | nodes.ClassDef, member: type) -> nodes.ClassDef:
     """create astroid for a living class object"""
     basenames = [base.__name__ for base in member.__bases__]
     return _base_class_object_build(node, member, basenames)
@@ -309,9 +307,7 @@ def _get_args_info_from_callable(
     return args, posonlyargs, defaults, kwonlyargs, kwonlydefaults
 
 
-def object_build_function(
-    node: nodes.Module | nodes.ClassDef, member: _FunctionTypes
-) -> nodes.FunctionDef:
+def object_build_function(node: nodes.Module | nodes.ClassDef, member: _FunctionTypes) -> nodes.FunctionDef:
     """create astroid for a living function object"""
     (
         args,
@@ -333,9 +329,7 @@ def object_build_function(
     )
 
 
-def object_build_datadescriptor(
-    node: nodes.Module | nodes.ClassDef, member: type
-) -> nodes.ClassDef:
+def object_build_datadescriptor(node: nodes.Module | nodes.ClassDef, member: type) -> nodes.ClassDef:
     """create astroid for a living data descriptor object"""
     return _base_class_object_build(node, member, [])
 
@@ -462,9 +456,7 @@ class InspectBuilder:
         self.object_build(node, module)
         return node
 
-    def object_build(
-        self, node: nodes.Module | nodes.ClassDef, obj: types.ModuleType | type
-    ) -> None:
+    def object_build(self, node: nodes.Module | nodes.ClassDef, obj: types.ModuleType | type) -> None:
         """recursive method which create a partial ast from real objects
         (only function, class, and method are handled)
         """
@@ -515,9 +507,7 @@ class InspectBuilder:
             elif isinstance(member, tuple(node_classes.CONST_CLS)):
                 # Special case: __hash__ = None overrides ObjectModel for unhashable types.
                 # See https://docs.python.org/3/reference/datamodel.html#object.__hash__
-                if alias in node.special_attributes and not (
-                    alias == "__hash__" and member is None
-                ):
+                if alias in node.special_attributes and not (alias == "__hash__" and member is None):
                     continue
                 child = nodes.const_factory(member)
             elif inspect.isroutine(member):
@@ -646,9 +636,7 @@ def _astroid_bootstrapping() -> None:
     )
     astroid_builtin.set_local(_GeneratorType.name, _GeneratorType)
     generator_doc_node = (
-        nodes.Const(value=types.GeneratorType.__doc__)
-        if types.GeneratorType.__doc__
-        else None
+        nodes.Const(value=types.GeneratorType.__doc__) if types.GeneratorType.__doc__ else None
     )
     _GeneratorType.postinit(
         bases=[],
@@ -670,9 +658,7 @@ def _astroid_bootstrapping() -> None:
         )
         astroid_builtin.set_local(_AsyncGeneratorType.name, _AsyncGeneratorType)
         async_generator_doc_node = (
-            nodes.Const(value=types.AsyncGeneratorType.__doc__)
-            if types.AsyncGeneratorType.__doc__
-            else None
+            nodes.Const(value=types.AsyncGeneratorType.__doc__) if types.AsyncGeneratorType.__doc__ else None
         )
         _AsyncGeneratorType.postinit(
             bases=[],
@@ -692,11 +678,7 @@ def _astroid_bootstrapping() -> None:
             end_col_offset=0,
             parent=astroid_builtin,
         )
-        union_type_doc_node = (
-            nodes.Const(value=types.UnionType.__doc__)
-            if types.UnionType.__doc__
-            else None
-        )
+        union_type_doc_node = nodes.Const(value=types.UnionType.__doc__) if types.UnionType.__doc__ else None
         _UnionTypeType.postinit(
             bases=[],
             body=[],

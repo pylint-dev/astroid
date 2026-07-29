@@ -49,7 +49,8 @@ def _options_enum() -> str:
 
 
 def ssl_transform() -> nodes.Module:
-    return parse(f"""
+    return parse(
+        f"""
     # Import necessary for conversion of objects defined in C into enums
     from enum import IntEnum as _IntEnum, IntFlag as _IntFlag
 
@@ -152,7 +153,10 @@ def ssl_transform() -> nodes.Module:
         CERT_NONE = 0
         CERT_OPTIONAL = 1
         CERT_REQUIRED = 2
-    """ + _verifyflags_enum() + _options_enum())
+    """
+        + _verifyflags_enum()
+        + _options_enum()
+    )
 
 
 def register(manager: AstroidManager) -> None:

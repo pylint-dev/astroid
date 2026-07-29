@@ -37,32 +37,24 @@ class AsStringVisitor:
         if not doc_node:
             return ""
 
-        return '\n{}"""{}"""'.format(
-            self.indent, doc_node.value.replace("\n", DOC_NEWLINE)
-        )
+        return '\n{}"""{}"""'.format(self.indent, doc_node.value.replace("\n", DOC_NEWLINE))
 
     def _stmt_list(self, stmts: list, indent: bool = True) -> str:
         """return a list of nodes to string"""
-        stmts_str: str = "\n".join(
-            nstr for nstr in [n.accept(self) for n in stmts] if nstr
-        )
+        stmts_str: str = "\n".join(nstr for nstr in [n.accept(self) for n in stmts] if nstr)
         if not indent:
             return stmts_str
 
         return self.indent + stmts_str.replace("\n", "\n" + self.indent)
 
-    def _precedence_parens(
-        self, node: nodes.NodeNG, child: nodes.NodeNG, is_left: bool = True
-    ) -> str:
+    def _precedence_parens(self, node: nodes.NodeNG, child: nodes.NodeNG, is_left: bool = True) -> str:
         """Wrap child in parens only if required to keep same semantics"""
         if self._should_wrap(node, child, is_left):
             return f"({child.accept(self)})"
 
         return child.accept(self)
 
-    def _should_wrap(
-        self, node: nodes.NodeNG, child: nodes.NodeNG, is_left: bool
-    ) -> bool:
+    def _should_wrap(self, node: nodes.NodeNG, child: nodes.NodeNG, is_left: bool) -> bool:
         """Wrap child if:
         - it has lower precedence
         - same precedence with position opposite to associativity direction
@@ -74,10 +66,7 @@ class AsStringVisitor:
             # 3 * (4 + 5)
             return True
 
-        if (
-            node_precedence == child_precedence
-            and is_left != node.op_left_associative()
-        ):
+        if node_precedence == child_precedence and is_left != node.op_left_associative():
             # 3 - (4 - 5)
             # (2**3)**4
             return True
@@ -164,11 +153,7 @@ class AsStringVisitor:
     def _handle_type_params(
         self, type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
     ) -> str:
-        return (
-            f"[{', '.join(tp.accept(self) for tp in type_params)}]"
-            if type_params
-            else ""
-        )
+        return f"[{', '.join(tp.accept(self) for tp in type_params)}]" if type_params else ""
 
     def visit_classdef(self, node: nodes.ClassDef) -> str:
         """return an nodes.ClassDef node as string"""
@@ -181,15 +166,12 @@ class AsStringVisitor:
         args_str = f"({', '.join(args)})" if args else ""
         docs = self._docs_dedent(node.doc_node)
         body = self._stmt_list(node.body)
-        return (
-            f"\n\n{decorate}class {node.name}{type_params}{args_str}:{docs}\n{body}\n"
-        )
+        return f"\n\n{decorate}class {node.name}{type_params}{args_str}:{docs}\n{body}\n"
 
     def visit_compare(self, node: nodes.Compare) -> str:
         """return an nodes.Compare node as string"""
         rhs_str = " ".join(
-            f"{op} {self._precedence_parens(node, expr, is_left=False)}"
-            for op, expr in node.ops
+            f"{op} {self._precedence_parens(node, expr, is_left=False)}" for op, expr in node.ops
         )
         return f"{self._precedence_parens(node, node.left)} {rhs_str}"
 
@@ -301,7 +283,8 @@ class AsStringVisitor:
             (
                 repr(value.value)[1:-1]
                 # Literal braces must be doubled to escape them
-                .replace("{", "{{").replace("}", "}}")
+                .replace("{", "{{")
+                .replace("}", "}}")
                 # Each value in values is either a string literal (Const)
                 # or a FormattedValue
                 if type(value).__name__ == "Const"
@@ -361,13 +344,9 @@ class AsStringVisitor:
 
     def visit_generatorexp(self, node: nodes.GeneratorExp) -> str:
         """return an nodes.GeneratorExp node as string"""
-        return "({} {})".format(
-            node.elt.accept(self), " ".join(n.accept(self) for n in node.generators)
-        )
+        return "({} {})".format(node.elt.accept(self), " ".join(n.accept(self) for n in node.generators))
 
-    def visit_attribute(
-        self, node: nodes.Attribute | nodes.AssignAttr | nodes.DelAttr
-    ) -> str:
+    def visit_attribute(self, node: nodes.Attribute | nodes.AssignAttr | nodes.DelAttr) -> str:
         """return an nodes.Attribute node as string"""
         try:
             left = self._precedence_parens(node, node.expr)
@@ -428,9 +407,7 @@ class AsStringVisitor:
 
     def visit_listcomp(self, node: nodes.ListComp) -> str:
         """return an nodes.ListComp node as string"""
-        return "[{} {}]".format(
-            node.elt.accept(self), " ".join(n.accept(self) for n in node.generators)
-        )
+        return "[{} {}]".format(node.elt.accept(self), " ".join(n.accept(self) for n in node.generators))
 
     def visit_module(self, node: nodes.Module) -> str:
         """return an nodes.Module node as string"""
@@ -455,9 +432,7 @@ class AsStringVisitor:
 
     def visit_paramspec(self, node: nodes.ParamSpec) -> str:
         """return an nodes.ParamSpec node as string"""
-        default_value_str = (
-            f" = {node.default_value.accept(self)}" if node.default_value else ""
-        )
+        default_value_str = f" = {node.default_value.accept(self)}" if node.default_value else ""
         return f"**{node.name.accept(self)}{default_value_str}"
 
     def visit_pass(self, node: nodes.Pass) -> str:
@@ -493,9 +468,7 @@ class AsStringVisitor:
 
     def visit_setcomp(self, node: nodes.SetComp) -> str:
         """return an nodes.SetComp node as string"""
-        return "{{{} {}}}".format(
-            node.elt.accept(self), " ".join(n.accept(self) for n in node.generators)
-        )
+        return "{{{} {}}}".format(node.elt.accept(self), " ".join(n.accept(self) for n in node.generators))
 
     def visit_slice(self, node: nodes.Slice) -> str:
         """return an nodes.Slice node as string"""
@@ -554,16 +527,12 @@ class AsStringVisitor:
     def visit_typevar(self, node: nodes.TypeVar) -> str:
         """return an nodes.TypeVar node as string"""
         bound_str = f": {node.bound.accept(self)}" if node.bound else ""
-        default_value_str = (
-            f" = {node.default_value.accept(self)}" if node.default_value else ""
-        )
+        default_value_str = f" = {node.default_value.accept(self)}" if node.default_value else ""
         return f"{node.name.accept(self)}{bound_str}{default_value_str}"
 
     def visit_typevartuple(self, node: nodes.TypeVarTuple) -> str:
         """return an nodes.TypeVarTuple node as string"""
-        default_value_str = (
-            f" = {node.default_value.accept(self)}" if node.default_value else ""
-        )
+        default_value_str = f" = {node.default_value.accept(self)}" if node.default_value else ""
         return f"*{node.name.accept(self)}{default_value_str}"
 
     def visit_unaryop(self, node: nodes.UnaryOp) -> str:
@@ -584,8 +553,7 @@ class AsStringVisitor:
     def visit_with(self, node: nodes.With) -> str:  # 'with' without 'as' is possible
         """return an nodes.With node as string"""
         items = ", ".join(
-            f"{expr.accept(self)}" + ((v and f" as {v.accept(self)}") or "")
-            for expr, v in node.items
+            f"{expr.accept(self)}" + ((v and f" as {v.accept(self)}") or "") for expr, v in node.items
         )
         return f"with {items}:\n{self._stmt_list(node.body)}"
 
@@ -618,10 +586,7 @@ class AsStringVisitor:
     def visit_matchcase(self, node: nodes.MatchCase) -> str:
         """Return an nodes.MatchCase node as string."""
         guard_str = f" if {node.guard.accept(self)}" if node.guard else ""
-        return (
-            f"case {node.pattern.accept(self)}{guard_str}:\n"
-            f"{self._stmt_list(node.body)}"
-        )
+        return f"case {node.pattern.accept(self)}{guard_str}:\n{self._stmt_list(node.body)}"
 
     def visit_matchvalue(self, node: nodes.MatchValue) -> str:
         """Return an nodes.MatchValue node as string."""
@@ -643,8 +608,7 @@ class AsStringVisitor:
         mapping_strings: list[str] = []
         if node.keys and node.patterns:
             mapping_strings.extend(
-                f"{key.accept(self)}: {p.accept(self)}"
-                for key, p in zip(node.keys, node.patterns)
+                f"{key.accept(self)}: {p.accept(self)}" for key, p in zip(node.keys, node.patterns)
             )
         if node.rest:
             mapping_strings.append(f"**{node.rest.accept(self)}")
@@ -668,9 +632,7 @@ class AsStringVisitor:
 
     def visit_matchas(self, node: nodes.MatchAs) -> str:
         """Return an nodes..MatchAs node as string."""
-        if isinstance(
-            node.parent, (nodes.MatchSequence, nodes.MatchMapping, nodes.MatchClass)
-        ):
+        if isinstance(node.parent, (nodes.MatchSequence, nodes.MatchMapping, nodes.MatchClass)):
             return node.name.accept(self) if node.name else "_"
         return (
             f"{node.pattern.accept(self) if node.pattern else '_'}"

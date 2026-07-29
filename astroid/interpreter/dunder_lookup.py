@@ -39,9 +39,7 @@ def _lookup_in_mro(node, name) -> list:
     return values
 
 
-def lookup(
-    node: nodes.NodeNG, name: str, context: InferenceContext | None = None
-) -> list:
+def lookup(node: nodes.NodeNG, name: str, context: InferenceContext | None = None) -> list:
     """Lookup the given special method name in the given *node*.
 
     If the special method was found, then a list of attributes
@@ -58,9 +56,7 @@ def lookup(
     raise AttributeInferenceError(attribute=name, target=node)
 
 
-def _class_lookup(
-    node: nodes.ClassDef, name: str, context: InferenceContext | None = None
-) -> list:
+def _class_lookup(node: nodes.ClassDef, name: str, context: InferenceContext | None = None) -> list:
     metaclass = node.metaclass(context=context)
     # An explicit metaclass may infer to a non-class node (e.g. a function),
     # which has no MRO to look the special method up in.

@@ -18,6 +18,4 @@ def numpy_core_fromnumeric_transform() -> nodes.Module:
 
 
 def register(manager: AstroidManager) -> None:
-    register_module_extender(
-        manager, "numpy.core.fromnumeric", numpy_core_fromnumeric_transform
-    )
+    register_module_extender(manager, "numpy.core.fromnumeric", numpy_core_fromnumeric_transform)

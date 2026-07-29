@@ -95,8 +95,7 @@ class Super(node_classes.NodeNG):
         """Get the MRO which will be used to lookup attributes in this super."""
         if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
             raise SuperError(
-                "The first argument to super must be a subtype of "
-                "type, not {mro_pointer}.",
+                "The first argument to super must be a subtype of type, not {mro_pointer}.",
                 super_=self,
             )
 
@@ -108,16 +107,14 @@ class Super(node_classes.NodeNG):
             mro_type = getattr(self.type, "_proxied", None)
             if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
                 raise SuperError(
-                    "The second argument to super must be an "
-                    "instance or subtype of type, not {type}.",
+                    "The second argument to super must be an instance or subtype of type, not {type}.",
                     super_=self,
                 )
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
             raise SuperError(
-                "The second argument to super must be an "
-                "instance or subtype of type, not {type}.",
+                "The second argument to super must be an instance or subtype of type, not {type}.",
                 super_=self,
             )
 
@@ -159,10 +156,7 @@ class Super(node_classes.NodeNG):
         # leak out as is from this function.
         except SuperError as exc:
             raise AttributeInferenceError(
-                (
-                    "Lookup for {name} on {target!r} because super call {super!r} "
-                    "is invalid."
-                ),
+                ("Lookup for {name} on {target!r} because super call {super!r} is invalid."),
                 target=self,
                 attribute=name,
                 context=context,
@@ -170,10 +164,7 @@ class Super(node_classes.NodeNG):
             ) from exc
         except MroError as exc:
             raise AttributeInferenceError(
-                (
-                    "Lookup for {name} on {target!r} failed because {cls!r} has an "
-                    "invalid MRO."
-                ),
+                ("Lookup for {name} on {target!r} failed because {cls!r} has an invalid MRO."),
                 target=self,
                 attribute=name,
                 context=context,
@@ -203,9 +194,7 @@ class Super(node_classes.NodeNG):
                 elif isinstance(inferred, Property):
                     function = inferred.function
                     try:
-                        yield from function.infer_call_result(
-                            caller=self, context=context
-                        )
+                        yield from function.infer_call_result(caller=self, context=context)
                     except InferenceError:
                         yield util.Uninferable
                 elif bases._is_property(inferred):
@@ -245,9 +234,7 @@ class ExceptionInstance(bases.Instance):
     @cached_property
     def special_attributes(self):
         qname = self.qname()
-        instance = objectmodel.BUILTIN_EXCEPTIONS.get(
-            qname, objectmodel.ExceptionInstanceModel
-        )
+        instance = objectmodel.BUILTIN_EXCEPTIONS.get(qname, objectmodel.ExceptionInstanceModel)
         return instance()(self)
 
 
@@ -312,9 +299,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
             wrapped_function = call.positional_arguments[0]
             inferred_wrapped_function = next(wrapped_function.infer())
             if isinstance(inferred_wrapped_function, PartialFunction):
-                self.filled_args = (
-                    inferred_wrapped_function.filled_args + self.filled_args
-                )
+                self.filled_args = inferred_wrapped_function.filled_args + self.filled_args
                 self.filled_keywords = {
                     **inferred_wrapped_function.filled_keywords,
                     **self.filled_keywords,
@@ -328,12 +313,8 @@ class PartialFunction(scoped_nodes.FunctionDef):
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
         if context:
-            assert (
-                context.callcontext
-            ), "CallContext should be set before inferring call result"
-            current_passed_keywords = {
-                keyword for (keyword, _) in context.callcontext.keywords
-            }
+            assert context.callcontext, "CallContext should be set before inferring call result"
+            current_passed_keywords = {keyword for (keyword, _) in context.callcontext.keywords}
             for keyword, value in self.filled_keywords.items():
                 if keyword not in current_passed_keywords:
                     context.callcontext.keywords.append((keyword, value))

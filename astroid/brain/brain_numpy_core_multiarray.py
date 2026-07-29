@@ -88,9 +88,7 @@ METHODS_TO_BE_INFERRED = {
 
 
 def register(manager: AstroidManager) -> None:
-    register_module_extender(
-        manager, "numpy.core.multiarray", numpy_core_multiarray_transform
-    )
+    register_module_extender(manager, "numpy.core.multiarray", numpy_core_multiarray_transform)
 
     method_names = frozenset(METHODS_TO_BE_INFERRED.keys())
 

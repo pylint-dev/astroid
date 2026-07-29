@@ -52,9 +52,7 @@ Uninferable: Final = UninferableBase()
 # Width/precision in a format spec drive how large a formatted string gets.
 # Match the leading width and the optional ``.precision`` from the start of a
 # format spec (PEP 3101 / format mini-language).
-_FORMAT_SPEC_SIZE = re.compile(
-    r"(?:.?[<>=^])?[-+ ]?z?#?0?(?P<width>\d+)?(?:[,_])?(?:\.(?P<precision>\d+))?"
-)
+_FORMAT_SPEC_SIZE = re.compile(r"(?:.?[<>=^])?[-+ ]?z?#?0?(?P<width>\d+)?(?:[,_])?(?:\.(?P<precision>\d+))?")
 # Mirrors the sequence/repetition caps in astroid.protocols.
 MAX_FORMATTED_SIZE = 10**8
 
@@ -68,8 +66,7 @@ def format_spec_too_large(format_spec: str) -> bool:
     # Every group in _FORMAT_SPEC_SIZE is optional, so match is never None.
     match = _FORMAT_SPEC_SIZE.match(format_spec)
     return any(
-        size is not None and int(size) > MAX_FORMATTED_SIZE
-        for size in match.group("width", "precision")
+        size is not None and int(size) > MAX_FORMATTED_SIZE for size in match.group("width", "precision")
     )
 
 
@@ -127,8 +124,7 @@ class BadBinaryOperationMessage(BadOperationMessage):
 
     def __str__(self) -> str:
         return (
-            f"unsupported operand type(s) for {self.op}: {self.left_type.name!r} "
-            f"and {self.right_type.name!r}"
+            f"unsupported operand type(s) for {self.op}: {self.left_type.name!r} and {self.right_type.name!r}"
         )
 
 
@@ -138,9 +134,7 @@ def check_warnings_filter() -> bool:
     https://docs.python.org/3/library/warnings.html#default-warning-filter
     """
     return any(
-        issubclass(DeprecationWarning, filter[2])
-        and filter[0] != "ignore"
-        and filter[3] != "__main__"
+        issubclass(DeprecationWarning, filter[2]) and filter[0] != "ignore" and filter[3] != "__main__"
         for filter in warnings.filters
     )
 

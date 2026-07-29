@@ -19,20 +19,22 @@ if TYPE_CHECKING:
 
 
 def _collections_transform():
-    return parse("""
+    return parse(
+        """
     class defaultdict(dict):
         default_factory = None
         def __missing__(self, key): pass
         def __getitem__(self, key): return default_factory
 
-    """ + _deque_mock() + _ordered_dict_mock())
+    """
+        + _deque_mock()
+        + _ordered_dict_mock()
+    )
 
 
 def _collections_abc_313_transform() -> nodes.Module:
     """See https://github.com/python/cpython/pull/124735"""
-    return AstroidBuilder(AstroidManager()).string_build(
-        "from _collections_abc import *"
-    )
+    return AstroidBuilder(AstroidManager()).string_build("from _collections_abc import *")
 
 
 def _deque_mock():
@@ -91,9 +93,7 @@ def _looks_like_subscriptable(node: ClassDef) -> bool:
 
     :param node: ClassDef node
     """
-    if node.qname().startswith("_collections") or node.qname().startswith(
-        "collections"
-    ):
+    if node.qname().startswith("_collections") or node.qname().startswith("collections"):
         try:
             node.getattr("__class_getitem__")
             return True
@@ -123,11 +123,7 @@ def register(manager: AstroidManager) -> None:
     # thanks to the __class_getitem__ method but the way it is implemented in
     # _collection_abc makes it difficult to infer. (We would have to handle AssignName inference in the
     # getitem method of the ClassDef class) Instead we put here a mock of the __class_getitem__ method
-    manager.register_transform(
-        ClassDef, easy_class_getitem_inference, _looks_like_subscriptable
-    )
+    manager.register_transform(ClassDef, easy_class_getitem_inference, _looks_like_subscriptable)
 
     if PY313_PLUS:
-        register_module_extender(
-            manager, "collections.abc", _collections_abc_313_transform
-        )
+        register_module_extender(manager, "collections.abc", _collections_abc_313_transform)

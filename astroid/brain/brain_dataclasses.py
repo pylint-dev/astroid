@@ -33,16 +33,12 @@ from astroid.typing import InferenceResult
 from astroid.util import Uninferable, UninferableBase, safe_infer
 
 _FieldDefaultReturn = (
-    None
-    | tuple[Literal["default"], nodes.NodeNG]
-    | tuple[Literal["default_factory"], nodes.Call]
+    None | tuple[Literal["default"], nodes.NodeNG] | tuple[Literal["default_factory"], nodes.Call]
 )
 
 DATACLASSES_DECORATORS = frozenset(("dataclass",))
 FIELD_NAME = "field"
-DATACLASS_MODULES = frozenset(
-    ("dataclasses", "marshmallow_dataclass", "pydantic.dataclasses")
-)
+DATACLASS_MODULES = frozenset(("dataclasses", "marshmallow_dataclass", "pydantic.dataclasses"))
 DEFAULT_FACTORY = "_HAS_DEFAULT_FACTORY"  # based on typing.py
 
 
@@ -110,17 +106,14 @@ def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef | None:
     return node
 
 
-def _get_dataclass_attributes(
-    node: nodes.ClassDef, init: bool = False
-) -> Iterator[nodes.AnnAssign]:
+def _get_dataclass_attributes(node: nodes.ClassDef, init: bool = False) -> Iterator[nodes.AnnAssign]:
     """Yield the AnnAssign nodes of dataclass attributes for the node.
 
     If init is True, also include InitVars.
     """
     for assign_node in node.body:
         if not (
-            isinstance(assign_node, nodes.AnnAssign)
-            and isinstance(assign_node.target, nodes.AssignName)
+            isinstance(assign_node, nodes.AnnAssign) and isinstance(assign_node.target, nodes.AssignName)
         ):
             continue
 
@@ -162,17 +155,14 @@ def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
 
     # Check for keyword arguments of the form init=False
     return not any(
-        keyword.arg == "init"
-        and keyword.value.bool_value() is False  # type: ignore[union-attr] # value is never None
+        keyword.arg == "init" and keyword.value.bool_value() is False  # type: ignore[union-attr] # value is never None
         for keyword in found.keywords
     )
 
 
 def _find_arguments_from_base_classes(
     node: nodes.ClassDef,
-) -> tuple[
-    dict[str, tuple[str | None, str | None]], dict[str, tuple[str | None, str | None]]
-]:
+) -> tuple[dict[str, tuple[str | None, str | None]], dict[str, tuple[str | None, str | None]]]:
     """Iterate through all bases and get their typing and defaults."""
     pos_only_store: dict[str, tuple[str | None, str | None]] = {}
     kw_only_store: dict[str, tuple[str | None, str | None]] = {}
@@ -334,9 +324,7 @@ def _generate_dataclass_init(
             # But we can't represent those as string
             try:
                 # Call str to make sure also Uninferable gets stringified
-                default_str = str(
-                    next(property_node.infer_call_result(None)).as_string()
-                )
+                default_str = str(next(property_node.infer_call_result(None)).as_string())
             except (InferenceError, StopIteration):
                 pass
         else:
@@ -384,9 +372,7 @@ def _generate_dataclass_init(
         if not init_var:
             assignments.append(assignment_str)
 
-    prev_pos_only, prev_kw_only = _parse_arguments_into_strings(
-        prev_pos_only_store, prev_kw_only_store
-    )
+    prev_pos_only, prev_kw_only = _parse_arguments_into_strings(prev_pos_only_store, prev_kw_only_store)
 
     # Construct the new init method paramter string
     # First we do the positional only parameters, making sure to add the
@@ -493,9 +479,7 @@ def _looks_like_dataclass_attribute(node: nodes.Unknown) -> bool:
     )
 
 
-def _looks_like_dataclass_field_call(
-    node: nodes.Call, check_scope: bool = True
-) -> bool:
+def _looks_like_dataclass_field_call(node: nodes.Call, check_scope: bool = True) -> bool:
     """Return True if node is calling dataclasses field or Field
     from an AnnAssign statement directly in the body of a ClassDef.
 
@@ -587,10 +571,7 @@ def _is_keyword_only_sentinel(node: nodes.NodeNG) -> bool:
         )
     if isinstance(node, nodes.Attribute) and node.attrname == "KW_ONLY":
         inferred_expr = safe_infer(node.expr)
-        return (
-            isinstance(inferred_expr, nodes.Module)
-            and inferred_expr.qname() == "dataclasses"
-        )
+        return isinstance(inferred_expr, nodes.Module) and inferred_expr.qname() == "dataclasses"
     return False
 
 
@@ -651,9 +632,7 @@ def register(manager: AstroidManager) -> None:
             _looks_like_dataclasses,
         )
 
-    manager.register_transform(
-        nodes.ClassDef, dataclass_transform, is_decorated_with_dataclass
-    )
+    manager.register_transform(nodes.ClassDef, dataclass_transform, is_decorated_with_dataclass)
 
     manager.register_transform(
         nodes.Call,

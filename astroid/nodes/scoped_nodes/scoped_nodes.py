@@ -174,9 +174,7 @@ def function_to_method(n, klass):
     return n
 
 
-def _infer_last(
-    arg: SuccessfulInferenceResult, context: InferenceContext
-) -> InferenceResult:
+def _infer_last(arg: SuccessfulInferenceResult, context: InferenceContext) -> InferenceResult:
     res = util.Uninferable
     for b in arg.infer(context=context.clone()):
         res = b
@@ -268,15 +266,11 @@ class Module(LocalsDictNodeNG):
         self.future_imports: set[str] = set()
         """The imports from ``__future__``."""
 
-        super().__init__(
-            lineno=0, parent=None, col_offset=0, end_lineno=None, end_col_offset=None
-        )
+        super().__init__(lineno=0, parent=None, col_offset=0, end_lineno=None, end_col_offset=None)
 
     # pylint: enable=redefined-builtin
 
-    def postinit(
-        self, body: list[node_classes.NodeNG], *, doc_node: Const | None = None
-    ):
+    def postinit(self, body: list[node_classes.NodeNG], *, doc_node: Const | None = None):
         self.body = body
         self.doc_node = doc_node
 
@@ -343,9 +337,7 @@ class Module(LocalsDictNodeNG):
         """
         return "Module"
 
-    def getattr(
-        self, name, context: InferenceContext | None = None, ignore_locals=False
-    ):
+    def getattr(self, name, context: InferenceContext | None = None, ignore_locals=False):
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
@@ -364,17 +356,13 @@ class Module(LocalsDictNodeNG):
             try:
                 result = [self.import_module(name, relative_only=True)]
             except (AstroidBuildingError, SyntaxError) as exc:
-                raise AttributeInferenceError(
-                    target=self, attribute=name, context=context
-                ) from exc
+                raise AttributeInferenceError(target=self, attribute=name, context=context) from exc
         result = [n for n in result if not isinstance(n, node_classes.DelName)]
         if result:
             return result
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
-    def igetattr(
-        self, name: str, context: InferenceContext | None = None
-    ) -> Iterator[InferenceResult]:
+    def igetattr(self, name: str, context: InferenceContext | None = None) -> Iterator[InferenceResult]:
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
@@ -388,9 +376,7 @@ class Module(LocalsDictNodeNG):
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except AttributeInferenceError as error:
-            raise InferenceError(
-                str(error), target=self, attribute=name, context=context
-            ) from error
+            raise InferenceError(str(error), target=self, attribute=name, context=context) from error
 
     def fully_defined(self) -> bool:
         """Check if this module has been build from a .py file.
@@ -456,9 +442,7 @@ class Module(LocalsDictNodeNG):
         absmodname = self.relative_to_absolute_name(modname, level)
 
         try:
-            return AstroidManager().ast_from_module_name(
-                absmodname, use_cache=use_cache
-            )
+            return AstroidManager().ast_from_module_name(absmodname, use_cache=use_cache)
         except AstroidBuildingError:
             # we only want to import a sub module or package of this module,
             # skip here
@@ -496,9 +480,7 @@ class Module(LocalsDictNodeNG):
             elif (
                 self.path
                 and not os.path.exists(os.path.dirname(self.path[0]) + "/__init__.py")
-                and os.path.exists(
-                    os.path.dirname(self.path[0]) + "/" + modname.split(".")[0]
-                )
+                and os.path.exists(os.path.dirname(self.path[0]) + "/" + modname.split(".")[0])
             ):
                 level = level - 1
                 package_name = ""
@@ -701,9 +683,7 @@ class DictComp(ComprehensionScope):
             parent=parent,
         )
 
-    def postinit(
-        self, key: NodeNG, value: NodeNG, generators: list[nodes.Comprehension]
-    ) -> None:
+    def postinit(self, key: NodeNG, value: NodeNG, generators: list[nodes.Comprehension]) -> None:
         self.key = key
         self.value = value
         self.generators = generators
@@ -1038,9 +1018,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
         """
         return self
 
-    def getattr(
-        self, name: str, context: InferenceContext | None = None
-    ) -> list[NodeNG]:
+    def getattr(self, name: str, context: InferenceContext | None = None) -> list[NodeNG]:
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
@@ -1151,9 +1129,7 @@ class FunctionDef(
         self.body: list[NodeNG] = []
         """The contents of the function body."""
 
-        self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
-            []
-        )
+        self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = []
         """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
@@ -1177,9 +1153,7 @@ class FunctionDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
-        type_params: (
-            list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] | None
-        ) = None,
+        type_params: (list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] | None) = None,
     ):
         """Do some setup after initialisation.
 
@@ -1243,10 +1217,7 @@ class FunctionDef(
                     else:
                         # Must be a function and in the same frame as the
                         # original method.
-                        if (
-                            isinstance(meth, FunctionDef)
-                            and assign_node.frame() == frame
-                        ):
+                        if isinstance(meth, FunctionDef) and assign_node.frame() == frame:
                             decorators.append(assign.value)
         return decorators
 
@@ -1287,9 +1258,7 @@ class FunctionDef(
 
         return names
 
-    def getattr(
-        self, name: str, context: InferenceContext | None = None
-    ) -> list[NodeNG]:
+    def getattr(self, name: str, context: InferenceContext | None = None) -> list[NodeNG]:
         if not name:
             raise AttributeInferenceError(target=self, attribute=name, context=context)
 
@@ -1385,9 +1354,7 @@ class FunctionDef(
         # statement lineno. Similar to 'ClassDef.fromlineno'
         lineno = self.lineno or 0
         if self.decorators is not None:
-            lineno += sum(
-                node.tolineno - (node.lineno or 0) + 1 for node in self.decorators.nodes
-            )
+            lineno += sum(node.tolineno - (node.lineno or 0) + 1 for node in self.decorators.nodes)
 
         return lineno or 0
 
@@ -1413,16 +1380,12 @@ class FunctionDef(
         """
         return self.fromlineno, self.tolineno
 
-    def igetattr(
-        self, name: str, context: InferenceContext | None = None
-    ) -> Iterator[InferenceResult]:
+    def igetattr(self, name: str, context: InferenceContext | None = None) -> Iterator[InferenceResult]:
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
         except AttributeInferenceError as error:
-            raise InferenceError(
-                str(error), target=self, attribute=name, context=context
-            ) from error
+            raise InferenceError(str(error), target=self, attribute=name, context=context) from error
 
     def is_method(self) -> bool:
         """Check if this function node represents a method.
@@ -1432,9 +1395,7 @@ class FunctionDef(
         # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
         return (
-            self.type != "function"
-            and self.parent is not None
-            and isinstance(self.parent.frame(), ClassDef)
+            self.type != "function" and self.parent is not None and isinstance(self.parent.frame(), ClassDef)
         )
 
     def decoratornames(self, context: InferenceContext | None = None) -> set[str]:
@@ -1594,11 +1555,7 @@ class FunctionDef(
                 )
                 new_class.hide = True
                 new_class.postinit(
-                    bases=[
-                        base
-                        for base in class_bases
-                        if not isinstance(base, util.UninferableBase)
-                    ],
+                    bases=[base for base in class_bases if not isinstance(base, util.UninferableBase)],
                     body=[],
                     decorators=None,
                     metaclass=metaclass,
@@ -1806,9 +1763,7 @@ def get_wrapping_class(node):
     return klass
 
 
-class ClassDef(
-    _base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement
-):
+class ClassDef(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG, _base_nodes.Statement):
     """Class representing an :class:`ast.ClassDef` node.
 
     >>> import astroid
@@ -1852,9 +1807,7 @@ class ClassDef(
     type = property(
         _class_type,
         doc=(
-            "The class type for this node.\n\n"
-            "Possible values are: class, metaclass, exception.\n\n"
-            ":type: str"
+            "The class type for this node.\n\nPossible values are: class, metaclass, exception.\n\n:type: str"
         ),
     )
     _other_fields = ("name", "is_dataclass", "position")
@@ -1898,9 +1851,7 @@ class ClassDef(
         self.is_dataclass: bool = False
         """Whether this class is a dataclass."""
 
-        self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
-            []
-        )
+        self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = []
         """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
 
         super().__init__(
@@ -1913,9 +1864,7 @@ class ClassDef(
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
 
-    infer_binary_op: ClassVar[InferBinaryOp[ClassDef]] = (
-        protocols.instance_class_infer_binary_op
-    )
+    infer_binary_op: ClassVar[InferBinaryOp[ClassDef]] = protocols.instance_class_infer_binary_op
 
     def implicit_parameters(self) -> Literal[1]:
         return 1
@@ -1946,9 +1895,7 @@ class ClassDef(
         *,
         position: Position | None = None,
         doc_node: Const | None = None,
-        type_params: (
-            list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] | None
-        ) = None,
+        type_params: (list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] | None) = None,
     ) -> None:
         if keywords is not None:
             self.keywords = keywords
@@ -2021,9 +1968,7 @@ class ClassDef(
             name_node = next(caller.args[0].infer(context))
         except StopIteration as e:
             raise InferenceError(node=caller.args[0], context=context) from e
-        if isinstance(name_node, node_classes.Const) and isinstance(
-            name_node.value, str
-        ):
+        if isinstance(name_node, node_classes.Const) and isinstance(name_node.value, str):
             name = name_node.value
         else:
             return util.Uninferable
@@ -2047,9 +1992,7 @@ class ClassDef(
             for base in class_bases.itered():
                 inferred = next(base.infer(context=context), None)
                 if inferred:
-                    bases.append(
-                        node_classes.EvaluatedObject(original=base, value=inferred)
-                    )
+                    bases.append(node_classes.EvaluatedObject(original=base, value=inferred))
             result.bases = bases
         else:
             # There is currently no AST node that can represent an 'unknown'
@@ -2128,14 +2071,10 @@ class ClassDef(
         # decorator that it's poorly named after a builtin object
         # inside this class.
         lookup_upper_frame = (
-            isinstance(node.parent, node_classes.Decorators)
-            and name in AstroidManager().builtins_module
+            isinstance(node.parent, node_classes.Decorators) and name in AstroidManager().builtins_module
         )
         if (
-            any(
-                node == base or (base.parent_of(node) and not self.type_params)
-                for base in self.bases
-            )
+            any(node == base or (base.parent_of(node) and not self.type_params) for base in self.bases)
             or lookup_upper_frame
         ):
             # Handle the case where we have either a name
@@ -2170,9 +2109,7 @@ class ClassDef(
         """
         return [bnode.as_string() for bnode in self.bases]
 
-    def ancestors(
-        self, recurs: bool = True, context: InferenceContext | None = None
-    ) -> Generator[ClassDef]:
+    def ancestors(self, recurs: bool = True, context: InferenceContext | None = None) -> Generator[ClassDef]:
         """Iterate over the base classes in prefixed depth first order.
 
         :param recurs: Whether to recurse or return direct ancestors only.
@@ -2451,9 +2388,7 @@ class ClassDef(
                 first_attr, attributes = attributes[0], attributes[1:]
                 first_scope = first_attr.parent.scope()
                 attributes = [first_attr] + [
-                    attr
-                    for attr in attributes
-                    if attr.parent and attr.parent.scope() == first_scope
+                    attr for attr in attributes if attr.parent and attr.parent.scope() == first_scope
                 ]
             functions = [attr for attr in attributes if isinstance(attr, FunctionDef)]
             setter = None
@@ -2470,16 +2405,12 @@ class ClassDef(
                 # Prefer only the last function, unless a property is involved.
                 last_function = functions[-1]
                 attributes = [
-                    a
-                    for a in attributes
-                    if a not in functions or a is last_function or bases._is_property(a)
+                    a for a in attributes if a not in functions or a is last_function or bases._is_property(a)
                 ]
 
             for inferred in bases._infer_stmts(attributes, context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
-                if not isinstance(inferred, node_classes.Const) and isinstance(
-                    inferred, bases.Instance
-                ):
+                if not isinstance(inferred, node_classes.Const) and isinstance(inferred, bases.Instance):
                     try:
                         inferred._proxied.getattr("__get__", context)
                     except AttributeInferenceError:
@@ -2490,13 +2421,9 @@ class ClassDef(
                     function = inferred.function
                     if not class_context:
                         if not context.callcontext and not setter:
-                            context.callcontext = CallContext(
-                                args=function.args.arguments, callee=function
-                            )
+                            context.callcontext = CallContext(args=function.args.arguments, callee=function)
                         # Through an instance so we can solve the property
-                        yield from function.infer_call_result(
-                            caller=self, context=context
-                        )
+                        yield from function.infer_call_result(caller=self, context=context)
                     # If we're in a class context, we need to determine if the property
                     # was defined in the metaclass (a derived class must be a subclass of
                     # the metaclass of all its bases), in which case we can resolve the
@@ -2505,9 +2432,7 @@ class ClassDef(
                     elif metaclass and function.parent.scope() is metaclass:
                         # Resolve a property as long as it is not accessed through
                         # the class itself.
-                        yield from function.infer_call_result(
-                            caller=self, context=context
-                        )
+                        yield from function.infer_call_result(caller=self, context=context)
                     else:
                         yield inferred
                 else:
@@ -2517,9 +2442,7 @@ class ClassDef(
                 # class handle some dynamic attributes, return a Uninferable object
                 yield util.Uninferable
             else:
-                raise InferenceError(
-                    str(error), target=self, attribute=name, context=context
-                ) from error
+                raise InferenceError(str(error), target=self, attribute=name, context=context) from error
 
     def has_dynamic_getattr(self, context: InferenceContext | None = None) -> bool:
         """Check if the class has a custom __getattr__ or __getattribute__.
@@ -2588,10 +2511,7 @@ class ClassDef(
             # However in such case the method is bound to an EmptyNode and
             # EmptyNode doesn't have infer_call_result method yielding to
             # AttributeError
-            if (
-                isinstance(method, node_classes.EmptyNode)
-                and self.pytype() == "builtins.type"
-            ):
+            if isinstance(method, node_classes.EmptyNode) and self.pytype() == "builtins.type":
                 return self
             # ``__class_getitem__`` may resolve to a non-callable node (e.g. an
             # ``AssignName`` or an ``Import``), which has no
@@ -2636,9 +2556,7 @@ class ClassDef(
         """
         return builtin_lookup("type")[1][0]
 
-    def declared_metaclass(
-        self, context: InferenceContext | None = None
-    ) -> SuccessfulInferenceResult | None:
+    def declared_metaclass(self, context: InferenceContext | None = None) -> SuccessfulInferenceResult | None:
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined by passing the
@@ -2685,9 +2603,7 @@ class ClassDef(
                         break
         return klass
 
-    def metaclass(
-        self, context: InferenceContext | None = None
-    ) -> SuccessfulInferenceResult | None:
+    def metaclass(self, context: InferenceContext | None = None) -> SuccessfulInferenceResult | None:
         """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
@@ -2746,10 +2662,7 @@ class ClassDef(
             for elt in values:
                 try:
                     for inferred in elt.infer():
-                        if not (
-                            isinstance(inferred, node_classes.Const)
-                            and isinstance(inferred.value, str)
-                        ):
+                        if not (isinstance(inferred, node_classes.Const) and isinstance(inferred.value, str)):
                             continue
                         if not inferred.value:
                             continue
@@ -2802,9 +2715,7 @@ class ClassDef(
         try:
             mro = self.mro()
         except MroError as e:
-            raise NotImplementedError(
-                "Cannot get slots while parsing mro fails."
-            ) from e
+            raise NotImplementedError("Cannot get slots while parsing mro fails.") from e
 
         slots = list(grouped_slots(mro))
         if not all(slot is not None for slot in slots):
@@ -2893,9 +2804,7 @@ class ClassDef(
         if self.qname() == "builtins.object":
             return [self]
 
-        inferred_bases = list(
-            self._inferred_bases(context=context, base_classes=base_chain)
-        )
+        inferred_bases = list(self._inferred_bases(context=context, base_classes=base_chain))
         bases_mro = []
         base_chain |= {self}
         for base in inferred_bases:
@@ -2941,9 +2850,7 @@ class ClassDef(
 
     @cached_property
     def _assign_nodes_in_scope(self):
-        children_assign_nodes = (
-            child_node._assign_nodes_in_scope for child_node in self.body
-        )
+        children_assign_nodes = (child_node._assign_nodes_in_scope for child_node in self.body)
         return list(itertools.chain.from_iterable(children_assign_nodes))
 
     def frame(self, *, future: Literal[None, True] = None) -> Self:

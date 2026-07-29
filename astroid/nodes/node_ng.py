@@ -115,9 +115,7 @@ class NodeNG:
         enough positional information. E.g. ClassDef, FunctionDef.
         """
 
-    def infer(
-        self, context: InferenceContext | None = None
-    ) -> Generator[InferenceResult]:
+    def infer(self, context: InferenceContext | None = None) -> Generator[InferenceResult]:
         """Get a generator of the inferred values.
 
         This is the main entry point to the inference system.
@@ -340,10 +338,7 @@ class NodeNG:
             if node_or_sequence is child:
                 return [node_or_sequence]
             # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-            if (
-                isinstance(node_or_sequence, (tuple, list))
-                and child in node_or_sequence
-            ):
+            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
                 return node_or_sequence
 
         msg = "Could not find %s in %s's children"
@@ -367,10 +362,7 @@ class NodeNG:
             # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
             if child is node_or_sequence:
                 return field, child
-            if (
-                isinstance(node_or_sequence, (tuple, list))
-                and child in node_or_sequence
-            ):
+            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
                 return field, node_or_sequence
         msg = "Could not find %s in %s's children"
         raise AstroidError(msg % (repr(child), repr(self)))
@@ -554,9 +546,7 @@ class NodeNG:
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """We don't know how to resolve a statement by default."""
         # this method is overridden by most concrete classes
-        raise InferenceError(
-            "No inference function for {node!r}.", node=self, context=context
-        )
+        raise InferenceError("No inference function for {node!r}.", node=self, context=context)
 
     def inferred(self):
         """Get a list of the inferred values.
@@ -649,9 +639,7 @@ class NodeNG:
             """Outputs a representation of a non-tuple/list, non-node that's
             contained within an AST, including strings.
             """
-            lines = pprint.pformat(
-                node, width=max(max_width - len(cur_indent), 1)
-            ).splitlines(True)
+            lines = pprint.pformat(node, width=max(max_width - len(cur_indent), 1)).splitlines(True)
             result.append(lines[0])
             result.extend([cur_indent + line for line in lines[1:]])
             return len(lines) != 1
@@ -694,9 +682,7 @@ class NodeNG:
         def _repr_node(node, result, done, cur_indent="", depth=1):
             """Outputs a strings representation of an astroid node."""
             if node in done:
-                result.append(
-                    indent + f"<Recursion on {type(node).__name__} with id={id(node)}"
-                )
+                result.append(indent + f"<Recursion on {type(node).__name__} with id={id(node)}")
                 return False
             done.add(node)
 
@@ -720,9 +706,7 @@ class NodeNG:
                 broken = False
             elif len(fields) == 1:
                 result.append(f"{fields[0]}=")
-                broken = _repr_tree(
-                    getattr(node, fields[0]), result, done, cur_indent, depth
-                )
+                broken = _repr_tree(getattr(node, fields[0]), result, done, cur_indent, depth)
             else:
                 result.append("\n")
                 result.append(cur_indent)

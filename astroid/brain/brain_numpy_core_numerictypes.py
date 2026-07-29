@@ -110,7 +110,9 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
         def __class_getitem__(cls, value):
             return cls
         """
-    return parse(generic_src + """
+    return parse(
+        generic_src
+        + """
     class dtype(object):
         def __init__(self, obj, align=False, copy=False):
             self.alignment = None
@@ -254,10 +256,9 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     unicode_ = str_
     ushort = uint16
     void0 = void
-    """)
+    """
+    )
 
 
 def register(manager: AstroidManager) -> None:
-    register_module_extender(
-        manager, "numpy.core.numerictypes", numpy_core_numerictypes_transform
-    )
+    register_module_extender(manager, "numpy.core.numerictypes", numpy_core_numerictypes_transform)

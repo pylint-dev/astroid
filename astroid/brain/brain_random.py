@@ -33,11 +33,7 @@ def _clone_node_with_lineno(node, parent, lineno):
     postinit_params = {param: getattr(node, param) for param in _astroid_fields}
 
     valid_init_params = set(inspect.signature(cls.__init__).parameters)
-    init_params = {
-        name: value
-        for name, value in candidate_init_params.items()
-        if name in valid_init_params
-    }
+    init_params = {name: value for name, value in candidate_init_params.items() if name in valid_init_params}
     for param in other_fields:
         if param in valid_init_params:
             init_params[param] = getattr(node, param)
@@ -88,10 +84,7 @@ def infer_random_sample(node, context: InferenceContext | None = None):
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
     )
-    new_elts = [
-        _clone_node_with_lineno(elt, parent=new_node, lineno=new_node.lineno)
-        for elt in elts
-    ]
+    new_elts = [_clone_node_with_lineno(elt, parent=new_node, lineno=new_node.lineno) for elt in elts]
     new_node.postinit(new_elts)
     return iter((new_node,))
 
@@ -106,6 +99,4 @@ def _looks_like_random_sample(node) -> bool:
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(
-        nodes.Call, inference_tip(infer_random_sample), _looks_like_random_sample
-    )
+    manager.register_transform(nodes.Call, inference_tip(infer_random_sample), _looks_like_random_sample)

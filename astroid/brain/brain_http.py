@@ -158,7 +158,8 @@ def _http_transform() -> nodes.Module:
 
 
 def _http_client_transform() -> nodes.Module:
-    return AstroidBuilder(AstroidManager()).string_build(textwrap.dedent("""
+    return AstroidBuilder(AstroidManager()).string_build(
+        textwrap.dedent("""
     from http import HTTPStatus
 
     CONTINUE = HTTPStatus.CONTINUE
@@ -225,7 +226,8 @@ def _http_client_transform() -> nodes.Module:
     LOOP_DETECTED = HTTPStatus.LOOP_DETECTED
     NOT_EXTENDED = HTTPStatus.NOT_EXTENDED
     NETWORK_AUTHENTICATION_REQUIRED = HTTPStatus.NETWORK_AUTHENTICATION_REQUIRED
-    """))
+    """)
+    )
 
 
 def register(manager: AstroidManager) -> None:

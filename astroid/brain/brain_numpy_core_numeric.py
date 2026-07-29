@@ -27,14 +27,14 @@ def numpy_core_numeric_transform() -> nodes.Module:
         """)
 
 
-METHODS_TO_BE_INFERRED = {"ones": """def ones(shape, dtype=None, order='C'):
-            return numpy.ndarray([0, 0])"""}
+METHODS_TO_BE_INFERRED = {
+    "ones": """def ones(shape, dtype=None, order='C'):
+            return numpy.ndarray([0, 0])"""
+}
 
 
 def register(manager: AstroidManager) -> None:
-    register_module_extender(
-        manager, "numpy.core.numeric", numpy_core_numeric_transform
-    )
+    register_module_extender(manager, "numpy.core.numeric", numpy_core_numeric_transform)
 
     manager.register_transform(
         nodes.Attribute,

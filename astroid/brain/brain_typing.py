@@ -156,11 +156,7 @@ def infer_typing_attr(
         # If typing subscript belongs to an alias handle it separately.
         raise UseInferenceDefault
 
-    if (
-        PY313_PLUS
-        and isinstance(value, nodes.FunctionDef)
-        and value.qname() == "typing.Annotated"
-    ):
+    if PY313_PLUS and isinstance(value, nodes.FunctionDef) and value.qname() == "typing.Annotated":
         # typing.Annotated is a FunctionDef on 3.13+
         node._explicit_inference = lambda node, context: iter([value])
         return iter([value])
@@ -412,11 +408,7 @@ def infer_typing_cast(
         func = next(node.func.infer(context=ctx))
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
-    if not (
-        isinstance(func, nodes.FunctionDef)
-        and func.qname() == "typing.cast"
-        and len(node.args) == 2
-    ):
+    if not (isinstance(func, nodes.FunctionDef) and func.qname() == "typing.cast" and len(node.args) == 2):
         raise UseInferenceDefault
 
     return node.args[1].infer(context=ctx)
@@ -483,20 +475,12 @@ def register(manager: AstroidManager) -> None:
     manager.register_transform(
         nodes.Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
     )
-    manager.register_transform(
-        nodes.Call, inference_tip(infer_typing_cast), _looks_like_typing_cast
-    )
+    manager.register_transform(nodes.Call, inference_tip(infer_typing_cast), _looks_like_typing_cast)
 
-    manager.register_transform(
-        nodes.FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict
-    )
+    manager.register_transform(nodes.FunctionDef, inference_tip(infer_typedDict), _looks_like_typedDict)
 
-    manager.register_transform(
-        nodes.Call, inference_tip(infer_typing_alias), _looks_like_typing_alias
-    )
-    manager.register_transform(
-        nodes.Call, inference_tip(infer_special_alias), _looks_like_special_alias
-    )
+    manager.register_transform(nodes.Call, inference_tip(infer_typing_alias), _looks_like_typing_alias)
+    manager.register_transform(nodes.Call, inference_tip(infer_special_alias), _looks_like_special_alias)
 
     if PY312_PLUS:
         register_module_extender(manager, "typing", _typing_transform)

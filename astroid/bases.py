@@ -67,17 +67,11 @@ POSSIBLE_PROPERTIES = {
 }
 
 
-def _is_property(
-    meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
-) -> bool:
+def _is_property(meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None) -> bool:
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
-    stripped = {
-        name.split(".")[-1]
-        for name in decoratornames
-        if not isinstance(name, UninferableBase)
-    }
+    stripped = {name.split(".")[-1] for name in decoratornames if not isinstance(name, UninferableBase)}
     if any(name in stripped for name in POSSIBLE_PROPERTIES):
         return True
 
@@ -122,9 +116,7 @@ class Proxy:
 
     def __init__(
         self,
-        proxied: (
-            nodes.ClassDef | nodes.FunctionDef | nodes.Lambda | UnboundMethod | None
-        ) = None,
+        proxied: (nodes.ClassDef | nodes.FunctionDef | nodes.Lambda | UnboundMethod | None) = None,
     ) -> None:
         if proxied is None:
             # This is a hack to allow calling this __init__ during bootstrapping of
@@ -183,10 +175,7 @@ def _infer_stmts(
                 if not constraint_stmt.parent_of(stmt):
                     stmt_constraints.update(potential_constraints)
             for inf in stmt.infer(context=context):
-                if all(
-                    constraint.satisfied_by(inf, context)
-                    for constraint in stmt_constraints
-                ):
+                if all(constraint.satisfied_by(inf, context) for constraint in stmt_constraints):
                     yield inf
                     inferred = True
                 else:
@@ -263,23 +252,17 @@ class BaseInstance(Proxy):
                 # unless they are explicitly defined.
                 return self._proxied.getattr(name, context, class_context=False)
 
-            raise AttributeInferenceError(
-                target=self, attribute=name, context=context
-            ) from exc
+            raise AttributeInferenceError(target=self, attribute=name, context=context) from exc
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
             try:
-                return values + self._proxied.getattr(
-                    name, context, class_context=False
-                )
+                return values + self._proxied.getattr(name, context, class_context=False)
             except AttributeInferenceError:
                 pass
         return values
 
-    def igetattr(
-        self, name: str, context: InferenceContext | None = None
-    ) -> Iterator[InferenceResult]:
+    def igetattr(self, name: str, context: InferenceContext | None = None) -> Iterator[InferenceResult]:
         """Inferred getattr."""
         if not context:
             context = InferenceContext()
@@ -287,9 +270,7 @@ class BaseInstance(Proxy):
             context.lookupname = name
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            yield from _infer_stmts(
-                self._wrap_attr(get_attr, context), context, frame=self
-            )
+            yield from _infer_stmts(self._wrap_attr(get_attr, context), context, frame=self)
         except AttributeInferenceError:
             try:
                 # fallback to class.igetattr since it has some logic to handle
@@ -389,9 +370,7 @@ class Instance(BaseInstance):
     def display_type(self) -> str:
         return "Instance of"
 
-    def bool_value(
-        self, context: InferenceContext | None = None
-    ) -> bool | UninferableBase:
+    def bool_value(self, context: InferenceContext | None = None) -> bool | UninferableBase:
         """Infer the truth value for an Instance.
 
         The truth value of an instance is determined by these conditions:
@@ -417,9 +396,7 @@ class Instance(BaseInstance):
                 return True
         return result
 
-    def getitem(
-        self, index: nodes.Const, context: InferenceContext | None = None
-    ) -> InferenceResult | None:
+    def getitem(self, index: nodes.Const, context: InferenceContext | None = None) -> InferenceResult | None:
         new_context = bind_context_to_node(context, self)
         if not context:
             context = new_context
@@ -427,9 +404,7 @@ class Instance(BaseInstance):
         # Create a new CallContext for providing index as an argument.
         new_context.callcontext = CallContext(args=[index], callee=method)
         if not isinstance(method, BoundMethod):
-            raise InferenceError(
-                "Could not find __getitem__ for {node!r}.", node=self, context=context
-            )
+            raise InferenceError("Could not find __getitem__ for {node!r}.", node=self, context=context)
         if len(method.args.arguments) != 2:  # (self, index)
             raise AstroidTypeError(
                 "__getitem__ for {node!r} does not have correct signature",
@@ -444,9 +419,9 @@ class UnboundMethod(Proxy):
 
     _proxied: nodes.FunctionDef | UnboundMethod
 
-    special_attributes: (
-        objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel
-    ) = objectmodel.UnboundMethodModel()
+    special_attributes: objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel = (
+        objectmodel.UnboundMethodModel()
+    )
 
     def __repr__(self) -> str:
         assert self._proxied.parent, "Expected a parent node"
@@ -466,9 +441,7 @@ class UnboundMethod(Proxy):
                 return [special_attr]
         return self._proxied.getattr(name, context)
 
-    def igetattr(
-        self, name: str, context: InferenceContext | None = None
-    ) -> Iterator[InferenceResult]:
+    def igetattr(self, name: str, context: InferenceContext | None = None) -> Iterator[InferenceResult]:
         if name in self.special_attributes:
             special_attr = self.special_attributes.lookup(name)
             if not isinstance(special_attr, nodes.Unknown):
@@ -562,9 +535,7 @@ class BoundMethod(UnboundMethod):
     def is_bound(self) -> Literal[True]:
         return True
 
-    def _infer_type_new_call(
-        self, caller: nodes.Call, context: InferenceContext
-    ) -> nodes.ClassDef | None:  # noqa: C901
+    def _infer_type_new_call(self, caller: nodes.Call, context: InferenceContext) -> nodes.ClassDef | None:  # noqa: C901
         """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
 
         In order for such call to be valid, the metaclass needs to be
@@ -581,14 +552,10 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(mcs, nodes.ClassDef):
             # Not a valid first argument.
-            raise InferenceError(
-                "type.__new__() requires a class for metaclass", context=context
-            )
+            raise InferenceError("type.__new__() requires a class for metaclass", context=context)
         if not mcs.is_subtype_of("builtins.type"):
             # Not a valid metaclass.
-            raise InferenceError(
-                "type.__new__() metaclass must be a subclass of type", context=context
-            )
+            raise InferenceError("type.__new__() metaclass must be a subclass of type", context=context)
 
         # Verify the name
         try:
@@ -597,14 +564,10 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(name, nodes.Const):
             # Not a valid name, needs to be a const.
-            raise InferenceError(
-                "type.__new__() requires a constant for name", context=context
-            )
+            raise InferenceError("type.__new__() requires a constant for name", context=context)
         if not isinstance(name.value, str):
             # Needs to be a string.
-            raise InferenceError(
-                "type.__new__() requires a string for name", context=context
-            )
+            raise InferenceError("type.__new__() requires a string for name", context=context)
 
         # Verify the bases
         try:
@@ -613,18 +576,14 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(bases, nodes.Tuple):
             # Needs to be a tuple.
-            raise InferenceError(
-                "type.__new__() requires a tuple for bases", context=context
-            )
+            raise InferenceError("type.__new__() requires a tuple for bases", context=context)
         try:
             inferred_bases = [next(elt.infer(context=context)) for elt in bases.elts]
         except StopIteration as e:
             raise InferenceError(context=context) from e
         if any(not isinstance(base, nodes.ClassDef) for base in inferred_bases):
             # All the bases needs to be Classes
-            raise InferenceError(
-                "type.__new__() requires classes for bases", context=context
-            )
+            raise InferenceError("type.__new__() requires classes for bases", context=context)
 
         # Verify the attributes.
         try:
@@ -633,9 +592,7 @@ class BoundMethod(UnboundMethod):
             raise InferenceError(context=context) from e
         if not isinstance(attrs, nodes.Dict):
             # Needs to be a dictionary.
-            raise InferenceError(
-                "type.__new__() requires a dict for attrs", context=context
-            )
+            raise InferenceError("type.__new__() requires a dict for attrs", context=context)
         cls_locals: dict[str, list[InferenceResult]] = collections.defaultdict(list)
         for key, value in attrs.items:
             try:

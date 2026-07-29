@@ -226,9 +226,7 @@ def transform_six_with_metaclass(node):
 
 def register(manager: AstroidManager) -> None:
     register_module_extender(manager, "six", six_moves_transform)
-    register_module_extender(
-        manager, "requests.packages.urllib3.packages.six", six_moves_transform
-    )
+    register_module_extender(manager, "requests.packages.urllib3.packages.six", six_moves_transform)
     manager.register_failed_import_hook(_six_fail_hook)
     manager.register_transform(
         nodes.ClassDef,

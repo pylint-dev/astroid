@@ -19,9 +19,9 @@ from astroid.typing import (
     TransformFn,
 )
 
-_cache: OrderedDict[
-    tuple[InferFn[Any], NodeNG, InferenceContext | None], list[InferenceResult]
-] = OrderedDict()
+_cache: OrderedDict[tuple[InferFn[Any], NodeNG, InferenceContext | None], list[InferenceResult]] = (
+    OrderedDict()
+)
 
 _CURRENTLY_INFERRING: set[tuple[InferFn[Any], NodeNG]] = set()
 
@@ -81,9 +81,7 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
     return inner
 
 
-def inference_tip(
-    infer_function: InferFn[_NodesT], raise_on_overwrite: bool = False
-) -> TransformFn[_NodesT]:
+def inference_tip(infer_function: InferFn[_NodesT], raise_on_overwrite: bool = False) -> TransformFn[_NodesT]:
     """Given an instance specific inference function, return a function to be
     given to AstroidManager().register_transform to set this inference function.
 
@@ -105,9 +103,7 @@ def inference_tip(
         excess overwrites.
     """
 
-    def transform(
-        node: _NodesT, infer_function: InferFn[_NodesT] = infer_function
-    ) -> _NodesT:
+    def transform(node: _NodesT, infer_function: InferFn[_NodesT] = infer_function) -> _NodesT:
         if (
             raise_on_overwrite
             and node._explicit_inference is not None

@@ -55,9 +55,7 @@ def _dunder_dict(instance, attributes):
     )
 
     # Convert the keys to node strings
-    keys = [
-        node_classes.Const(value=value, parent=obj) for value in list(attributes.keys())
-    ]
+    keys = [node_classes.Const(value=value, parent=obj) for value in list(attributes.keys())]
 
     # The original attribute has a list of elements for each key,
     # but that is not useful for retrieving the special attribute's value.
@@ -141,9 +139,7 @@ class ObjectModel:
         """Calling cls.__new__(type) on an object returns an instance of 'type'."""
         from astroid import builder  # pylint: disable=import-outside-toplevel
 
-        node: nodes.FunctionDef = builder.extract_node(
-            """def __new__(self, cls): return cls()"""
-        )
+        node: nodes.FunctionDef = builder.extract_node("""def __new__(self, cls): return cls()""")
         # We set the parent as being the ClassDef of 'object' as that
         # triggers correct inference as a call to __new__ in bases.py
         node.parent = AstroidManager().builtins_module["object"]
@@ -158,9 +154,7 @@ class ObjectModel:
         # The *args and **kwargs are necessary not to trigger warnings about missing
         # or extra parameters for '__init__' methods we don't infer correctly.
         # This BoundMethod is the fallback value for those.
-        node: nodes.FunctionDef = builder.extract_node(
-            """def __init__(self, *args, **kwargs): return None"""
-        )
+        node: nodes.FunctionDef = builder.extract_node("""def __init__(self, *args, **kwargs): return None""")
         # We set the parent as being the ClassDef of 'object' as that
         # is where this method originally comes from
         node.parent = AstroidManager().builtins_module["object"]
@@ -211,9 +205,7 @@ class ModuleModel(ObjectModel):
 
         path_objs = [
             node_classes.Const(
-                value=(
-                    path if not path.endswith("__init__.py") else os.path.dirname(path)
-                ),
+                value=(path if not path.endswith("__init__.py") else os.path.dirname(path)),
                 parent=self._instance,
             )
             for path in self._instance.path
@@ -307,9 +299,7 @@ class FunctionModel(ObjectModel):
     @property
     def attr___annotations__(self):
         if self._is_builtin_func():
-            raise AttributeInferenceError(
-                target=self._instance, attribute="__annotations__"
-            )
+            raise AttributeInferenceError(target=self._instance, attribute="__annotations__")
         obj = node_classes.Dict(
             parent=self._instance,
             lineno=self._instance.lineno,
@@ -330,9 +320,7 @@ class FunctionModel(ObjectModel):
             zip(args.posonlyargs or [], args.posonlyargs_annotations),
         )
 
-        annotations = {
-            arg.name: annotation for (arg, annotation) in pair_annotations if annotation
-        }
+        annotations = {arg.name: annotation for (arg, annotation) in pair_annotations if annotation}
         if args.varargannotation:
             annotations[args.vararg] = args.varargannotation
         if args.kwargannotation:
@@ -340,10 +328,7 @@ class FunctionModel(ObjectModel):
         if returns:
             annotations["return"] = returns
 
-        items = [
-            (node_classes.Const(key, parent=obj), value)
-            for (key, value) in annotations.items()
-        ]
+        items = [(node_classes.Const(key, parent=obj), value) for (key, value) in annotations.items()]
 
         obj.postinit(items)
         return obj
@@ -363,9 +348,7 @@ class FunctionModel(ObjectModel):
     @property
     def attr___globals__(self):
         if self._is_builtin_func():
-            raise AttributeInferenceError(
-                target=self._instance, attribute="__globals__"
-            )
+            raise AttributeInferenceError(target=self._instance, attribute="__globals__")
         return node_classes.Dict(
             parent=self._instance,
             lineno=self._instance.lineno,
@@ -377,9 +360,7 @@ class FunctionModel(ObjectModel):
     @property
     def attr___kwdefaults__(self):
         if self._is_builtin_func():
-            raise AttributeInferenceError(
-                target=self._instance, attribute="__kwdefaults__"
-            )
+            raise AttributeInferenceError(target=self._instance, attribute="__kwdefaults__")
 
         def _default_args(args, parent):
             for arg in args.kwonlyargs:
@@ -444,9 +425,7 @@ class FunctionModel(ObjectModel):
                     raise InferenceError(context=context, node=caller.args[0]) from e
 
                 if isinstance(cls, util.UninferableBase):
-                    raise InferenceError(
-                        "Invalid class inferred", target=self, context=context
-                    )
+                    raise InferenceError("Invalid class inferred", target=self, context=context)
 
                 # The `func` can already be a Unbound or BoundMethod. If the former, make sure to
                 # wrap as a BoundMethod like we do below when constructing the function from scratch.
@@ -499,9 +478,7 @@ class FunctionModel(ObjectModel):
                 we get a new object which has two parameters, *self* and *type*.
                 """
                 nonlocal func
-                arguments = nodes.Arguments(
-                    parent=func.args.parent, vararg=None, kwarg=None
-                )
+                arguments = nodes.Arguments(parent=func.args.parent, vararg=None, kwarg=None)
 
                 positional_or_keyword_params = func.args.args.copy()
                 positional_or_keyword_params.append(
@@ -766,9 +743,7 @@ class GeneratorBaseModel(FunctionModel, ContextManagerModel):
 
     @property
     def attr___name__(self):
-        return node_classes.Const(
-            value=self._instance.parent.name, parent=self._instance
-        )
+        return node_classes.Const(value=self._instance.parent.name, parent=self._instance)
 
     @property
     def attr___doc__(self):
@@ -987,13 +962,9 @@ class PropertyModel(ObjectModel):
             ) -> Iterator[InferenceResult]:
                 nonlocal func
                 if caller and len(caller.args) != 1:
-                    raise InferenceError(
-                        "fget() needs a single argument", target=self, context=context
-                    )
+                    raise InferenceError("fget() needs a single argument", target=self, context=context)
 
-                yield from func.function.infer_call_result(
-                    caller=caller, context=context
-                )
+                yield from func.function.infer_call_result(caller=caller, context=context)
 
         property_accessor = PropertyFuncAccessor(
             name="fget",
@@ -1026,9 +997,7 @@ class PropertyModel(ObjectModel):
 
         func_setter = find_setter(func)
         if not func_setter:
-            raise InferenceError(
-                f"Unable to find the setter of property {func.function.name}"
-            )
+            raise InferenceError(f"Unable to find the setter of property {func.function.name}")
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(
@@ -1038,9 +1007,7 @@ class PropertyModel(ObjectModel):
             ) -> Iterator[InferenceResult]:
                 nonlocal func_setter
                 if caller and len(caller.args) != 2:
-                    raise InferenceError(
-                        "fset() needs two arguments", target=self, context=context
-                    )
+                    raise InferenceError("fset() needs two arguments", target=self, context=context)
                 yield from func_setter.infer_call_result(caller=caller, context=context)
 
         property_accessor = PropertyFuncAccessor(
