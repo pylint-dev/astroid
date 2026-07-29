@@ -81,9 +81,13 @@ def raise_if_nothing_inferred(
             # generator is empty
             if error.args:
                 raise InferenceError(**error.args[0]) from error
-            raise InferenceError("StopIteration raised without any error information.") from error
+            raise InferenceError(
+                "StopIteration raised without any error information."
+            ) from error
         except RecursionError as error:
-            raise InferenceError(f"RecursionError raised with limit {sys.getrecursionlimit()}.") from error
+            raise InferenceError(
+                f"RecursionError raised with limit {sys.getrecursionlimit()}."
+            ) from error
 
         yield from generator
 

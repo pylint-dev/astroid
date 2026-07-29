@@ -15,11 +15,15 @@ from astroid.typing import SuccessfulInferenceResult, TransformFn
 if TYPE_CHECKING:
     from astroid import nodes
 
-    _SuccessfulInferenceResultT = TypeVar("_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult)
+    _SuccessfulInferenceResultT = TypeVar(
+        "_SuccessfulInferenceResultT", bound=SuccessfulInferenceResult
+    )
     _Predicate = Callable[[_SuccessfulInferenceResultT], bool] | None
 
 # pylint: disable-next=consider-alternative-union-syntax
-_Vistables = Union["nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None]
+_Vistables = Union[
+    "nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None
+]
 _VisitReturns = (
     SuccessfulInferenceResult
     | list[SuccessfulInferenceResult]
@@ -90,10 +94,14 @@ class TransformVisitor:
     def _visit_generic(self, node: str) -> str: ...
 
     @overload
-    def _visit_generic(self, node: list[nodes.NodeNG]) -> list[SuccessfulInferenceResult]: ...
+    def _visit_generic(
+        self, node: list[nodes.NodeNG]
+    ) -> list[SuccessfulInferenceResult]: ...
 
     @overload
-    def _visit_generic(self, node: tuple[nodes.NodeNG, ...]) -> tuple[SuccessfulInferenceResult, ...]: ...
+    def _visit_generic(
+        self, node: tuple[nodes.NodeNG, ...]
+    ) -> tuple[SuccessfulInferenceResult, ...]: ...
 
     @overload
     def _visit_generic(self, node: nodes.NodeNG) -> SuccessfulInferenceResult: ...

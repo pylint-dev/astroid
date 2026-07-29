@@ -27,4 +27,6 @@ def _looks_like_boto3_service_request(node: ClassDef) -> bool:
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(ClassDef, service_request_transform, _looks_like_boto3_service_request)
+    manager.register_transform(
+        ClassDef, service_request_transform, _looks_like_boto3_service_request
+    )

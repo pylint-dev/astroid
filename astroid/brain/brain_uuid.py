@@ -14,4 +14,6 @@ def _patch_uuid_class(node: nodes.ClassDef) -> None:
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(nodes.ClassDef, _patch_uuid_class, lambda node: node.qname() == "uuid.UUID")
+    manager.register_transform(
+        nodes.ClassDef, _patch_uuid_class, lambda node: node.qname() == "uuid.UUID"
+    )

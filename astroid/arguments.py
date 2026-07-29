@@ -138,7 +138,9 @@ class CallSite:
                 values.append(arg)
         return values
 
-    def infer_argument(self, funcnode: InferenceResult, name: str, context: InferenceContext):  # noqa: C901
+    def infer_argument(
+        self, funcnode: InferenceResult, name: str, context: InferenceContext
+    ):  # noqa: C901
         """Infer a function argument value according to the call context."""
         # pylint: disable = too-many-branches
 
@@ -187,7 +189,11 @@ class CallSite:
             argindex = funcnode.args.find_argname(name)[0]
 
         kwonlyargs = {arg.name for arg in funcnode.args.kwonlyargs}
-        kwargs = {key: value for key, value in self.keyword_arguments.items() if key not in kwonlyargs}
+        kwargs = {
+            key: value
+            for key, value in self.keyword_arguments.items()
+            if key not in kwonlyargs
+        }
         # If there are too few positionals compared to
         # what the function expects to receive, check to see
         # if the missing positional arguments were passed
@@ -260,7 +266,9 @@ class CallSite:
                 end_lineno=funcnode.args.end_lineno,
                 end_col_offset=funcnode.args.end_col_offset,
             )
-            kwarg.postinit([(nodes.const_factory(key), value) for key, value in kwargs.items()])
+            kwarg.postinit(
+                [(nodes.const_factory(key), value) for key, value in kwargs.items()]
+            )
             return iter((kwarg,))
         if funcnode.args.vararg == name:
             # It wants all the args that were passed into

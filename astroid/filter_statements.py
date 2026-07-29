@@ -25,8 +25,12 @@ def _get_filtered_node_statements(
     statements = [(node, node.statement()) for node in stmt_nodes]
     # Next we check if we have ExceptHandlers that are parent
     # of the underlying variable, in which case the last one survives
-    if len(statements) > 1 and all(isinstance(stmt, nodes.ExceptHandler) for _, stmt in statements):
-        statements = [(node, stmt) for node, stmt in statements if stmt.parent_of(base_node)]
+    if len(statements) > 1 and all(
+        isinstance(stmt, nodes.ExceptHandler) for _, stmt in statements
+    ):
+        statements = [
+            (node, stmt) for node, stmt in statements if stmt.parent_of(base_node)
+        ]
     return statements
 
 
@@ -221,7 +225,9 @@ def _filter_stmts(
             continue
         # Add the new assignment
         _stmts.append(node)
-        if isinstance(node, nodes.Arguments) or isinstance(node.parent, nodes.Arguments):
+        if isinstance(node, nodes.Arguments) or isinstance(
+            node.parent, nodes.Arguments
+        ):
             # Special case for _stmt_parents when node is a function parameter;
             # in this case, stmt is the enclosing FunctionDef, which is what we
             # want to add to _stmt_parents, not stmt.parent. This case occurs when

@@ -37,5 +37,9 @@ def _transform_buffered(node):
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(ClassDef, _transform_buffered, lambda node: node.name in BUFFERED)
-    manager.register_transform(ClassDef, _transform_text_io_wrapper, lambda node: node.name == TextIOWrapper)
+    manager.register_transform(
+        ClassDef, _transform_buffered, lambda node: node.name in BUFFERED
+    )
+    manager.register_transform(
+        ClassDef, _transform_text_io_wrapper, lambda node: node.name == TextIOWrapper
+    )

@@ -38,7 +38,9 @@ class Constraint(ABC):
 
     @classmethod
     @abstractmethod
-    def match(cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False) -> Self | None:
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
@@ -46,7 +48,9 @@ class Constraint(ABC):
         """
 
     @abstractmethod
-    def satisfied_by(self, inferred: InferenceResult, context: InferenceContext) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
 
 
@@ -56,7 +60,9 @@ class NoneConstraint(Constraint):
     CONST_NONE: nodes.Const = nodes.Const(None)
 
     @classmethod
-    def match(cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False) -> Self | None:
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
         """Return a new constraint for node matched from expr, if expr matches
         the constraint pattern.
 
@@ -65,13 +71,17 @@ class NoneConstraint(Constraint):
         if isinstance(expr, nodes.Compare) and len(expr.ops) == 1:
             left = expr.left
             op, right = expr.ops[0]
-            if op in {"is", "is not"} and (_matches(left, node) and _matches(right, cls.CONST_NONE)):
+            if op in {"is", "is not"} and (
+                _matches(left, node) and _matches(right, cls.CONST_NONE)
+            ):
                 negate = (op == "is" and negate) or (op == "is not" and not negate)
                 return cls(node=node, negate=negate)
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult, context: InferenceContext) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True if this constraint is satisfied by the given inferred value."""
         # Assume true if uninferable
         if inferred is util.Uninferable:
@@ -85,7 +95,9 @@ class BooleanConstraint(Constraint):
     """Represents an "x" or "not x" constraint."""
 
     @classmethod
-    def match(cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False) -> Self | None:
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
         """Return a new constraint for node if expr matches one of these patterns:
 
         - direct match (expr == node): use given negate value
@@ -96,12 +108,18 @@ class BooleanConstraint(Constraint):
         if _matches(expr, node):
             return cls(node=node, negate=negate)
 
-        if isinstance(expr, nodes.UnaryOp) and expr.op == "not" and _matches(expr.operand, node):
+        if (
+            isinstance(expr, nodes.UnaryOp)
+            and expr.op == "not"
+            and _matches(expr.operand, node)
+        ):
             return cls(node=node, negate=not negate)
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult, context: InferenceContext) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True for uninferable results, or depending on negate flag:
 
         - negate=False: satisfied if boolean value is True
@@ -117,12 +135,16 @@ class BooleanConstraint(Constraint):
 class TypeConstraint(Constraint):
     """Represents an "isinstance(x, y)" constraint."""
 
-    def __init__(self, node: nodes.NodeNG, classinfo: nodes.NodeNG, negate: bool) -> None:
+    def __init__(
+        self, node: nodes.NodeNG, classinfo: nodes.NodeNG, negate: bool
+    ) -> None:
         super().__init__(node=node, negate=negate)
         self.classinfo = classinfo
 
     @classmethod
-    def match(cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False) -> Self | None:
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
         """Return a new constraint for node if expr matches the
         "isinstance(x, y)" pattern. Else, return None.
         """
@@ -138,7 +160,9 @@ class TypeConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult, context: InferenceContext) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True for uninferable results, or depending on negate flag:
 
         - negate=False: satisfied when inferred is an instance of the checked types.
@@ -173,7 +197,9 @@ class EqualityConstraint(Constraint):
         self.operand = operand
 
     @classmethod
-    def match(cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False) -> Self | None:
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
         """Return a new constraint for node if expr matches one of these patterns:
 
         - "node == operand" or "operand == node": use given negate value
@@ -193,7 +219,9 @@ class EqualityConstraint(Constraint):
 
         return None
 
-    def satisfied_by(self, inferred: InferenceResult, context: InferenceContext) -> bool:
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
         """Return True for uninferable/ambiguous results, or depending on negate flag:
 
         - negate=False: satisfied when both operands are equal.
@@ -208,7 +236,9 @@ class EqualityConstraint(Constraint):
         if operand_inferred is util.Uninferable or operand_inferred is None:
             return True
 
-        if isinstance(inferred, nodes.Const) and isinstance(operand_inferred, nodes.Const):
+        if isinstance(inferred, nodes.Const) and isinstance(
+            operand_inferred, nodes.Const
+        ):
             return self.negate ^ (inferred.value == operand_inferred.value)
 
         if inferred.callable() and operand_inferred.callable():
@@ -217,7 +247,9 @@ class EqualityConstraint(Constraint):
         return True
 
 
-def get_constraints(expr: _NameNodes, frame: nodes.LocalsDictNodeNG) -> dict[nodes.NodeNG, set[Constraint]]:
+def get_constraints(
+    expr: _NameNodes, frame: nodes.LocalsDictNodeNG
+) -> dict[nodes.NodeNG, set[Constraint]]:
     """Returns the constraints for the given expression.
 
     The returned dictionary maps the node where the constraint was generated to the
@@ -249,7 +281,9 @@ def get_constraints(expr: _NameNodes, frame: nodes.LocalsDictNodeNG) -> dict[nod
             else:
                 # Preceding conditions of the same generator guard this condition.
                 _add_ifs_constraints(expr, parent.ifs[:index], constraints_mapping)
-        elif isinstance(parent, (nodes.ListComp, nodes.SetComp, nodes.DictComp, nodes.GeneratorExp)):
+        elif isinstance(
+            parent, (nodes.ListComp, nodes.SetComp, nodes.DictComp, nodes.GeneratorExp)
+        ):
             branch, _ = parent.locate_child(current_node)
             if branch == "generators":
                 # Conditions guard the iterables of all later generators.
@@ -299,7 +333,9 @@ def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
     return False
 
 
-def _match_constraint(node: _NameNodes, expr: nodes.NodeNG, invert: bool = False) -> Iterator[Constraint]:
+def _match_constraint(
+    node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
+) -> Iterator[Constraint]:
     """Yields all constraint patterns for node that match."""
     for constraint_cls in ALL_CONSTRAINT_CLASSES:
         constraint = constraint_cls.match(node, expr, invert)

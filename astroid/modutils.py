@@ -119,7 +119,9 @@ def _path_from_filename(filename: str, is_jython: bool = IS_JYTHON) -> str:
     return filename
 
 
-def _handle_blacklist(blacklist: Sequence[str], dirnames: list[str], filenames: list[str]) -> None:
+def _handle_blacklist(
+    blacklist: Sequence[str], dirnames: list[str], filenames: list[str]
+) -> None:
     """Remove files/directories in the black list.
 
     dirnames/filenames are usually from os.walk
@@ -177,9 +179,13 @@ def load_module_from_name(dotted_name: str) -> types.ModuleType:
 
         logger = logging.getLogger(__name__)
         if stderr_value:
-            logger.error("Captured stderr while importing %s:\n%s", dotted_name, stderr_value)
+            logger.error(
+                "Captured stderr while importing %s:\n%s", dotted_name, stderr_value
+            )
         if stdout_value:
-            logger.info("Captured stdout while importing %s:\n%s", dotted_name, stdout_value)
+            logger.info(
+                "Captured stdout while importing %s:\n%s", dotted_name, stdout_value
+            )
 
     return module
 
@@ -279,7 +285,9 @@ def modpath_from_file_with_callback(
     paths_to_check = sys.path.copy()
     if path:
         paths_to_check = path + paths_to_check
-    for pathname in itertools.chain(paths_to_check, map(_cache_normalize_path, paths_to_check)):
+    for pathname in itertools.chain(
+        paths_to_check, map(_cache_normalize_path, paths_to_check)
+    ):
         if not pathname:
             continue
         modpath = _get_relative_base_path(filename, pathname)
@@ -289,7 +297,11 @@ def modpath_from_file_with_callback(
         if is_package_cb(pathname, modpath[:-1]):
             return modpath
 
-    raise ImportError("Unable to find module for {} in {}".format(filename, ", \n".join(paths_to_check)))
+    raise ImportError(
+        "Unable to find module for {} in {}".format(
+            filename, ", \n".join(paths_to_check)
+        )
+    )
 
 
 def modpath_from_file(filename: str, path: list[str] | None = None) -> list[str]:
@@ -409,17 +421,23 @@ def get_module_part(dotted_name: str, context_file: str | None = None) -> str:
     path: list[str] | None = None
     starti = 0
     if parts[0] == "":
-        assert context_file is not None, "explicit relative import, but no context_file?"
+        assert (
+            context_file is not None
+        ), "explicit relative import, but no context_file?"
         path = []  # prevent resolving the import non-relatively
         starti = 1
     # for all further dots: change context
     while starti < len(parts) and parts[starti] == "":
         starti += 1
-        assert context_file is not None, "explicit relative import, but no context_file?"
+        assert (
+            context_file is not None
+        ), "explicit relative import, but no context_file?"
         context_file = os.path.dirname(context_file)
     for i in range(starti, len(parts)):
         try:
-            file_from_modpath(parts[starti : i + 1], path=path, context_file=context_file)
+            file_from_modpath(
+                parts[starti : i + 1], path=path, context_file=context_file
+            )
         except ImportError:
             if i < max(1, len(parts) - 2):
                 raise
@@ -427,7 +445,9 @@ def get_module_part(dotted_name: str, context_file: str | None = None) -> str:
     return dotted_name
 
 
-def get_module_files(src_directory: str, blacklist: Sequence[str], list_all: bool = False) -> list[str]:
+def get_module_files(
+    src_directory: str, blacklist: Sequence[str], list_all: bool = False
+) -> list[str]:
     """Given a package directory return a list of all available python
     module's files in the package and its subpackages.
 
@@ -460,7 +480,9 @@ def get_module_files(src_directory: str, blacklist: Sequence[str], list_all: boo
     return files
 
 
-def get_source_file(filename: str, include_no_ext: bool = False, prefer_stubs: bool = False) -> str:
+def get_source_file(
+    filename: str, include_no_ext: bool = False, prefer_stubs: bool = False
+) -> str:
     """Given a python module's file name return the matching source file
     name (the filename will be returned identically if it's already an
     absolute path to a python source file).
@@ -543,7 +565,11 @@ def is_relative(modname: str, from_file: str) -> bool:
         from_file = os.path.dirname(from_file)
     if from_file in sys.path:
         return False
-    return bool(importlib.machinery.PathFinder.find_spec(modname.split(".", maxsplit=1)[0], [from_file]))
+    return bool(
+        importlib.machinery.PathFinder.find_spec(
+            modname.split(".", maxsplit=1)[0], [from_file]
+        )
+    )
 
 
 @lru_cache(maxsize=1024)
@@ -581,7 +607,9 @@ def _spec_from_modpath(
         try:
             assert found_spec.location is not None
             location = get_source_file(found_spec.location)
-            return found_spec._replace(location=location, type=spec.ModuleType.PY_SOURCE)
+            return found_spec._replace(
+                location=location, type=spec.ModuleType.PY_SOURCE
+            )
         except NoSourceFile:
             return found_spec._replace(location=location)
     elif found_spec.type == spec.ModuleType.C_BUILTIN:
@@ -622,7 +650,9 @@ def is_directory(specobj: spec.ModuleSpec) -> bool:
     return specobj.type == spec.ModuleType.PKG_DIRECTORY
 
 
-def is_module_name_part_of_extension_package_whitelist(module_name: str, package_whitelist: set[str]) -> bool:
+def is_module_name_part_of_extension_package_whitelist(
+    module_name: str, package_whitelist: set[str]
+) -> bool:
     """
     Returns True if one part of the module name is in the package whitelist.
 
@@ -630,4 +660,6 @@ def is_module_name_part_of_extension_package_whitelist(module_name: str, package
     True
     """
     parts = module_name.split(".")
-    return any(".".join(parts[:x]) in package_whitelist for x in range(1, len(parts) + 1))
+    return any(
+        ".".join(parts[:x]) in package_whitelist for x in range(1, len(parts) + 1)
+    )

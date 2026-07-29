@@ -230,7 +230,9 @@ class MultiLineBlockNode(NodeNG):
     @cached_property
     def _assign_nodes_in_scope(self) -> list[nodes.Assign]:
         children_assign_nodes = (
-            child_node._assign_nodes_in_scope for block in self._multi_line_blocks for child_node in block
+            child_node._assign_nodes_in_scope
+            for block in self._multi_line_blocks
+            for child_node in block
         )
         return list(itertools.chain.from_iterable(children_assign_nodes))
 
@@ -344,8 +346,12 @@ BIN_OP_METHOD = {
     "@": "__matmul__",
 }
 
-REFLECTED_BIN_OP_METHOD = {key: _reflected_name(value) for (key, value) in BIN_OP_METHOD.items()}
-AUGMENTED_OP_METHOD = {key + "=": _augmented_name(value) for (key, value) in BIN_OP_METHOD.items()}
+REFLECTED_BIN_OP_METHOD = {
+    key: _reflected_name(value) for (key, value) in BIN_OP_METHOD.items()
+}
+AUGMENTED_OP_METHOD = {
+    key + "=": _augmented_name(value) for (key, value) in BIN_OP_METHOD.items()
+}
 
 
 class OperatorNode(NodeNG):
@@ -424,8 +430,16 @@ class OperatorNode(NodeNG):
         method = methods[0]
         context.callcontext.callee = method
 
-        if isinstance(instance, nodes.Const) and isinstance(instance.value, str) and op == "%":
-            return iter(OperatorNode._infer_old_style_string_formatting(instance, other, context))
+        if (
+            isinstance(instance, nodes.Const)
+            and isinstance(instance.value, str)
+            and op == "%"
+        ):
+            return iter(
+                OperatorNode._infer_old_style_string_formatting(
+                    instance, other, context
+                )
+            )
 
         try:
             inferred = next(method.infer(context=context))
@@ -559,14 +573,18 @@ class OperatorNode(NodeNG):
         elif helpers.is_supertype(left_type, right_type):
             methods = [
                 OperatorNode._aug_op(left, aug_opnode, aug_op, right, context),
-                OperatorNode._bin_op(right, aug_opnode, bin_op, left, reverse_context, reverse=True),
+                OperatorNode._bin_op(
+                    right, aug_opnode, bin_op, left, reverse_context, reverse=True
+                ),
                 OperatorNode._bin_op(left, aug_opnode, bin_op, right, context),
             ]
         else:
             methods = [
                 OperatorNode._aug_op(left, aug_opnode, aug_op, right, context),
                 OperatorNode._bin_op(left, aug_opnode, bin_op, right, context),
-                OperatorNode._bin_op(right, aug_opnode, bin_op, left, reverse_context, reverse=True),
+                OperatorNode._bin_op(
+                    right, aug_opnode, bin_op, left, reverse_context, reverse=True
+                ),
             ]
         return methods
 
@@ -603,13 +621,17 @@ class OperatorNode(NodeNG):
             methods = [OperatorNode._bin_op(left, binary_opnode, op, right, context)]
         elif helpers.is_supertype(left_type, right_type):
             methods = [
-                OperatorNode._bin_op(right, binary_opnode, op, left, reverse_context, reverse=True),
+                OperatorNode._bin_op(
+                    right, binary_opnode, op, left, reverse_context, reverse=True
+                ),
                 OperatorNode._bin_op(left, binary_opnode, op, right, context),
             ]
         else:
             methods = [
                 OperatorNode._bin_op(left, binary_opnode, op, right, context),
-                OperatorNode._bin_op(right, binary_opnode, op, left, reverse_context, reverse=True),
+                OperatorNode._bin_op(
+                    right, binary_opnode, op, left, reverse_context, reverse=True
+                ),
             ]
 
         # pylint: disable = too-many-boolean-expressions
@@ -642,10 +664,14 @@ class OperatorNode(NodeNG):
         """
         from astroid import helpers  # pylint: disable=import-outside-toplevel
 
-        context, reverse_context = OperatorNode._get_binop_contexts(context, left, right)
+        context, reverse_context = OperatorNode._get_binop_contexts(
+            context, left, right
+        )
         left_type = helpers.object_type(left)
         right_type = helpers.object_type(right)
-        methods = flow_factory(left, left_type, binary_opnode, right, right_type, context, reverse_context)
+        methods = flow_factory(
+            left, left_type, binary_opnode, right, right_type, context, reverse_context
+        )
         for method in methods:
             try:
                 results = list(method())
@@ -663,7 +689,9 @@ class OperatorNode(NodeNG):
 
                 if all(map(OperatorNode._is_not_implemented, results)):
                     continue
-                not_implemented = sum(1 for result in results if OperatorNode._is_not_implemented(result))
+                not_implemented = sum(
+                    1 for result in results if OperatorNode._is_not_implemented(result)
+                )
                 if not_implemented and not_implemented != len(results):
                     # Can't infer yet what this is.
                     yield util.Uninferable

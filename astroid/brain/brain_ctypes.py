@@ -57,16 +57,14 @@ def enrich_ctypes_redefined_types() -> nodes.Module:
         ("c_wchar", "str", "u"),
     )
 
-    src = [
-        """
+    src = ["""
 from _ctypes import _SimpleCData
 
 class c_bool(_SimpleCData):
     def __init__(self, value):
         self.value = True
         self._type_ = '?'
-    """
-    ]
+    """]
 
     for c_type, builtin_type, type_code in c_class_to_type:
         src.append(f"""

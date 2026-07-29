@@ -125,7 +125,11 @@ def const_infer_binary_op(
             sequence, count = self.value, other.value
             if isinstance(sequence, int) and isinstance(count, (str, bytes)):
                 sequence, count = count, sequence
-            if isinstance(sequence, (str, bytes)) and isinstance(count, int) and len(sequence) * count > 1e8:
+            if (
+                isinstance(sequence, (str, bytes))
+                and isinstance(count, int)
+                and len(sequence) * count > 1e8
+            ):
                 yield util.Uninferable
                 return
         # Left-shifting by a large amount builds an enormous int, the integer
@@ -300,7 +304,9 @@ def _resolve_looppart(parts, assign_path, context):
                 # we are not yet on the last part of the path
                 # search on each possibly inferred value
                 try:
-                    yield from _resolve_looppart(assigned.infer(context), assign_path, context)
+                    yield from _resolve_looppart(
+                        assigned.infer(context), assign_path, context
+                    )
                 except InferenceError:
                     break
 
@@ -353,7 +359,9 @@ def sequence_assigned_stmts(
         ) from exc
 
     assign_path.insert(0, index)
-    return self.parent.assigned_stmts(node=self, context=context, assign_path=assign_path)
+    return self.parent.assigned_stmts(
+        node=self, context=context, assign_path=assign_path
+    )
 
 
 def assend_assigned_stmts(
@@ -379,12 +387,20 @@ def _arguments_infer_argname(
     args = [arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]]
     functype = self.parent.type
     # first argument of instance/class method
-    if args and getattr(self.arguments[0], "name", None) == name and functype != "staticmethod":
+    if (
+        args
+        and getattr(self.arguments[0], "name", None) == name
+        and functype != "staticmethod"
+    ):
         cls = self.parent.parent.scope()
         is_metaclass = isinstance(cls, nodes.ClassDef) and cls.type == "metaclass"
         # If this is a metaclass, then the first argument will always
         # be the class, not an instance.
-        if context and context.boundnode and isinstance(context.boundnode, bases.Instance):
+        if (
+            context
+            and context.boundnode
+            and isinstance(context.boundnode, bases.Instance)
+        ):
             cls = context.boundnode._proxied
         if is_metaclass or functype == "classmethod":
             yield cls
@@ -466,7 +482,9 @@ def assign_assigned_stmts(
     if not assign_path:
         yield self.value
         return None
-    yield from _resolve_assignment_parts(self.value.infer(context), assign_path, context)
+    yield from _resolve_assignment_parts(
+        self.value.infer(context), assign_path, context
+    )
 
     return {
         "node": self,
@@ -522,7 +540,9 @@ def _resolve_assignment_parts(parts, assign_path, context):
             # we are not yet on the last part of the path search on each
             # possibly inferred value
             try:
-                yield from _resolve_assignment_parts(assigned.infer(context), assign_path, context)
+                yield from _resolve_assignment_parts(
+                    assigned.infer(context), assign_path, context
+                )
             except InferenceError:
                 return
 
@@ -547,16 +567,14 @@ def excepthandler_assigned_stmts(
         # except * handler has assigned ExceptionGroup with caught
         # exceptions under exceptions attribute
         # pylint: disable-next=stop-iteration-return
-        eg = next(
-            node_classes.unpack_infer(
-                extract_node("""
+        eg = next(node_classes.unpack_infer(extract_node("""
 from builtins import ExceptionGroup
 ExceptionGroup
-""")
-            )
-        )
+""")))
         assigned = objects.ExceptionInstance(eg)
-        assigned.instance_attrs["exceptions"] = [nodes.Tuple.from_elements(_generate_assigned())]
+        assigned.instance_attrs["exceptions"] = [
+            nodes.Tuple.from_elements(_generate_assigned())
+        ]
         yield assigned
     else:
         yield from _generate_assigned()
@@ -577,7 +595,9 @@ def _infer_context_manager(self, mgr, context):
         # Check if it is decorated with contextlib.contextmanager.
         func = inferred.parent
         if not func.decorators:
-            raise InferenceError("No decorators found on inferred generator %s", node=func)
+            raise InferenceError(
+                "No decorators found on inferred generator %s", node=func
+            )
 
         for decorator_node in func.decorators.nodes:
             decorator = next(decorator_node.infer(context=context), None)
@@ -816,7 +836,9 @@ def starred_assigned_stmts(  # noqa: C901
         except (InferenceError, StopIteration):
             yield util.Uninferable
             return
-        if isinstance(inferred_iterable, util.UninferableBase) or not hasattr(inferred_iterable, "itered"):
+        if isinstance(inferred_iterable, util.UninferableBase) or not hasattr(
+            inferred_iterable, "itered"
+        ):
             yield util.Uninferable
             return
         try:
@@ -836,7 +858,9 @@ def starred_assigned_stmts(  # noqa: C901
         lookups: list[tuple[int, int]] = []
         _determine_starred_iteration_lookups(self, target, lookups)
         if not lookups:
-            raise InferenceError("Could not make sense of this, needs at least a lookup", context=context)
+            raise InferenceError(
+                "Could not make sense of this, needs at least a lookup", context=context
+            )
 
         # Make the last lookup a slice, since that what we want for a Starred node
         last_element_index, last_element_length = lookups[-1]
@@ -846,7 +870,11 @@ def starred_assigned_stmts(  # noqa: C901
         # iterable, whose length is unrelated to the target's.
         lookup_slice = slice(
             last_element_index,
-            (None if is_starred_last else -(last_element_length - last_element_index - 1)),
+            (
+                None
+                if is_starred_last
+                else -(last_element_length - last_element_index - 1)
+            ),
         )
         last_lookup = lookup_slice
 

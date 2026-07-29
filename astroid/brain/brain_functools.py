@@ -77,7 +77,9 @@ def _functools_partial_inference(
     if number_of_positional < 1:
         raise UseInferenceDefault("functools.partial takes at least one argument")
     if number_of_positional == 1 and not call.keyword_arguments:
-        raise UseInferenceDefault("functools.partial needs at least to have some filled arguments")
+        raise UseInferenceDefault(
+            "functools.partial needs at least to have some filled arguments"
+        )
 
     partial_function = call.positional_arguments[0]
     try:
@@ -99,7 +101,11 @@ def _functools_partial_inference(
             inferred_wrapped_function.args.posonlyargs or (),
             inferred_wrapped_function.args.kwonlyargs or (),
         )
-    parameter_names = {param.name for param in function_parameters if isinstance(param, nodes.AssignName)}
+    parameter_names = {
+        param.name
+        for param in function_parameters
+        if isinstance(param, nodes.AssignName)
+    }
     if set(call.keyword_arguments) - parameter_names:
         raise UseInferenceDefault("wrapped function received unknown parameters")
 
@@ -136,7 +142,9 @@ def _looks_like_lru_cache(node) -> bool:
     return False
 
 
-def _looks_like_functools_member(node: nodes.Attribute | nodes.Call, member: str) -> bool:
+def _looks_like_functools_member(
+    node: nodes.Attribute | nodes.Call, member: str
+) -> bool:
     """Check if the given Call node is the wanted member of functools."""
     if isinstance(node, nodes.Attribute):
         return node.attrname == member
@@ -155,7 +163,9 @@ _looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(nodes.FunctionDef, _transform_lru_cache, _looks_like_lru_cache)
+    manager.register_transform(
+        nodes.FunctionDef, _transform_lru_cache, _looks_like_lru_cache
+    )
 
     manager.register_transform(
         nodes.Call,

@@ -78,7 +78,9 @@ def _object_type(
             raise AssertionError(f"We don't handle {type(inferred)} currently")
 
 
-def object_type(node: InferenceResult, context: InferenceContext | None = None) -> InferenceResult | None:
+def object_type(
+    node: InferenceResult, context: InferenceContext | None = None
+) -> InferenceResult | None:
     """Obtain the type of the given node.
 
     This is used to implement the ``type`` builtin, which means that it's
@@ -102,11 +104,16 @@ def _object_type_is_subclass(
     class_or_seq: list[InferenceResult],
     context: InferenceContext | None = None,
 ) -> util.UninferableBase | bool:
-    if isinstance(obj_type, util.UninferableBase) or not isinstance(obj_type, nodes.ClassDef):
+    if isinstance(obj_type, util.UninferableBase) or not isinstance(
+        obj_type, nodes.ClassDef
+    ):
         return util.Uninferable
 
     # Instances are not types
-    class_seq = [item if not isinstance(item, bases.Instance) else util.Uninferable for item in class_or_seq]
+    class_seq = [
+        item if not isinstance(item, bases.Instance) else util.Uninferable
+        for item in class_or_seq
+    ]
     # strict compatibility with issubclass
     # issubclass(type, (object, 1)) evaluates to true
     # issubclass(object, (1, type)) raises TypeError
@@ -168,7 +175,9 @@ def class_or_tuple_to_container(
     # for isinstance
     if isinstance(node_infer, nodes.Tuple):
         try:
-            class_container = [next(node.infer(context=context)) for node in node_infer.elts]
+            class_container = [
+                next(node.infer(context=context)) for node in node_infer.elts
+            ]
         except StopIteration as e:  # pragma: no cover
             raise InferenceError(node=node, context=context) from e
     else:
@@ -275,7 +284,9 @@ def object_len(node, context: InferenceContext | None = None):
 
     if inferred_node is None or isinstance(inferred_node, util.UninferableBase):
         raise InferenceError(node=node)
-    if isinstance(inferred_node, nodes.Const) and isinstance(inferred_node.value, (bytes, str)):
+    if isinstance(inferred_node, nodes.Const) and isinstance(
+        inferred_node.value, (bytes, str)
+    ):
         return len(inferred_node.value)
     if isinstance(inferred_node, (nodes.List, nodes.Set, nodes.Tuple, FrozenSet)):
         return len(inferred_node.elts)
@@ -291,20 +302,28 @@ def object_len(node, context: InferenceContext | None = None):
     except StopIteration as e:
         raise AstroidTypeError(str(e)) from e
     except AttributeInferenceError as e:
-        raise AstroidTypeError(f"object of type '{node_type.pytype()}' has no len()") from e
+        raise AstroidTypeError(
+            f"object of type '{node_type.pytype()}' has no len()"
+        ) from e
 
     inferred = len_call.infer_call_result(node, context)
     if isinstance(inferred, util.UninferableBase):
         raise InferenceError(node=node, context=context)
     result_of_len = next(inferred, None)
-    if isinstance(result_of_len, nodes.Const) and result_of_len.pytype() == "builtins.int":
+    if (
+        isinstance(result_of_len, nodes.Const)
+        and result_of_len.pytype() == "builtins.int"
+    ):
         return result_of_len.value
     if result_of_len is None or (
-        isinstance(result_of_len, bases.Instance) and result_of_len.is_subtype_of("builtins.int")
+        isinstance(result_of_len, bases.Instance)
+        and result_of_len.is_subtype_of("builtins.int")
     ):
         # Fake a result as we don't know the arguments of the instance call.
         return 0
-    raise AstroidTypeError(f"'{result_of_len}' object cannot be interpreted as an integer")
+    raise AstroidTypeError(
+        f"'{result_of_len}' object cannot be interpreted as an integer"
+    )
 
 
 def _higher_function_scope(node: nodes.NodeNG) -> nodes.FunctionDef | None:

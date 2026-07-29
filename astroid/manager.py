@@ -72,7 +72,9 @@ class AstroidManager:
         self.astroid_cache = AstroidManager.brain["astroid_cache"]
         self._mod_file_cache = AstroidManager.brain["_mod_file_cache"]
         self._failed_import_hooks = AstroidManager.brain["_failed_import_hooks"]
-        self.extension_package_whitelist = AstroidManager.brain["extension_package_whitelist"]
+        self.extension_package_whitelist = AstroidManager.brain[
+            "extension_package_whitelist"
+        ]
         self.module_denylist = AstroidManager.brain["module_denylist"]
         self._transform = AstroidManager.brain["_transform"]
         self.prefer_stubs = AstroidManager.brain["prefer_stubs"]
@@ -139,17 +141,25 @@ class AstroidManager:
                 modname = ".".join(modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
-        if modname in self.astroid_cache and self.astroid_cache[modname].file == filepath:
+        if (
+            modname in self.astroid_cache
+            and self.astroid_cache[modname].file == filepath
+        ):
             return self.astroid_cache[modname]
         # Call get_source_file() only after a cache miss,
         # since it calls os.path.exists().
         try:
-            filepath = get_source_file(filepath, include_no_ext=True, prefer_stubs=self.prefer_stubs)
+            filepath = get_source_file(
+                filepath, include_no_ext=True, prefer_stubs=self.prefer_stubs
+            )
             source = True
         except NoSourceFile:
             pass
         # Second attempt on the cache after get_source_file().
-        if modname in self.astroid_cache and self.astroid_cache[modname].file == filepath:
+        if (
+            modname in self.astroid_cache
+            and self.astroid_cache[modname].file == filepath
+        ):
             return self.astroid_cache[modname]
         if source:
             return AstroidBuilder(self).file_build(filepath, modname)
@@ -157,7 +167,9 @@ class AstroidManager:
             return self.ast_from_module_name(modname)
         raise AstroidBuildingError("Unable to build an AST for {path}.", path=filepath)
 
-    def ast_from_string(self, data: str, modname: str = "", filepath: str | None = None) -> nodes.Module:
+    def ast_from_string(
+        self, data: str, modname: str = "", filepath: str | None = None
+    ) -> nodes.Module:
         """Given some source code as a string, return its corresponding astroid
         object.
         """
@@ -166,7 +178,9 @@ class AstroidManager:
     def _build_stub_module(self, modname: str) -> nodes.Module:
         return AstroidBuilder(self).string_build("", modname)
 
-    def _build_namespace_module(self, modname: str, path: Sequence[str]) -> nodes.Module:
+    def _build_namespace_module(
+        self, modname: str, path: Sequence[str]
+    ) -> nodes.Module:
         return build_namespace_package_module(modname, path)
 
     def _can_load_extension(self, modname: str) -> bool:
@@ -174,7 +188,9 @@ class AstroidManager:
             return True
         if is_stdlib_module(modname):
             return True
-        return is_module_name_part_of_extension_package_whitelist(modname, self.extension_package_whitelist)
+        return is_module_name_part_of_extension_package_whitelist(
+            modname, self.extension_package_whitelist
+        )
 
     def ast_from_module_name(  # noqa: C901
         self,
@@ -209,7 +225,10 @@ class AstroidManager:
                 spec.ModuleType.C_BUILTIN,
                 spec.ModuleType.C_EXTENSION,
             ):
-                if found_spec.type == spec.ModuleType.C_EXTENSION and not self._can_load_extension(modname):
+                if (
+                    found_spec.type == spec.ModuleType.C_EXTENSION
+                    and not self._can_load_extension(modname)
+                ):
                     return self._build_stub_module(modname)
                 try:
                     named_module = load_module_from_name(modname)
@@ -229,7 +248,9 @@ class AstroidManager:
                 )
 
             elif found_spec.type == spec.ModuleType.PY_NAMESPACE:
-                return self._build_namespace_module(modname, found_spec.submodule_search_locations or [])
+                return self._build_namespace_module(
+                    modname, found_spec.submodule_search_locations or []
+                )
             elif found_spec.type == spec.ModuleType.PY_FROZEN:
                 if found_spec.location is None:
                     return self._build_stub_module(modname)
@@ -238,7 +259,9 @@ class AstroidManager:
                 return self.ast_from_file(found_spec.location, modname, fallback=False)
 
             if found_spec.location is None:
-                raise AstroidImportError("Can't find a file for module {modname}.", modname=modname)
+                raise AstroidImportError(
+                    "Can't find a file for module {modname}.", modname=modname
+                )
 
             return self.ast_from_file(found_spec.location, modname, fallback=False)
         except AstroidBuildingError as e:
@@ -267,18 +290,24 @@ class AstroidManager:
                 zmodname = resource.replace(os.path.sep, ".")
                 if importer.is_package(resource):
                     zmodname = zmodname + ".__init__"
-                module = builder.string_build(importer.get_source(resource), zmodname, filepath)
+                module = builder.string_build(
+                    importer.get_source(resource), zmodname, filepath
+                )
                 return module
             except Exception:  # pylint: disable=broad-except
                 continue
         return None
 
-    def file_from_module_name(self, modname: str, contextfile: str | None) -> spec.ModuleSpec:
+    def file_from_module_name(
+        self, modname: str, contextfile: str | None
+    ) -> spec.ModuleSpec:
         try:
             value = self._mod_file_cache[(modname, contextfile)]
         except KeyError:
             try:
-                value = file_info_from_modpath(modname.split("."), context_file=contextfile)
+                value = file_info_from_modpath(
+                    modname.split("."), context_file=contextfile
+                )
             except ImportError as e:
                 value = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
@@ -292,7 +321,9 @@ class AstroidManager:
             raise value.with_traceback(None)  # pylint: disable=no-member
         return value
 
-    def ast_from_module(self, module: types.ModuleType, modname: str | None = None) -> nodes.Module:
+    def ast_from_module(
+        self, module: types.ModuleType, modname: str | None = None
+    ) -> nodes.Module:
         """Given an imported module, return the astroid object."""
         modname = modname or module.__name__
         if modname in self.astroid_cache:

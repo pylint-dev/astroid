@@ -15,7 +15,9 @@ from astroid.typing import InferenceResult, SuccessfulInferenceResult
 if TYPE_CHECKING:
     from astroid import constraint, nodes
 
-_InferenceCache = dict[tuple["nodes.NodeNG", str | None, str | None, str | None], Sequence["nodes.NodeNG"]]
+_InferenceCache = dict[
+    tuple["nodes.NodeNG", str | None, str | None, str | None], Sequence["nodes.NodeNG"]
+]
 
 _INFERENCE_CACHE: _InferenceCache = {}
 

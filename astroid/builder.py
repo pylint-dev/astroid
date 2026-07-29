@@ -40,7 +40,9 @@ _STATEMENT_SELECTOR = "#@"
 if PY312_PLUS:
     warnings.filterwarnings("ignore", ".*invalid escape sequence", SyntaxWarning)
 if PY314_PLUS:
-    warnings.filterwarnings("ignore", "'(return|continue|break)' in a 'finally'", SyntaxWarning)
+    warnings.filterwarnings(
+        "ignore", "'(return|continue|break)' in a 'finally'", SyntaxWarning
+    )
 
 
 def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
@@ -78,7 +80,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
         if not raw_building.InspectBuilder.bootstrapped:
             manager.bootstrap()
 
-    def module_build(self, module: types.ModuleType, modname: str | None = None) -> nodes.Module:
+    def module_build(
+        self, module: types.ModuleType, modname: str | None = None
+    ) -> nodes.Module:
         """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, "__file__", None)
@@ -142,7 +146,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
             module, builder = self._data_build(data, modname, path)
             return self._post_build(module, builder, encoding)
 
-    def string_build(self, data: str, modname: str = "", path: str | None = None) -> nodes.Module:
+    def string_build(
+        self, data: str, modname: str = "", path: str | None = None
+    ) -> nodes.Module:
         """Build astroid from source code string."""
         module, builder = self._data_build(data, modname, path)
         module.file_bytes = data.encode("utf-8")
@@ -192,12 +198,17 @@ class AstroidBuilder(raw_building.InspectBuilder):
             modname = modname[:-9]
             package = True
         else:
-            package = path is not None and os.path.splitext(os.path.basename(path))[0] == "__init__"
+            package = (
+                path is not None
+                and os.path.splitext(os.path.basename(path))[0] == "__init__"
+            )
         builder = rebuilder.TreeRebuilder(self._manager, data)
         module = builder.visit_module(node, modname, node_file, package)
         return module, builder
 
-    def add_from_names_to_locals(self, node: nodes.ImportFrom, global_name: Collection[str]) -> None:
+    def add_from_names_to_locals(
+        self, node: nodes.ImportFrom, global_name: Collection[str]
+    ) -> None:
         """Store imported names to the locals.
 
         Resort the locals if coming from a delayed node
@@ -468,9 +479,13 @@ def _extract_single_node(code: str, module_name: str = "") -> nodes.NodeNG:
     return ret
 
 
-def _parse_string(data: str, type_comments: bool = True, modname: str | None = None) -> ast.Module:
+def _parse_string(
+    data: str, type_comments: bool = True, modname: str | None = None
+) -> ast.Module:
     try:
-        parsed = ast.parse(data + "\n", filename=modname or "<unknown>", type_comments=type_comments)
+        parsed = ast.parse(
+            data + "\n", filename=modname or "<unknown>", type_comments=type_comments
+        )
     except SyntaxError as exc:
         # If the type annotations are misplaced for some reason, we do not want
         # to fail the entire parsing of the file, so we need to retry the

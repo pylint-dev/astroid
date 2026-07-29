@@ -45,4 +45,6 @@ def _looks_like_namespace(node) -> bool:
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(nodes.Call, inference_tip(infer_namespace), _looks_like_namespace)
+    manager.register_transform(
+        nodes.Call, inference_tip(infer_namespace), _looks_like_namespace
+    )

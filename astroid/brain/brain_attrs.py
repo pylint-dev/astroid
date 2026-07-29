@@ -81,10 +81,16 @@ def attr_attributes_transform(node: nodes.ClassDef) -> None:
             continue
 
         # Skip attributes that are explicitly annotated as class variables
-        if isinstance(cdef_body_node, nodes.AnnAssign) and is_class_var(cdef_body_node.annotation):
+        if isinstance(cdef_body_node, nodes.AnnAssign) and is_class_var(
+            cdef_body_node.annotation
+        ):
             continue
 
-        targets = cdef_body_node.targets if hasattr(cdef_body_node, "targets") else [cdef_body_node.target]
+        targets = (
+            cdef_body_node.targets
+            if hasattr(cdef_body_node, "targets")
+            else [cdef_body_node.target]
+        )
         for target in targets:
             rhs_node = nodes.Unknown(
                 lineno=cdef_body_node.lineno,
@@ -100,4 +106,6 @@ def attr_attributes_transform(node: nodes.ClassDef) -> None:
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(nodes.ClassDef, attr_attributes_transform, is_decorated_with_attrs)
+    manager.register_transform(
+        nodes.ClassDef, attr_attributes_transform, is_decorated_with_attrs
+    )

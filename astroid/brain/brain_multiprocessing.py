@@ -98,5 +98,7 @@ def _multiprocessing_managers_transform():
 
 
 def register(manager: AstroidManager) -> None:
-    register_module_extender(manager, "multiprocessing.managers", _multiprocessing_managers_transform)
+    register_module_extender(
+        manager, "multiprocessing.managers", _multiprocessing_managers_transform
+    )
     register_module_extender(manager, "multiprocessing", _multiprocessing_transform)

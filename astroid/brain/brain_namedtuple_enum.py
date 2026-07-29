@@ -61,7 +61,9 @@ def _find_func_form_arguments(node, context):
 
     args = node.args
     keywords = node.keywords
-    found_keywords = {keyword.arg: keyword.value for keyword in keywords} if keywords else {}
+    found_keywords = (
+        {keyword.arg: keyword.value for keyword in keywords} if keywords else {}
+    )
 
     name = _extract_namedtuple_arg_or_keyword(position=0, key_name="typename")
     names = _extract_namedtuple_arg_or_keyword(position=1, key_name="field_names")
@@ -96,7 +98,9 @@ def infer_func_form(
                 fields = _get_namedtuple_fields(node)
                 if fields:
                     fields_node = extract_node(fields)
-                    attributes = [_infer_first(const, context).value for const in fields_node.elts]
+                    attributes = [
+                        _infer_first(const, context).value for const in fields_node.elts
+                    ]
 
             # Handle attributes of Enums
             else:
@@ -119,7 +123,9 @@ def infer_func_form(
                             if isinstance(const, nodes.Tuple)
                         ]
                     else:
-                        attributes = [_infer_first(const, context).value for const in names.elts]
+                        attributes = [
+                            _infer_first(const, context).value for const in names.elts
+                        ]
                 else:
                     raise AttributeError from exc
                 if not attributes:
@@ -188,13 +194,19 @@ _looks_like_enum = functools.partial(_looks_like, name="Enum")
 _looks_like_typing_namedtuple = functools.partial(_looks_like, name="NamedTuple")
 
 
-def infer_named_tuple(node: nodes.Call, context: InferenceContext | None = None) -> Iterator[nodes.ClassDef]:
+def infer_named_tuple(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> Iterator[nodes.ClassDef]:
     """Specific inference function for namedtuple Call node."""
     tuple_base: nodes.Name = _extract_single_node("tuple")
-    class_node, name, attributes = infer_func_form(node, tuple_base, parent=SYNTHETIC_ROOT, context=context)
+    class_node, name, attributes = infer_func_form(
+        node, tuple_base, parent=SYNTHETIC_ROOT, context=context
+    )
 
     call_site = arguments.CallSite.from_call(node, context=context)
-    func = util.safe_infer(_extract_single_node("import collections; collections.namedtuple"))
+    func = util.safe_infer(
+        _extract_single_node("import collections; collections.namedtuple")
+    )
     assert isinstance(func, nodes.NodeNG)
     try:
         rename_arg_bool_value = next(
@@ -213,7 +225,10 @@ def infer_named_tuple(node: nodes.Call, context: InferenceContext | None = None)
 
     replace_args = ", ".join(f"{arg}=None" for arg in attributes)
     field_def = "    {name} = property(lambda self: self[{index:d}], doc='Alias for field number {index:d}')"
-    field_defs = "\n".join(field_def.format(name=name, index=index) for index, name in enumerate(attributes))
+    field_defs = "\n".join(
+        field_def.format(name=name, index=index)
+        for index, name in enumerate(attributes)
+    )
     fake = AstroidBuilder(AstroidManager()).string_build(f"""
 class {name}(tuple):
     __slots__ = ()
@@ -266,16 +281,24 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
     # <snippet>
     for name in (typename, *attributes):
         if not isinstance(name, str):
-            raise AstroidTypeError(f"Type names and field names must be strings, not {type(name)!r}")
+            raise AstroidTypeError(
+                f"Type names and field names must be strings, not {type(name)!r}"
+            )
         if not name.isidentifier():
-            raise AstroidValueError("Type names and field names must be valid" + f"identifiers: {name!r}")
+            raise AstroidValueError(
+                "Type names and field names must be valid" + f"identifiers: {name!r}"
+            )
         if keyword.iskeyword(name):
-            raise AstroidValueError(f"Type names and field names cannot be a keyword: {name!r}")
+            raise AstroidValueError(
+                f"Type names and field names cannot be a keyword: {name!r}"
+            )
 
     seen = set()
     for name in attributes:
         if name.startswith("_") and not rename:
-            raise AstroidValueError(f"Field names cannot start with an underscore: {name!r}")
+            raise AstroidValueError(
+                f"Field names cannot start with an underscore: {name!r}"
+            )
         if name in seen:
             raise AstroidValueError(f"Encountered duplicate field name: {name!r}")
         seen.add(name)
@@ -284,7 +307,9 @@ def _check_namedtuple_attributes(typename, attributes, rename=False):
     return attributes
 
 
-def infer_enum(node: nodes.Call, context: InferenceContext | None = None) -> Iterator[bases.Instance]:
+def infer_enum(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> Iterator[bases.Instance]:
     """Specific inference function for enum Call node."""
     # Raise `UseInferenceDefault` if `node` is a call to a a user-defined Enum.
     try:
@@ -292,7 +317,10 @@ def infer_enum(node: nodes.Call, context: InferenceContext | None = None) -> Ite
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
-    if not any(isinstance(item, nodes.ClassDef) and item.qname() == ENUM_QNAME for item in inferred):
+    if not any(
+        isinstance(item, nodes.ClassDef) and item.qname() == ENUM_QNAME
+        for item in inferred
+    ):
         raise UseInferenceDefault
 
     enum_meta = _extract_single_node("""
@@ -374,7 +402,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         dunder_members = {}
         target_names = set()
         for local, values in node.locals.items():
-            if any(not isinstance(value, nodes.AssignName) for value in values) or local == "_ignore_":
+            if (
+                any(not isinstance(value, nodes.AssignName) for value in values)
+                or local == "_ignore_"
+            ):
                 continue
 
             stmt = values[0].statement()
@@ -432,9 +463,9 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                     # should result in some nice symbolic execution
                     classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
 
-                fake = AstroidBuilder(AstroidManager(), apply_transforms=False).string_build(classdef)[
-                    target.name
-                ]
+                fake = AstroidBuilder(
+                    AstroidManager(), apply_transforms=False
+                ).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
@@ -501,7 +532,9 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                     """
                     return ''
                 ''')
-            name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)["name"]
+            name_dynamicclassattr = AstroidBuilder(AstroidManager()).string_build(code)[
+                "name"
+            ]
             node.locals["name"] = [name_dynamicclassattr]
         break
     return node
@@ -511,7 +544,9 @@ def infer_typing_namedtuple_class(class_node, context: InferenceContext | None =
     """Infer a subclass of typing.NamedTuple."""
     # Check if it has the corresponding bases
     annassigns_fields = [
-        annassign.target.name for annassign in class_node.body if isinstance(annassign, nodes.AnnAssign)
+        annassign.target.name
+        for annassign in class_node.body
+        if isinstance(annassign, nodes.AnnAssign)
     ]
     code = dedent("""
     from collections import namedtuple
@@ -620,9 +655,13 @@ def _is_enum_subclass(cls: nodes.ClassDef) -> bool:
 
 
 def register(manager: AstroidManager) -> None:
-    manager.register_transform(nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple)
+    manager.register_transform(
+        nodes.Call, inference_tip(infer_named_tuple), _looks_like_namedtuple
+    )
     manager.register_transform(nodes.Call, inference_tip(infer_enum), _looks_like_enum)
-    manager.register_transform(nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass)
+    manager.register_transform(
+        nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
+    )
     manager.register_transform(
         nodes.ClassDef,
         inference_tip(infer_typing_namedtuple_class),
@@ -631,7 +670,8 @@ def register(manager: AstroidManager) -> None:
     manager.register_transform(
         nodes.FunctionDef,
         inference_tip(infer_typing_namedtuple_function),
-        lambda node: node.name == "NamedTuple" and getattr(node.root(), "name", None) == "typing",
+        lambda node: node.name == "NamedTuple"
+        and getattr(node.root(), "name", None) == "typing",
     )
     manager.register_transform(
         nodes.Call,
