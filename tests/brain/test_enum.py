@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import datetime
+import types
 import unittest
 
 import pytest
@@ -11,9 +13,23 @@ import pytest
 import astroid
 from astroid import bases, builder, nodes, objects, util
 from astroid.exceptions import InferenceError
+from astroid.manager import AstroidManager
 
 
 class EnumBrainTest(unittest.TestCase):
+    def test_enum_predicate_does_not_raise_for_extension_class(self) -> None:
+        """Classes introspected from extensions can have an unresolvable base.
+
+        Regression test for pylint-dev/pylint#11179.
+        """
+        module = types.ModuleType("extension_module")
+        module.datetime = datetime
+        extension_class = type("ExtensionClass", (datetime.datetime,), {})
+        extension_class.__module__ = module.__name__
+        module.ExtensionClass = extension_class
+
+        builder.AstroidBuilder(AstroidManager()).module_build(module, module.__name__)
+
     def test_simple_enum(self) -> None:
         module = builder.parse("""
         import enum

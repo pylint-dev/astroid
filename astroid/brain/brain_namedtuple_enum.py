@@ -16,6 +16,7 @@ from astroid import arguments, bases, nodes, util
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import (
+    AstroidError,
     AstroidTypeError,
     AstroidValueError,
     InferenceError,
@@ -654,7 +655,10 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
 
 def _is_enum_subclass(cls: nodes.ClassDef) -> bool:
     """Return whether cls is a subclass of an Enum."""
-    return cls.is_subtype_of("enum.Enum")
+    try:
+        return cls.is_subtype_of("enum.Enum")
+    except AstroidError:
+        return False
 
 
 def register(manager: AstroidManager) -> None:
