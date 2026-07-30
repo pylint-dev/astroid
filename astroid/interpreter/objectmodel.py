@@ -744,7 +744,15 @@ class ContextManagerModel(ObjectModel):
 class BoundMethodModel(FunctionModel):
     @property
     def attr___func__(self):
-        return self._instance._proxied._proxied
+        # A bound method either proxies another method proxy, as when an
+        # instance method is accessed through an instance, or the function
+        # itself, as for a classmethod accessed on its class or a lambda
+        # assigned as a class attribute. Unwrap the proxies that are there
+        # instead of assuming a fixed nesting depth.
+        proxied = self._instance._proxied
+        while isinstance(proxied, bases.UnboundMethod):
+            proxied = proxied._proxied
+        return proxied
 
     @property
     def attr___self__(self):
