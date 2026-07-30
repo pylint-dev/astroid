@@ -309,6 +309,28 @@ def test(val):
         inferred = next(node.infer())
         self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
 
+    @unittest.skipUnless(PY312_PLUS, "Uses 3.12 type param syntax")
+    def test_decorator_names_type_param(self) -> None:
+        node = extract_node("""
+        class Basket[T]:
+            @T
+            def apple(self): #@
+                pass
+        """)
+
+        self.assertEqual(node.decoratornames(), {"typing.TypeVar"})
+        self.assertIs(next(node.infer()), node)
+
+    def test_decorator_names_slice(self) -> None:
+        node = extract_node("""
+        @slice(0)
+        def f(): #@
+            pass
+        """)
+
+        self.assertEqual(node.decoratornames(), {"builtins.slice"})
+        self.assertIs(next(node.infer()), node)
+
     def test_recursive_property_method(self) -> None:
         node = extract_node("""
         class APropert():

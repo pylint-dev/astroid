@@ -3426,6 +3426,20 @@ class ParamSpec(_base_nodes.AssignTypeNode):
         self.name = name
         self.default_value = default_value
 
+    def pytype(self) -> Literal["typing.ParamSpec"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.ParamSpec"
+
+    def qname(self) -> Literal["typing.ParamSpec"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.ParamSpec"
+
     def _infer(self, context: InferenceContext | None = None) -> Iterator[ParamSpec]:
         yield self
 
@@ -4122,6 +4136,20 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.type_params = type_params
         self.value = value
 
+    def pytype(self) -> Literal["typing.TypeAliasType"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.TypeAliasType"
+
+    def qname(self) -> Literal["typing.TypeAliasType"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.TypeAliasType"
+
     def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeAlias]:
         yield self
 
@@ -4180,6 +4208,20 @@ class TypeVar(_base_nodes.AssignTypeNode):
         self.bound = bound
         self.default_value = default_value
 
+    def pytype(self) -> Literal["typing.TypeVar"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.TypeVar"
+
+    def qname(self) -> Literal["typing.TypeVar"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.TypeVar"
+
     def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeVar]:
         yield self
 
@@ -4224,6 +4266,20 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
     ) -> None:
         self.name = name
         self.default_value = default_value
+
+    def pytype(self) -> Literal["typing.TypeVarTuple"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.TypeVarTuple"
+
+    def qname(self) -> Literal["typing.TypeVarTuple"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.TypeVarTuple"
 
     def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeVarTuple]:
         yield self

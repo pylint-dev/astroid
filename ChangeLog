@@ -53,6 +53,8 @@ Release date: TBA
   materializing one ``Const`` node per character for a repeated string such as
   ``dict.fromkeys("x" * 10 ** 8)``, which is a single-key dict.
 
+* Bound str/bytes and list/tuple concatenation (``a + b``) during inference.
+
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
   ``multiprocessing`` module.
@@ -174,6 +176,13 @@ Refs #3108
 
   Closes #1115
 
+* Bypass ``__init__`` in ``InferenceContext.clone()`` and write the slots
+  directly. ``clone()`` is called ~85k times per pandas/frame.py pylint run;
+  skipping the conditional defaults shaves measurable time off the hottest
+  constructor in inference.
+
+  Refs #1115
+
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
   (e.g. ``Module``). The clone helper now filters init params to those the
@@ -242,6 +251,22 @@ Refs #3108
 
 * Fix detecting static/class methods and inspecting IntFlag types in
   GObject-based libraries (GLib, Gtk etc)
+
+  * Fix a crash when inferring ``__func__`` on a bound method that proxies its  function directly,
+    such as ``A.method.__func__`` for a classmethod, or a lambda assigned to a class attribute
+    such as ``A().lam.__func__``.
+
+  Closes pylint-dev/pylint#11198
+
+* Add ``qname()`` and ``pytype()`` to the ``TypeVar``, ``ParamSpec``,
+  ``TypeVarTuple`` and ``TypeAlias`` node classes, returning
+  ``"typing.TypeVar"``, ``"typing.ParamSpec"``, ``"typing.TypeVarTuple"``
+  and ``"typing.TypeAliasType"``. PEP 695 type parameters and type aliases
+  are inferred as themselves, so callers that ask an inferred value for its
+  type crashed with an ``AttributeError``, as ``FunctionDef.decoratornames()``
+  did for ``@T`` inside ``class Basket[T]``.
+
+  Refs #3115
 
 What's New in astroid 4.1.2?
 ============================
