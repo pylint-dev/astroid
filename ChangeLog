@@ -237,7 +237,7 @@ Refs #3108
   GObject-based libraries (GLib, Gtk etc)
 
   * Fix a crash when inferring ``__func__`` on a bound method that proxies its  function directly,
-    such as ``A.method.__func__`` for a classmethod, or a lambda assigned to a class attribute 
+    such as ``A.method.__func__`` for a classmethod, or a lambda assigned to a class attribute
     such as ``A().lam.__func__``.
 
   Closes pylint-dev/pylint#11198
