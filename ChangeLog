@@ -236,12 +236,9 @@ Refs #3108
 * Fix detecting static/class methods and inspecting IntFlag types in
   GObject-based libraries (GLib, Gtk etc)
 
-* Fix ``AttributeError`` crash when inferring ``__func__`` on a bound method
-  that proxies its function directly, such as a classmethod accessed on its
-  class (``A.method.__func__``) or a lambda assigned as a class attribute
-  (``A().lam.__func__``). ``BoundMethodModel.attr___func__`` unwrapped two
-  proxy levels unconditionally, so those raised ``AttributeError: 'FunctionDef'
-  object has no attribute '_proxied'`` instead of returning the function.
+  * Fix a crash when inferring ``__func__`` on a bound method that proxies its  function directly,
+    such as ``A.method.__func__`` for a classmethod, or a lambda assigned to a class attribute 
+    such as ``A().lam.__func__``.
 
   Closes pylint-dev/pylint#11198
 
