@@ -30,6 +30,7 @@ from astroid import (
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
 from astroid.const import PY312_PLUS, WIN32
+from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidBuildingError,
     AttributeInferenceError,
@@ -43,6 +44,7 @@ from astroid.exceptions import (
     TooManyLevelsError,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes.scoped_nodes import scoped_nodes as _scoped_nodes
 from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources
@@ -2774,6 +2776,74 @@ def test_import_with_global() -> None:
     assert "deque" in code.locals
     assert "VERSION" in code.locals
     assert "Path" in code.locals
+
+
+class TestFindMetaclassCaching:
+    """Regression tests for the ``ClassDef._find_metaclass()`` per-instance cache."""
+
+    @staticmethod
+    def test_cached_result_reused_on_second_call() -> None:
+        """A second no-context call returns the cached metaclass result."""
+        klass = extract_node("""
+            import abc
+            class WithMeta(metaclass=abc.ABCMeta):  #@
+                pass
+        """)
+        first = klass.metaclass()
+        assert isinstance(first, nodes.ClassDef)
+        cached = klass.__dict__["_cached_find_metaclass"]
+        assert cached is first
+        second = klass.metaclass()
+        assert second is first
+        assert klass.__dict__["_cached_find_metaclass"] is cached
+
+    @staticmethod
+    def test_none_result_is_cached() -> None:
+        """A class with no metaclass caches ``None`` so the MRO walk runs once."""
+        klass = extract_node("""
+            class Plain:  #@
+                pass
+        """)
+        assert klass.metaclass() is None
+        # ``None`` is stored explicitly so the next call short-circuits
+        # without re-walking ancestors.
+        assert "_cached_find_metaclass" in klass.__dict__
+        assert klass.__dict__["_cached_find_metaclass"] is None
+
+    @staticmethod
+    def test_context_argument_bypasses_cache() -> None:
+        """Calls with an explicit context skip the cache entirely."""
+        klass = extract_node("""
+            import abc
+            class WithMeta(metaclass=abc.ABCMeta):  #@
+                pass
+        """)
+        ctx = InferenceContext()
+        result = klass._find_metaclass(context=ctx)
+        assert isinstance(result, nodes.ClassDef)
+        # The cache key is ``context is None`` — passing a context must
+        # neither read nor write the instance cache.
+        assert "_cached_find_metaclass" not in klass.__dict__
+
+    @staticmethod
+    def test_reentry_through_sentinel_returns_none() -> None:
+        """Recursive re-entry while computing returns ``None`` to break the cycle.
+
+        Manually parking the ``_COMPUTING_METACLASS`` sentinel on the
+        instance and then calling ``_find_metaclass()`` simulates the
+        cyclic class hierarchy case where the walk re-enters the same
+        node before its result is finalized.
+        """
+        klass = extract_node("""
+            class Plain:  #@
+                pass
+        """)
+        klass.__dict__["_cached_find_metaclass"] = _scoped_nodes._COMPUTING_METACLASS
+        try:
+            assert klass._find_metaclass() is None
+        finally:
+            # Don't leave the sentinel parked on the cached node.
+            klass.__dict__.pop("_cached_find_metaclass", None)
 
 
 class TestFrameNodes:
