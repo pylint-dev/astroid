@@ -2344,3 +2344,70 @@ def test_slice_qname() -> None:
     assert isinstance(node, nodes.Subscript)
     assert isinstance(node.slice, nodes.Slice)
     assert node.slice.qname() == "builtins.slice"
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
+@pytest.mark.parametrize(
+    "source,node_type,qname",
+    [
+        ("class Basket[T]: pass", nodes.TypeVar, "typing.TypeVar"),
+        ("def peel[**P](): pass", nodes.ParamSpec, "typing.ParamSpec"),
+        ("def peel[*Ts](): pass", nodes.TypeVarTuple, "typing.TypeVarTuple"),
+    ],
+)
+def test_type_param_qname(
+    source: str, node_type: type[nodes.NodeNG], qname: str
+) -> None:
+    """Type parameters are inferred as themselves, so they need a qname."""
+    node = extract_node(source)
+    type_param = node.type_params[0]
+    assert isinstance(type_param, node_type)
+    assert next(type_param.infer()) is type_param
+    assert type_param.qname() == qname
+    assert type_param.pytype() == qname
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type alias nodes")
+def test_type_alias_qname() -> None:
+    """A type alias is inferred as itself, so it needs a qname."""
+    node = extract_node("type Basket = int")
+    assert isinstance(node, nodes.TypeAlias)
+    assert next(node.infer()) is node
+    assert node.qname() == "typing.TypeAliasType"
+    assert node.pytype() == "typing.TypeAliasType"
+
+
+def test_self_inferring_nodes_have_a_type() -> None:
+    """A node inferred as itself is a value, so callers ask it for its type.
+
+    Without ``qname()`` and ``pytype()`` they crash with an ``AttributeError``
+    instead, as ``FunctionDef.decoratornames()`` used to for ``@T``. Nodes are
+    found by their ``_infer`` return annotation, so this only covers the usual
+    spelling, ``Iterator[TheNodeClass]``.
+    """
+    node_classes = set()
+    to_visit = [nodes.NodeNG]
+    while to_visit:
+        for subclass in to_visit.pop().__subclasses__():
+            if subclass not in node_classes:
+                node_classes.add(subclass)
+                to_visit.append(subclass)
+
+    missing = []
+    for node_class in node_classes:
+        infer = node_class.__dict__.get("_infer")
+        if infer is None:
+            continue
+        returns = str(infer.__annotations__.get("return", ""))
+        if returns not in (f"Iterator[{node_class.__name__}]", "Iterator[Self]"):
+            continue
+        if issubclass(node_class, bases.Proxy):
+            # Proxies answer both from the class they proxy, e.g. Const.
+            continue
+        missing += [
+            f"{node_class.__name__}.{name}"
+            for name in ("qname", "pytype")
+            if not hasattr(node_class, name)
+        ]
+
+    assert not missing
