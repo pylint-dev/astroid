@@ -44,7 +44,7 @@ string::
 
     >>> tree = astroid.parse('a + b')
     >>> tree
-    >>> <Module l.0 at 0x10d8a68d0>
+    >>> <Module l.0 at 0x...>
 
     >>> print(tree.repr_tree())
     Module(
@@ -73,7 +73,7 @@ which given a string, tries to extract one or more nodes from the given string::
    ... a = 1
    ... b = 2
    ... c
-   ''')
+   ... ''')
 
 In that example, the node that is going to be returned is the last node
 from the tree, so it will be the ``Name(c)`` node.
@@ -83,7 +83,7 @@ You can also use :func:`astroid.extract_node` to extract multiple nodes::
    ... a = 1 #@
    ... b = 2 #@
    ... c
-   ''')
+   ... ''')
 
 You can use ``#@`` comment to annotate the lines for which you want the
 corresponding nodes to be extracted. In that example, what we're going to
@@ -100,10 +100,10 @@ with all the potential values that ``astroid`` can extract for a piece of code::
     ... b = 2
     ... c = a + b
     ... c
-    ''')
+    ... ''')
     >>> inferred = next(name_node.infer())
     >>> inferred
-    <Const.int l.None at 0x10d913128>
+    <Const.int l.None at 0x...>
     >>> inferred.value
     3
 

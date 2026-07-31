@@ -10,10 +10,15 @@ build:
   # Read the Docs builds every pull request and is a required check, so this is
   # what enforces `fail_on_warning` above. Keep the interpreter recent enough to
   # parse the syntax the documentation shows: the examples for PEP 695 type
-  # parameters need 3.12.
+  # parameters need 3.12, and those for template strings need 3.14.
   os: ubuntu-24.04
   tools:
-    python: "3.13"
+    python: "3.14"
+  jobs:
+    post_build:
+      # Run the `>>>` examples too, so the same required check covers both a
+      # reference that does not resolve and an example that is no longer true.
+      - python -m sphinx -E -W -b doctest doc doc/build/doctest
 
 python:
   install:

@@ -189,9 +189,9 @@ class Module(LocalsDictNodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('import astroid')
     >>> node
-    <Import l.1 at 0x7f23b2e4e5c0>
+    <Import l.1 at 0x...>
     >>> node.parent
-    <Module l.0 at 0x7f23b2e4eda0>
+    <Module l.0 at 0x...>
     """
 
     _astroid_fields = ("doc_node", "body")
@@ -615,7 +615,7 @@ class GeneratorExp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('(thing for thing in things if thing)')
     >>> node
-    <GeneratorExp l.1 at 0x7f23b2e4e400>
+    <GeneratorExp l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
@@ -670,7 +670,7 @@ class DictComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('{k:v for k, v in things if k > v}')
     >>> node
-    <DictComp l.1 at 0x7f23b2e41d68>
+    <DictComp l.1 at 0x...>
     """
 
     _astroid_fields = ("key", "value", "generators")
@@ -730,7 +730,7 @@ class SetComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('{thing for thing in things if thing}')
     >>> node
-    <SetComp l.1 at 0x7f23b2e41898>
+    <SetComp l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
@@ -786,7 +786,7 @@ class ListComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('[thing for thing in things if thing]')
     >>> node
-    <ListComp l.1 at 0x7f23b2e418d0>
+    <ListComp l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
@@ -880,7 +880,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('lambda arg: arg + 1')
     >>> node
-    <Lambda.<lambda> l.1 at 0x7f23b2e41518>
+    <Lambda.<lambda> l.1 at 0x...>
     """
 
     _astroid_fields: ClassVar[tuple[str, ...]] = ("args", "body")
@@ -1075,7 +1075,7 @@ class FunctionDef(
     ...     return arg + 1
     ... ''')
     >>> node
-    <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
+    <FunctionDef.my_func l.2 at 0x...>
     """
 
     _astroid_fields = (
@@ -1705,14 +1705,14 @@ class AsyncFunctionDef(FunctionDef):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    async def func(things):
-        async for thing in things:
-            print(thing)
-    ''')
+    ... async def func(things):
+    ...     async for thing in things:
+    ...         print(thing)
+    ... ''')
     >>> node
-    <AsyncFunctionDef.func l.2 at 0x7f23b2e416d8>
+    <AsyncFunctionDef.func l.2 at 0x...>
     >>> node.body[0]
-    <AsyncFor l.3 at 0x7f23b2e417b8>
+    <AsyncFor l.3 at 0x...>
     """
 
 
@@ -1816,12 +1816,12 @@ class ClassDef(
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    class Thing:
-        def my_meth(self, arg):
-            return arg + self.offset
-    ''')
+    ... class Thing:
+    ...     def my_meth(self, arg):
+    ...         return arg + self.offset
+    ... ''')
     >>> node
-    <ClassDef.Thing l.2 at 0x7f23b2e9e748>
+    <ClassDef.Thing l.2 at 0x...>
     """
 
     # some of the attributes below are set by the builder module or

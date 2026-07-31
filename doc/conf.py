@@ -2,6 +2,7 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import doctest
 import os
 import sys
 from datetime import datetime, timezone
@@ -18,6 +19,7 @@ sys.path.insert(0, os.path.abspath(".."))
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
@@ -84,6 +86,18 @@ intersphinx_mapping = {
     # upcoming Python versions.
     "python": ("https://docs.python.org/dev", None),
 }
+
+# -- Options for the doctest builder -------------------------------------------
+
+# Run the ``>>>`` examples with ``tox -e doctest``, so that one that stops being
+# true is noticed. The examples print nodes, whose repr ends in the address the
+# node happens to live at, so they are written ``at 0x...`` and matched loosely.
+doctest_default_flags = (
+    doctest.DONT_ACCEPT_TRUE_FOR_1
+    | doctest.ELLIPSIS
+    | doctest.IGNORE_EXCEPTION_DETAIL
+    | doctest.NORMALIZE_WHITESPACE
+)
 
 # -- Options for cross-reference checking --------------------------------------
 

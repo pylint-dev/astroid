@@ -13,6 +13,12 @@ Release date: TBA
   are documented as part of the public API, and a number of docstrings that
   Sphinx could not parse were repaired.
 
+* The ``>>>`` examples in the documentation are run when the documentation is
+  built, so one that stops being true is noticed. Most of them could not run
+  before: they printed node addresses recorded in 2018, and the multi-line ones
+  were missing the ``...`` continuation prompt. The example for ``Decorators``
+  reported the wrong line numbers.
+
 * Fix the example in the docstring of ``BoolOp``, which showed the node it was
   copied from: ``astroid.extract_node("a and b")`` gives a ``BoolOp``, not a
   ``BinOp``.
