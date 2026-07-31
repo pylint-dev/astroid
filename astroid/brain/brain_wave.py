@@ -72,9 +72,7 @@ def _infer_wave_open(
         return iter([write_class.instantiate_class()])
     # Unknown mode (or defaulting to the mode of a file-like object):
     # return both possibilities to avoid false positives.
-    return iter(
-        [read_class.instantiate_class(), write_class.instantiate_class()]
-    )
+    return iter([read_class.instantiate_class(), write_class.instantiate_class()])
 
 
 def register(manager: AstroidManager) -> None:
