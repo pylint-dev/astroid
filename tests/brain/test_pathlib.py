@@ -73,3 +73,24 @@ def test_inference_parents_subscript_not_path() -> None:
     inferred = name_node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
+
+
+def test_inference_parents_assigned_to_variable() -> None:
+    """Test inference of ``pathlib.Path.parents`` when assigned to a variable.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/2864
+    """
+    node = astroid.extract_node("""
+    from pathlib import Path
+
+    cwd = Path.cwd()
+    parents = cwd.parents
+    parents[0]  #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    if PY313:
+        assert inferred[0].qname() == "pathlib._local.Path"
+    else:
+        assert inferred[0].qname() == "pathlib.Path"

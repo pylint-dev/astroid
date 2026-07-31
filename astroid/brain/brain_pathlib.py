@@ -19,22 +19,34 @@ Path
 """
 
 
-def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
-    if not (
-        isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents"
-    ):
-        return False
-
-    try:
-        value = next(node.value.infer())
-    except (InferenceError, StopIteration):
-        return False
+def _is_parents_type(value: bases.Instance) -> bool:
+    """Check if a value is a pathlib._PathParents or builtins.tuple from .parents."""
     parents = "builtins.tuple" if PY313 else "pathlib._PathParents"
     return (
         isinstance(value, bases.Instance)
         and isinstance(value._proxied, nodes.ClassDef)
         and value.qname() == parents
     )
+
+
+def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
+    if isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents":
+        try:
+            value = next(node.value.infer())
+        except (InferenceError, StopIteration):
+            return False
+        return _is_parents_type(value)
+
+    # Handle the case where parents is assigned to a variable first:
+    # parents = cwd.parents; parents[0]
+    if isinstance(node.value, nodes.Name):
+        try:
+            value = next(node.value.infer())
+        except (InferenceError, StopIteration):
+            return False
+        return _is_parents_type(value)
+
+    return False
 
 
 def infer_parents_subscript(
