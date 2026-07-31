@@ -13,21 +13,21 @@ statically your Python code.
 How does it work ?
 ------------------
 
-The magic is handled by :meth:`NodeNG.infer` method.
+The magic is handled by :meth:`~astroid.nodes.NodeNG.infer` method.
 *astroid* usually provides inference support for various Python primitives,
 such as protocols and statements, but it can also be enriched
 via `inference transforms`.
 
-In both cases the :meth:`infer` must return a *generator* which iterates
+In both cases the :meth:`~astroid.nodes.NodeNG.infer` must return a *generator* which iterates
 through the various *values* the node could take.
 
 In some case the value yielded will not be a node found in the AST of the node
-but an instance of a special inference class such as :obj:`Uninferable`,
-or :class:`Instance`.
+but an instance of a special inference class such as :obj:`~astroid.Uninferable`,
+or :class:`~astroid.Instance`.
 
-Namely, the special singleton :obj:`Uninferable` is yielded when the inference reaches
+Namely, the special singleton :obj:`~astroid.Uninferable` is yielded when the inference reaches
 a point where it can't follow the code and is so unable to guess a value; and
-instances of the :class:`Instance` class are yielded when the current node is
+instances of the :class:`~astroid.Instance` class are yielded when the current node is
 inferred to be an instance of some known class.
 
 
@@ -61,9 +61,9 @@ string::
                 right=Name(name='b')))])
 
 
-The :meth:`repr_tree` is super useful to inspect how a tree actually looks.
+The :meth:`~astroid.nodes.NodeNG.repr_tree` is super useful to inspect how a tree actually looks.
 Most of the time you can access the same fields as those represented
-in the output of :meth:`repr_tree` so you can do ``tree.body[0].value.left``
+in the output of :meth:`~astroid.nodes.NodeNG.repr_tree` so you can do ``tree.body[0].value.left``
 to get the left hand side operand of the addition operation.
 
 Another useful function that you can use is :func:`astroid.extract_node`,
@@ -92,7 +92,7 @@ but you can access their underlying ``Assign`` nodes using the ``.value`` attrib
 
 Now let's see how can we use ``astroid`` to infer what's going on with your code.
 
-The main method that you can use is :meth:`infer`. It returns a generator
+The main method that you can use is :meth:`~astroid.nodes.NodeNG.infer`. It returns a generator
 with all the potential values that ``astroid`` can extract for a piece of code::
 
     >>> name_node = astroid.extract_node('''
