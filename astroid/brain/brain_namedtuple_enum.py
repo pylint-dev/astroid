@@ -73,8 +73,7 @@ def _find_func_form_arguments(node, context):
     # typing.NamedTuple also accepts the fields as keyword arguments,
     # e.g. Point = NamedTuple("Point", x=float, y=float)
     if name and any(
-        keyword.arg
-        and keyword.arg not in ("typename", "field_names")
+        keyword.arg and keyword.arg not in ("typename", "field_names")
         for keyword in (keywords or [])
     ):
         return name.value, None
