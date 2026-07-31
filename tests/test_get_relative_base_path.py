@@ -98,6 +98,7 @@ class TestModUtilsRelativePath(unittest.TestCase):
             with self.subTest(target=target, base=base):
                 self._run_relative_path_test(target, base, expected)
 
+
 def test_symlink_resolution(tmp_path):
     base_dir = tmp_path / "some"
     base_dir.mkdir()
