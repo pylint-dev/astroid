@@ -2,7 +2,6 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 import os
-import tempfile
 import unittest
 
 from astroid import modutils
@@ -99,20 +98,18 @@ class TestModUtilsRelativePath(unittest.TestCase):
             with self.subTest(target=target, base=base):
                 self._run_relative_path_test(target, base, expected)
 
-    def test_symlink_resolution(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            base_dir = os.path.join(tmpdir, "some")
-            os.makedirs(base_dir, exist_ok=True)
+def test_symlink_resolution(tmp_path):
+    base_dir = tmp_path / "some"
+    base_dir.mkdir()
 
-            real_file = os.path.join(base_dir, "real.py")
-            with open(real_file, "w", encoding="utf-8") as f:
-                f.write("# dummy content")
+    real_file = base_dir / "real.py"
+    real_file.write_text("# dummy content", encoding="utf-8")
 
-            symlink_path = os.path.join(tmpdir, "symlink.py")
-            os.symlink(real_file, symlink_path)
+    symlink_path = tmp_path / "symlink.py"
+    os.symlink(real_file, symlink_path)
 
-            result = modutils._get_relative_base_path(symlink_path, base_dir)
-            self.assertEqual(result, ["real"])
+    result = modutils._get_relative_base_path(str(symlink_path), str(base_dir))
+    assert result == ["real"]
 
 
 if __name__ == "__main__":
