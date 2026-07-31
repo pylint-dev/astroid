@@ -435,7 +435,7 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
     For convenience, singleton lists are unpacked.
 
     :param str code: A piece of Python code that is parsed as
-    a module. Will be passed through textwrap.dedent first.
+        a module. Will be passed through textwrap.dedent first.
     :param str module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
     """

@@ -317,7 +317,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         """An iterator over the elements this node contains.
 
         :returns: The contents of this node.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         return self.elts
 
@@ -791,11 +791,12 @@ class Arguments(
     @cached_property
     def arguments(self):
         """Get all the arguments for this node. This includes:
+
         * Positional only arguments
         * Positional arguments
         * Keyword arguments
-        * Variable arguments (.e.g *args)
-        * Variable keyword arguments (e.g **kwargs)
+        * Variable arguments (e.g. ``*args``)
+        * Variable keyword arguments (e.g. ``**kwargs``)
         """
         retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
         if self.vararg_node:
@@ -1387,7 +1388,7 @@ class AugAssign(
     ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BadBinaryOperationMessage` ,
+        Each TypeError is represented by a :class:`~astroid.util.BadBinaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
@@ -1505,7 +1506,7 @@ class BinOp(_base_nodes.OperatorNode):
     ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
+        Each TypeError is represented by a :class:`~astroid.util.BadBinaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
@@ -1839,7 +1840,7 @@ class Compare(NodeNG):
         strings.
 
         :returns: The children.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         yield self.left
         for _, comparator in self.ops:
@@ -2158,7 +2159,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """An iterator over the elements this node contains.
 
         :returns: The contents of this node.
-        :rtype: iterable(Const)
+        :rtype: Iterator[Const]
 
         :raises TypeError: If this node does not represent something that is iterable.
         """
@@ -2392,7 +2393,7 @@ class Dict(NodeNG, Instance):
         code, key first then the value.
 
         :returns: The children.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         for key, value in self.items:
             yield key
@@ -2412,7 +2413,7 @@ class Dict(NodeNG, Instance):
         """An iterator over the keys this node contains.
 
         :returns: The keys of this node.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         return [key for (key, _) in self.items]
 
@@ -2557,7 +2558,7 @@ class Expr(_base_nodes.Statement):
 
 
 class EmptyNode(_base_nodes.NoChildrenNode):
-    """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
+    """Holds an arbitrary object in the :attr:`~astroid.nodes.LocalsDictNodeNG.locals`."""
 
     object = None
 
@@ -4342,7 +4343,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     ) -> list[util.BadUnaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BadUnaryOperationMessage`,
+        Each TypeError is represented by a :class:`~astroid.util.BadUnaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
@@ -4597,7 +4598,7 @@ class With(
         """Get the child nodes below this node.
 
         :returns: The children.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         for expr, var in self.items:
             yield expr

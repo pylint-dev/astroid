@@ -7,6 +7,12 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* The documentation build now fails on any Sphinx warning, so a cross-reference
+  that does not resolve is caught by CI instead of quietly rendering as plain
+  text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
+  are documented as part of the public API, and a number of docstrings that
+  Sphinx could not parse were repaired.
+
 * Comprehension conditions now constrain the inference of names used in the
   comprehension, like ``if`` statement conditions already did:
   ``[x for x in lst if x is not None]`` no longer infers ``None`` for ``x``
@@ -371,8 +377,9 @@ Release date: 2026-02-08
   Closes #2870
 
 * Fix ability to detect .py modules inside PATH directories on Windows
-  described by a UNC path with a trailing backslash (`\`)
-    - Example: modutils.modpath_from_file(filename=r"\\Mac\Code\tests\test_resources.py", path=["\\mac\code\"]) == ['tests', 'test_resources']
+  described by a UNC path with a trailing backslash (``\``)
+
+  - Example: ``modutils.modpath_from_file(filename=r"\\Mac\Code\tests\test_resources.py", path=["\\mac\code\"]) == ['tests', 'test_resources']``
 
 * Fix ``random.sample`` inference crash when sequence contains uninferable elements.
 
@@ -595,8 +602,8 @@ What's New in astroid 3.3.6?
 ============================
 Release date: 2024-12-08
 
-* Fix inability to import `collections.abc` in python 3.13.1.
-  _It was later found that this did not resolve the linked issue. It was fixed in astroid 3.3.7_
+* Fix inability to import ``collections.abc`` in python 3.13.1.
+  *It was later found that this did not resolve the linked issue. It was fixed in astroid 3.3.7*
 
   Closes pylint-dev/pylint#10112
 
@@ -912,14 +919,13 @@ Release date: 2023-09-26
   We have tried to minimize the amount of breaking changes caused by this change
   but some are unavoidable.
 
-* ``infer_call_result`` now shares the same interface across all implementations. Namely:
-  ```python
-  def infer_call_result(
-                self,
-                caller: SuccessfulInferenceResult | None,
-                context: InferenceContext | None = None,
-            ) -> Iterator[InferenceResult]:
-  ```
+* ``infer_call_result`` now shares the same interface across all implementations. Namely::
+
+      def infer_call_result(
+          self,
+          caller: SuccessfulInferenceResult | None,
+          context: InferenceContext | None = None,
+      ) -> Iterator[InferenceResult]:
 
   This is a breaking change for ``nodes.FunctionDef`` where previously ``caller`` had a default of
   ``None``. Passing ``None`` again will not create a behaviour change.

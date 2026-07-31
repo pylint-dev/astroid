@@ -9,4 +9,5 @@ API
    general
    astroid.nodes
    base_nodes
+   astroid.util
    astroid.exceptions
