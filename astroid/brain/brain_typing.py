@@ -229,6 +229,12 @@ def infer_typedDict(  # pylint: disable=invalid-name
     class_def.postinit(bases=[extract_node("dict")], body=[], decorators=None)
     func_to_add = _extract_single_node("dict")
     class_def.locals["__call__"] = [func_to_add]
+    # TypedDict subclasses have ``__required_keys__`` and ``__optional_keys__``
+    # class attributes at runtime (e.g. ``MyDict.__required_keys__``), even
+    # though the annotation-only body never declares them.
+    for attr in ("__required_keys__", "__optional_keys__"):
+        func_to_add = _extract_single_node("dict")
+        class_def.locals[attr] = [func_to_add]
     return iter([class_def])
 
 
