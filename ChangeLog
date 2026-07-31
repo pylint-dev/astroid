@@ -13,6 +13,13 @@ Release date: TBA
   are documented as part of the public API, and a number of docstrings that
   Sphinx could not parse were repaired.
 
+* Fix the example in the docstring of ``BoolOp``, which showed the node it was
+  copied from: ``astroid.extract_node("a and b")`` gives a ``BoolOp``, not a
+  ``BinOp``.
+
+* Names written between single backticks in the ChangeLog render as code again,
+  rather than as italics.
+
 * The API documentation now covers the proxies, the objects with no node of
   their own, the inference context, the manager, the object models and the
   extension call signatures. The ``EvaluatedObject``, ``Interpolation``,
