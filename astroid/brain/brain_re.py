@@ -138,7 +138,9 @@ def infer_re_compile(
     node: nodes.Call, ctx: context.InferenceContext | None = None
 ) -> Iterator[bases.Instance]:
     """Infer the result of re.compile as an instance of re.Pattern."""
-    from astroid.manager import AstroidManager  # pylint: disable=import-outside-toplevel
+    from astroid.manager import (
+        AstroidManager,
+    )  # pylint: disable=import-outside-toplevel
 
     re_module = AstroidManager().ast_from_module_name("re")
     try:
