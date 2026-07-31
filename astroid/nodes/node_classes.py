@@ -1579,7 +1579,7 @@ class BoolOp(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('a and b')
     >>> node
-    <BinOp l.1 at 0x7f23b2e71c50>
+    <BoolOp l.1 at 0x7f23b2e71c50>
     """
 
     _astroid_fields = ("values",)

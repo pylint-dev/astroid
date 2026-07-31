@@ -4,7 +4,7 @@
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -33,12 +33,17 @@ source_suffix = ".rst"
 # the locale of the machine running the build happens to be.
 language = "en"
 
+# Single backticks mean code. Without this they mean "title reference", which
+# renders as italics, and the ChangeLog is full of `infer` and `**kwargs` that
+# were plainly meant to be code.
+default_role = "code"
+
 # The master toctree document.
 root_doc = "index"
 
 # General information about the project.
 project = "Astroid"
-current_year = datetime.utcnow().year
+current_year = datetime.now(timezone.utc).year
 contributors = "Logilab, and astroid contributors"
 copyright = f"2003-{current_year}, {contributors}"
 
