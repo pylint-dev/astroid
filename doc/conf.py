@@ -103,7 +103,7 @@ nitpick_ignore_regex = [
     (r"py:.*", r"(?:\w+\.)*_\w+(?:\.\w+)*"),
     # Same reason, for annotations written relative to their own module, e.g.
     # ``node_classes.NodeNG``. The name Sphinx sees has no module path in it.
-    (r"py:class", r"(?:arguments|node_classes|objectmodel|objects)\.\w+"),
+    (r"py:class", r"(?:arguments|constraint|node_classes|objectmodel|objects)\.\w+"),
     # ``Uninferable`` is a singleton object, not a class, so it can never be a
     # ``:class:`` target. Prose should link to :obj:`~astroid.Uninferable`.
     (r"py:class", r"Uninferable"),
@@ -111,15 +111,6 @@ nitpick_ignore_regex = [
     # only to spell out signatures, and have no page of their own.
     (r"py:class", r"FrameType|InferenceContext|InferenceResult"),
     (r"py:class", r"LookupMixIn|SuccessfulInferenceResult"),
-    # Public modules the API documentation does not cover yet. Deleting a line
-    # here turns that module's references back on, so this doubles as a to-do.
-    (r"py:class", r"astroid\.bases\.Proxy"),
-    (r"py:class", r"astroid\.context\.InferenceContext"),
-    (r"py:class", r"astroid\.interpreter\.objectmodel\.\w+"),
-    (r"py:class", r"astroid\.manager\.AstroidManager"),
-    (r"py:class", r"astroid\.nodes\.as_string\.AsStringVisitor"),
-    (r"py:class", r"astroid\.objects\.DictInstance"),
-    (r"py:class", r"astroid\.typing\.\w+"),
 ]
 
 # -- Options for the linkcheck builder -----------------------------------------

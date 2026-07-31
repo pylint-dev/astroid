@@ -38,6 +38,7 @@ Nodes
    astroid.nodes.DictComp
    astroid.nodes.DictUnpack
    astroid.nodes.EmptyNode
+   astroid.nodes.EvaluatedObject
    astroid.nodes.ExceptHandler
    astroid.nodes.Expr
    astroid.nodes.For
@@ -49,6 +50,7 @@ Nodes
    astroid.nodes.IfExp
    astroid.nodes.Import
    astroid.nodes.ImportFrom
+   astroid.nodes.Interpolation
    astroid.nodes.JoinedStr
    astroid.nodes.Keyword
    astroid.nodes.Lambda
@@ -66,6 +68,7 @@ Nodes
    astroid.nodes.MatchValue
    astroid.nodes.Module
    astroid.nodes.Name
+   astroid.nodes.NamedExpr
    astroid.nodes.Nonlocal
    astroid.nodes.ParamSpec
    astroid.nodes.Pass
@@ -76,6 +79,7 @@ Nodes
    astroid.nodes.Slice
    astroid.nodes.Starred
    astroid.nodes.Subscript
+   astroid.nodes.TemplateStr
    astroid.nodes.Try
    astroid.nodes.TryStar
    astroid.nodes.Tuple
@@ -99,3 +103,12 @@ Extra information attached to some nodes, rather than nodes themselves.
    :template: autosummary_class.rst
 
    astroid.nodes.utils.Position
+
+Turning nodes back into code
+----------------------------
+
+.. autosummary::
+   :toctree: nodes
+   :template: autosummary_class.rst
+
+   astroid.nodes.as_string.AsStringVisitor
