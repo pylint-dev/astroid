@@ -634,6 +634,29 @@ class TypingBrain(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.Instance)
 
+    def test_typing_namedtuple_fields_as_keyword_arguments(self) -> None:
+        node = builder.extract_node("""
+        from typing import NamedTuple
+
+        Point = NamedTuple("Point", x=float, y=float)
+        Point #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, "Point")
+        self.assertIn("x", inferred.locals)
+        self.assertIn("y", inferred.locals)
+
+        instance = builder.extract_node("""
+        from typing import NamedTuple
+
+        Point = NamedTuple("Point", x=float, y=float)
+        p = Point(1, 2)
+        p #@
+        """)
+        inferred = next(instance.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+
     def test_typed_dict(self):
         code = builder.extract_node("""
         from typing import TypedDict

@@ -70,6 +70,15 @@ def _find_func_form_arguments(node, context):
     if name and names:
         return name.value, names
 
+    # typing.NamedTuple also accepts the fields as keyword arguments,
+    # e.g. Point = NamedTuple("Point", x=float, y=float)
+    if name and any(
+        keyword.arg
+        and keyword.arg not in ("typename", "field_names")
+        for keyword in (keywords or [])
+    ):
+        return name.value, None
+
     raise UseInferenceDefault()
 
 
@@ -104,6 +113,8 @@ def infer_func_form(
 
             # Handle attributes of Enums
             else:
+                if names is None:
+                    raise UseInferenceDefault
                 # Enums supports either iterator of (name, value) pairs
                 # or mappings.
                 if hasattr(names, "items") and isinstance(names.items, list):
@@ -601,10 +612,10 @@ def infer_typing_namedtuple(
     if func.qname() not in TYPING_NAMEDTUPLE_QUALIFIED:
         raise UseInferenceDefault
 
-    if len(node.args) != 2:
-        raise UseInferenceDefault
-
-    if not isinstance(node.args[1], (nodes.List, nodes.Tuple)):
+    if len(node.args) == 2:
+        if not isinstance(node.args[1], (nodes.List, nodes.Tuple)):
+            raise UseInferenceDefault
+    elif not node.keywords:
         raise UseInferenceDefault
 
     return infer_named_tuple(node, context)
@@ -634,16 +645,25 @@ def _get_namedtuple_fields(node: nodes.Call) -> str:
                     raise UseInferenceDefault from exc
                 break
     if not isinstance(container, nodes.BaseContainer):
-        raise UseInferenceDefault
-    for elt in container.elts:
-        if isinstance(elt, nodes.Const):
-            names.append(elt.as_string())
-            continue
-        if not isinstance(elt, (nodes.List, nodes.Tuple)):
+        # typing.NamedTuple also accepts the fields as keyword arguments,
+        # e.g. Point = NamedTuple("Point", x=float, y=float)
+        names = [
+            f"'{keyword_node.arg}'"
+            for keyword_node in node.keywords
+            if keyword_node.arg and keyword_node.arg != "field_names"
+        ]
+        if not names:
             raise UseInferenceDefault
-        if len(elt.elts) != 2:
-            raise UseInferenceDefault
-        names.append(elt.elts[0].as_string())
+    else:
+        for elt in container.elts:
+            if isinstance(elt, nodes.Const):
+                names.append(elt.as_string())
+                continue
+            if not isinstance(elt, (nodes.List, nodes.Tuple)):
+                raise UseInferenceDefault
+            if len(elt.elts) != 2:
+                raise UseInferenceDefault
+            names.append(elt.elts[0].as_string())
 
     if names:
         field_names = f"({','.join(names)},)"
