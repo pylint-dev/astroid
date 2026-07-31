@@ -119,6 +119,63 @@ class ProtocolTests(unittest.TestCase):
         assigned3 = list(for3_assnode.assigned_stmts())
         self.assertNameNodesEqual(["str", "bytes"], assigned3)
 
+    def test_assigned_stmts_unpacking_names_in_iterable(self) -> None:
+        # Names in the iterable are references to the sequence elements and
+        # have to be inferred before the assignment path is resolved into
+        # them. Regression test for pylint no-member false positive, see
+        # https://github.com/pylint-dev/pylint/issues/10472
+        assign_stmts = extract_node("""
+        lorem = ("lorem", 0)
+        ipsum = ("ipsum", 1)
+        for a, b in [lorem, ipsum]:  #@
+            pass
+        """)
+        assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+
+        for1_assnode = next(assign_nodes)
+        assigned = list(for1_assnode.assigned_stmts())
+        self.assertConstNodesEqual(["lorem", "ipsum"], assigned)
+
+        for2_assnode = next(assign_nodes)
+        assigned2 = list(for2_assnode.assigned_stmts())
+        self.assertConstNodesEqual([0, 1], assigned2)
+
+    def test_assigned_stmts_unpacking_mixed_names_in_iterable(self) -> None:
+        assign_stmts = extract_node("""
+        lorem = (1, 2)
+        for a, b in [(3, 4), lorem]:  #@
+            pass
+        """)
+        assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+
+        for1_assnode = next(assign_nodes)
+        assigned = list(for1_assnode.assigned_stmts())
+        self.assertConstNodesEqual([3, 1], assigned)
+
+        for2_assnode = next(assign_nodes)
+        assigned2 = list(for2_assnode.assigned_stmts())
+        self.assertConstNodesEqual([4, 2], assigned2)
+
+    def test_assigned_stmts_unpacking_nested_names_in_iterable(self) -> None:
+        assign_stmts = extract_node("""
+        lorem = ((1, 2), 3)
+        for (a, b), c in [lorem]:  #@
+            pass
+        """)
+        assign_nodes = assign_stmts.nodes_of_class(nodes.AssignName)
+
+        for1_assnode = next(assign_nodes)
+        assigned = list(for1_assnode.assigned_stmts())
+        self.assertConstNodesEqual([1], assigned)
+
+        for2_assnode = next(assign_nodes)
+        assigned2 = list(for2_assnode.assigned_stmts())
+        self.assertConstNodesEqual([2], assigned2)
+
+        for3_assnode = next(assign_nodes)
+        assigned3 = list(for3_assnode.assigned_stmts())
+        self.assertConstNodesEqual([3], assigned3)
+
     def test_assigned_stmts_starred_for(self) -> None:
         assign_stmts = extract_node("""
         for *a, b in ((1, 2, 3), (4, 5, 6, 7)): #@
