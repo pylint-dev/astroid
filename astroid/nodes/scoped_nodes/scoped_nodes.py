@@ -292,7 +292,7 @@ class Module(LocalsDictNodeNG):
     def stream(self):
         """Get a stream to the underlying file or bytes.
 
-        :type: file or io.BytesIO or None
+        :type: io.IOBase or io.BytesIO or None
         """
         return self._get_stream()
 
@@ -712,7 +712,7 @@ class DictComp(ComprehensionScope):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-            For a :class:`DictComp` this is always :class:`Uninferable`.
+            For a :class:`DictComp` this is always :obj:`~astroid.Uninferable`.
         :rtype: Uninferable
         """
         return util.Uninferable
@@ -769,7 +769,7 @@ class SetComp(ComprehensionScope):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-            For a :class:`SetComp` this is always :class:`Uninferable`.
+            For a :class:`SetComp` this is always :obj:`~astroid.Uninferable`.
         :rtype: Uninferable
         """
         return util.Uninferable
@@ -826,7 +826,7 @@ class ListComp(ComprehensionScope):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-            For a :class:`ListComp` this is always :class:`Uninferable`.
+            For a :class:`ListComp` this is always :obj:`~astroid.Uninferable`.
         :rtype: Uninferable
         """
         return util.Uninferable
@@ -1154,7 +1154,10 @@ class FunctionDef(
         self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
             []
         )
-        """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
+        """The type parameters introduced by :pep:`695`, new in Python 3.12.
+
+        For example, the ``T`` in ``def func[T]() -> T: ...``.
+        """
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
 
@@ -1536,7 +1539,7 @@ class FunctionDef(
         """Infer what the function yields when called
 
         :returns: What the function yields
-        :rtype: iterable(NodeNG or Uninferable) or None
+        :rtype: Iterator[NodeNG or Uninferable] or None
         """
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
@@ -1901,7 +1904,10 @@ class ClassDef(
         self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
             []
         )
-        """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
+        """The type parameters introduced by :pep:`695`, new in Python 3.12.
+
+        For example, the ``T`` in ``class MyClass[T]: ...``.
+        """
 
         super().__init__(
             lineno=lineno,
@@ -2223,7 +2229,7 @@ class ClassDef(
         :type name: str
 
         :returns: The parents that define the given name.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         # Look up in the mro if we can. This will result in the
         # attribute being looked up just as Python does it.
@@ -2245,7 +2251,7 @@ class ClassDef(
 
         :returns: The parents that define the given name as
             an instance attribute.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         for astroid in self.ancestors(context=context):
             if name in astroid.instance_attrs:
@@ -2307,9 +2313,9 @@ class ClassDef(
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
     def instantiate_class(self) -> bases.Instance:
-        """Get an :class:`Instance` of the :class:`ClassDef` node.
+        """Get an :class:`~astroid.Instance` of the :class:`ClassDef` node.
 
-        :returns: An :class:`Instance` of the :class:`ClassDef` node
+        :returns: An :class:`~astroid.Instance` of the :class:`ClassDef` node
         """
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
@@ -2329,9 +2335,9 @@ class ClassDef(
     ) -> list[InferenceResult]:
         """Get an attribute from this class, using Python's attribute semantic.
 
-        This method doesn't look in the :attr:`instance_attrs` dictionary
-        since it is done by an :class:`Instance` proxy at inference time.
-        It may return an :class:`Uninferable` object if
+        This method doesn't look in the ``instance_attrs`` dictionary
+        since it is done by an :class:`~astroid.Instance` proxy at inference time.
+        It may return an :obj:`~astroid.Uninferable` object if
         the attribute has not been
         found, but a ``__getattr__`` or ``__getattribute__`` method is defined.
         If ``class_context`` is given, then it is considered that the
@@ -2606,7 +2612,7 @@ class ClassDef(
         """Iterate over all of the method defined in this class and its parents.
 
         :returns: The methods defined on the class.
-        :rtype: iterable(FunctionDef)
+        :rtype: Iterator[FunctionDef]
         """
         done = {}
         for astroid in itertools.chain(iter((self,)), self.ancestors()):
@@ -2620,7 +2626,7 @@ class ClassDef(
         """Iterate over all of the method defined in this class only.
 
         :returns: The methods defined on the class.
-        :rtype: iterable(FunctionDef)
+        :rtype: Iterator[FunctionDef]
         """
         for member in self.values():
             if isinstance(member, FunctionDef):
@@ -2632,7 +2638,7 @@ class ClassDef(
         This will return an instance of builtins.type.
 
         :returns: The metaclass.
-        :rtype: builtins.type
+        :rtype: type
         """
         return builtin_lookup("type")[1][0]
 

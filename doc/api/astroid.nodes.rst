@@ -88,3 +88,14 @@ Nodes
    astroid.nodes.With
    astroid.nodes.Yield
    astroid.nodes.YieldFrom
+
+Node metadata
+-------------
+
+Extra information attached to some nodes, rather than nodes themselves.
+
+.. autosummary::
+   :toctree: nodes
+   :template: autosummary_class.rst
+
+   astroid.nodes.utils.Position
