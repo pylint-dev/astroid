@@ -13,6 +13,12 @@ Release date: TBA
   are documented as part of the public API, and a number of docstrings that
   Sphinx could not parse were repaired.
 
+* The API documentation now covers the proxies, the objects with no node of
+  their own, the inference context, the manager, the object models and the
+  extension call signatures. The ``EvaluatedObject``, ``Interpolation``,
+  ``NamedExpr`` and ``TemplateStr`` nodes were missing from the list of nodes
+  and are listed now.
+
 * Comprehension conditions now constrain the inference of names used in the
   comprehension, like ``if`` statement conditions already did:
   ``[x for x in lst if x is not None]`` no longer infers ``None`` for ``x``
