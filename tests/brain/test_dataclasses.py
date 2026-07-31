@@ -405,11 +405,17 @@ def test_dataclass_order_of_inherited_attributes():
     assert [a.name for a in keyword_only_init.args.kwonlyargs] == ["a", "b", "c"]
 
 
-def test_pydantic_field() -> None:
-    """Test that pydantic.Field attributes are currently Uninferable.
+try:
+    import pydantic  # noqa: F401
 
-    (Eventually, we can extend the brain to support pydantic.Field)
-    """
+    HAS_PYDANTIC = True
+except ImportError:
+    HAS_PYDANTIC = False
+
+
+@pytest.mark.skipif(not HAS_PYDANTIC, reason="Requires the pydantic library.")
+def test_pydantic_field() -> None:
+    """Test that pydantic.Field attributes are inferred as FieldInfo."""
     klass, instance = astroid.extract_node("""
     from pydantic import Field
     from pydantic.dataclasses import dataclass
@@ -423,14 +429,22 @@ def test_pydantic_field() -> None:
     """)
 
     inferred = klass.inferred()
-    assert len(inferred) == 1
-    assert inferred[0] is Uninferable
+    assert len(inferred) == 5
+    # The dataclass brain generates NoneType defaults for the field, while
+    # pydantic's Field is inferred as FieldInfo.
+    assert inferred[0] is Uninferable or inferred[0].name == "NoneType"
+    assert any(
+        isinstance(i, bases.Instance) and i.qname() == "pydantic.fields.FieldInfo"
+        for i in inferred
+    )
 
     inferred = instance.inferred()
-    assert len(inferred) == 2
-    assert inferred[0] is Uninferable
-    assert isinstance(inferred[1], bases.Instance)
-    assert inferred[1].name == "str"
+    assert len(inferred) == 6
+    assert any(
+        isinstance(i, bases.Instance) and i.qname() == "pydantic.fields.FieldInfo"
+        for i in inferred
+    )
+    assert any(isinstance(i, bases.Instance) and i.name == "str" for i in inferred)
 
 
 @parametrize_module
