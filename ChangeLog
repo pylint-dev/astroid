@@ -194,6 +194,13 @@ Release date: TBA
 * Fix detecting static/class methods and inspecting IntFlag types in
   GObject-based libraries (GLib, Gtk etc)
 
+* Only inject the ``_HAS_DEFAULT_FACTORY`` sentinel into a module's locals when
+  the generated dataclass ``__init__`` actually references it. Parsing a module
+  containing a dataclass without any ``field(default_factory=...)`` no longer
+  exposes an unexpected ``_HAS_DEFAULT_FACTORY`` name.
+
+  Closes #2808
+
 What's New in astroid 4.1.2?
 ============================
 Release date: 2026-03-22
