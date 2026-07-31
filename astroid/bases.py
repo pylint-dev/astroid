@@ -98,8 +98,7 @@ def _is_property(
         # to different values (e.g. a factory function) should not turn
         # the decorated function into a property.
         if all(
-            isinstance(inf, (nodes.ClassDef, Instance))
-            and inf.qname() in PROPERTIES
+            isinstance(inf, (nodes.ClassDef, Instance)) and inf.qname() in PROPERTIES
             for inf in inferred_decorators
         ):
             return True
