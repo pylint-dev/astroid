@@ -7,6 +7,16 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+
+* Make ``typing_extensions.TypeAlias`` infer to a single value
+  (``typing.TypeAlias``) instead of two: the legacy Python 3.9 fallback
+  ``FunctionDef`` behind an ``hasattr`` check was dead code for all
+  supported Python versions and confused consumers of the inference.
+  This fixes an ``invalid-name`` false positive in pylint for type
+  aliases declared with ``typing_extensions.TypeAlias``.
+
+  Closes pylint-dev/pylint#11013
+
 * Comprehension conditions now constrain the inference of names used in the
   comprehension, like ``if`` statement conditions already did:
   ``[x for x in lst if x is not None]`` no longer infers ``None`` for ``x``

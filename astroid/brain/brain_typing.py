@@ -474,6 +474,27 @@ def _typing_transform():
     return AstroidBuilder(AstroidManager()).string_build(code)
 
 
+def _typing_extensions_typealias_transform(
+    module: nodes.Module,
+) -> nodes.Module:
+    """Remove the legacy ``TypeAlias`` FunctionDef from ``typing_extensions``.
+
+    ``typing_extensions.TypeAlias`` is an alias of ``typing.TypeAlias`` since
+    Python 3.10, but the source still contains a Python 3.9 fallback
+    implementation behind an ``hasattr`` check. Astroid cannot prune that
+    branch, so the name infers to two values and consumers (e.g. pylint's
+    name checker) see inconsistent results.
+    """
+    if "TypeAlias" not in module.locals:
+        return module
+    module.locals["TypeAlias"] = [
+        node
+        for node in module.locals["TypeAlias"]
+        if not (isinstance(node, nodes.FunctionDef) and node.name == "TypeAlias")
+    ]
+    return module
+
+
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
         nodes.Call,
@@ -505,3 +526,8 @@ def register(manager: AstroidManager) -> None:
             inference_tip(infer_typing_generic_class_pep695),
             _looks_like_generic_class_pep695,
         )
+    manager.register_transform(
+        nodes.Module,
+        _typing_extensions_typealias_transform,
+        lambda module: module.name == "typing_extensions",
+    )

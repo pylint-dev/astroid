@@ -37,3 +37,18 @@ class TestTypingExtensions:
         for node in ast_nodes:
             inferred = next(node.infer())
             assert isinstance(inferred, nodes.ClassDef)
+
+    @staticmethod
+    @pytest.mark.skipif(
+        not HAS_TYPING_EXTENSIONS_TYPEVAR,
+        reason="Need typing_extensions>=4.4.0 to test TypeVar",
+    )
+    def test_typing_extensions_typealias() -> None:
+        """TypeAlias infers to a single node, matching typing.TypeAlias."""
+        ast_nodes = builder.extract_node("""
+        from typing_extensions import TypeAlias
+        TypeAlias #@
+        """)
+        inferred = list(ast_nodes.infer())
+        assert len(inferred) == 1
+        assert inferred[0].qname() == "typing.TypeAlias"
