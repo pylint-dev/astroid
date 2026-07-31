@@ -11,6 +11,7 @@ from __future__ import annotations
 import difflib
 import os
 import sys
+import tempfile
 import textwrap
 import unittest
 from functools import partial
@@ -213,6 +214,30 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
                 f"({level-1}) for module {mod.name!r}"
             )
             self.assertEqual(expected, str(cm.exception))
+
+    def test_relative_to_absolute_name_namespace_package(self) -> None:
+        """A module in a namespace package must keep the package prefix."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pkg = os.path.join(tmpdir, "pkg")
+            subpkg = os.path.join(pkg, "subpkg")
+            os.makedirs(subpkg)
+            with open(os.path.join(subpkg, "mod.py"), "w", encoding="utf-8") as f:
+                f.write("x = 1\n")
+            with open(os.path.join(pkg, "main.py"), "w", encoding="utf-8") as f:
+                f.write("from .subpkg import mod\n")
+
+            sys.path.insert(0, tmpdir)
+            try:
+                mod = MANAGER.ast_from_file(os.path.join(pkg, "main.py"))
+                self.assertEqual(mod.name, "pkg.main")
+                self.assertFalse(mod.package)
+                self.assertEqual(
+                    mod.relative_to_absolute_name("subpkg", 1), "pkg.subpkg"
+                )
+                imported = mod.import_module("subpkg", level=1)
+                self.assertEqual(imported.name, "pkg.subpkg")
+            finally:
+                del sys.path[0]
 
     def test_import_1(self) -> None:
         data = """from . import subpackage"""

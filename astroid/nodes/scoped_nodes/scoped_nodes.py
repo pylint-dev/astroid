@@ -501,7 +501,13 @@ class Module(LocalsDictNodeNG):
                 )
             ):
                 level = level - 1
-                package_name = ""
+                # The module is part of a namespace package: keep the
+                # namespace package prefix so that the relative import can be
+                # resolved against it (e.g. ``pkg.main`` importing
+                # ``.subpkg`` must resolve to ``pkg.subpkg``, not ``subpkg``).
+                package_name = (
+                    self.name.rsplit(".", 1)[0] if "." in self.name else ""
+                )
             else:
                 package_name = self.name.rsplit(".", level)[0]
             if level and self.name.count(".") < level:
