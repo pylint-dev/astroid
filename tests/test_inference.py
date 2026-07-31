@@ -6462,6 +6462,28 @@ def test_inference_is_limited_to_the_boundnode(code, instance_name) -> None:
     assert inferred.name == instance_name
 
 
+def test_classmethod_returned_tuple_subscript_ignores_unrelated_boundnode() -> None:
+    node = extract_node("""
+    class A:
+        def b(self):
+            return 0
+
+        @classmethod
+        def c(cls):
+            return cls(), 0
+
+    class D:
+        def e(self):
+            self.f = A.c()[0]
+            self.f #@
+    """)
+
+    inferred = next(node.infer())
+
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "A"
+
+
 def test_property_inference() -> None:
     code = """
     class A:
