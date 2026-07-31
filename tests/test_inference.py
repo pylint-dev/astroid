@@ -1898,6 +1898,30 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = ast["do_a_thing"]
         self.assertEqual(node.type, "function")
 
+    def test_decorator_inferring_to_multiple_values_is_not_property(self) -> None:
+        # Regression test for https://github.com/pylint-dev/astroid/issues/2632
+        # A decorator that can infer to multiple values (e.g. a factory
+        # function) should not turn the decorated function into a property,
+        # even if one of the possible inferred values is a property.
+        code = """
+            def decorate(obj=None):
+                if obj is None:
+                    return lambda x: decorate(x)
+                if isinstance(obj, property):
+                    return property()
+                return obj
+
+            @decorate()
+            def func() -> str:
+                return 'foo'
+        """
+        ast = parse(code, __name__)
+        node = ast["func"]
+        inferred = list(node.inferred())
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.FunctionDef)
+        self.assertIs(inferred[0], node)
+
     @pytest.mark.skipif(
         IS_PYPY,
         reason="Persistent recursion error that we ignore and never fix",
