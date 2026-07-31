@@ -7,6 +7,15 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+
+* Fix ``@decorate()`` style decorators being wrongly inferred as properties
+  when the decorator call can infer to multiple values (e.g. a factory
+  function returning a property in one branch). A decorator is now only
+  considered a property when all of its inferred results are properties.
+  This fixes an ``assignment-from-no-return`` false positive in pylint.
+
+  Closes #2632
+
 * Comprehension conditions now constrain the inference of names used in the
   comprehension, like ``if`` statement conditions already did:
   ``[x for x in lst if x is not None]`` no longer infers ``None`` for ``x``

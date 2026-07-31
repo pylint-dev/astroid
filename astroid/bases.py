@@ -71,8 +71,6 @@ def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
 ) -> bool:
     decoratornames = meth.decoratornames(context=context)
-    if PROPERTIES.intersection(decoratornames):
-        return True
     stripped = {
         name.split(".")[-1]
         for name in decoratornames
@@ -83,12 +81,30 @@ def _is_property(
 
     if not meth.decorators:
         return False
-    # Lookup for subclasses of *property*
-    for decorator in meth.decorators.nodes or ():
-        inferred = safe_infer(decorator, context=context)
-        if inferred is None or isinstance(inferred, UninferableBase):
+    # Lookup for standard properties and subclasses of *property*
+    for decorator in meth.decorators.nodes + meth.extra_decorators:
+        try:
+            inferred_decorators = [
+                inf
+                for inf in decorator.infer(context=context)
+                if not isinstance(inf, UninferableBase)
+            ]
+        except InferenceError:
             continue
-        if isinstance(inferred, nodes.ClassDef):
+        if not inferred_decorators:
+            continue
+        # A decorator is only considered a standard property when all of
+        # its inferred results are properties; a decorator that can infer
+        # to different values (e.g. a factory function) should not turn
+        # the decorated function into a property.
+        if all(
+            isinstance(inf, (nodes.ClassDef, Instance)) and inf.qname() in PROPERTIES
+            for inf in inferred_decorators
+        ):
+            return True
+        for inferred in inferred_decorators:
+            if not isinstance(inferred, nodes.ClassDef):
+                continue
             # Check for a class which inherits from a standard property type
             if any(inferred.is_subtype_of(pclass) for pclass in PROPERTIES):
                 return True
