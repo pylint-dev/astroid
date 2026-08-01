@@ -388,9 +388,9 @@ def _generate_dataclass_init(
         prev_pos_only_store, prev_kw_only_store
     )
 
-    # Construct the new init method paramter string
+    # Construct the new init method parameter string
     # First we do the positional only parameters, making sure to add the
-    # the self parameter and the comma to allow adding keyword only parameters
+    # self parameter and the comma to allow adding keyword only parameters
     params_string = "" if "self" in prev_pos_only else "self, "
     params_string += prev_pos_only + ", ".join(params)
     if not params_string.endswith(", "):
