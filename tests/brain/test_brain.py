@@ -655,6 +655,22 @@ class TypingBrain(unittest.TestCase):
         # Test TypedDict instance is callable
         assert next(code[1].infer()).callable() is True
 
+    def test_typed_dict_required_and_optional_keys(self):
+        """TypedDict subclasses expose ``__required_keys__`` and ``__optional_keys__``."""
+        code = builder.extract_node("""
+        from typing import TypedDict
+        from typing_extensions import TypedDict as ETD
+
+        class CustomTD(TypedDict):  #@
+            var: int
+
+        class CustomTD2(ETD):  #@
+            var: int
+        """)
+        for cls in code:
+            for attr in ("__required_keys__", "__optional_keys__"):
+                assert cls.getattr(attr), f"{cls.name}.{attr} not found"
+
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are

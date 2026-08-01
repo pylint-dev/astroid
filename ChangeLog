@@ -32,6 +32,12 @@ Release date: TBA
   ``NamedExpr`` and ``TemplateStr`` nodes were missing from the list of nodes
   and are listed now.
 
+* Add ``__required_keys__`` and ``__optional_keys__`` to the inferred
+  ``TypedDict`` base class, so subclasses no longer raise a ``no-member``
+  false positive in pylint when accessing those attributes at runtime.
+
+  Closes pylint-dev/pylint#10158
+
 * Comprehension conditions now constrain the inference of names used in the
   comprehension, like ``if`` statement conditions already did:
   ``[x for x in lst if x is not None]`` no longer infers ``None`` for ``x``
