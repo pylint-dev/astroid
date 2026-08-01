@@ -666,13 +666,13 @@ class GeneratorModelTest(unittest.TestCase):
         doc = next(ast_nodes[1].infer())
         self.assertEqual(doc.value, "a")
 
+        # ``gi_code`` and ``gi_frame`` are data descriptors, so they resolve but
+        # the values they return are not statically known.
         gi_code = next(ast_nodes[2].infer())
-        self.assertIsInstance(gi_code, nodes.ClassDef)
-        self.assertEqual(gi_code.name, "gi_code")
+        self.assertIs(gi_code, util.Uninferable)
 
         gi_frame = next(ast_nodes[3].infer())
-        self.assertIsInstance(gi_frame, nodes.ClassDef)
-        self.assertEqual(gi_frame.name, "gi_frame")
+        self.assertIs(gi_frame, util.Uninferable)
 
         send = next(ast_nodes[4].infer())
         self.assertIsInstance(send, astroid.BoundMethod)
@@ -740,6 +740,21 @@ class ExceptionModelTest(unittest.TestCase):
             inferred = next(node.infer())
             assert isinstance(inferred, nodes.Const)
             assert inferred.value == value
+
+    @staticmethod
+    def test_traceback_frame_attribute() -> None:
+        """The frame a traceback exposes is a data descriptor, so its value is
+        unknown rather than a class named after the attribute.
+
+        Closes https://github.com/pylint-dev/pylint/issues/11218
+        """
+        node = builder.extract_node("""
+        try:
+            raise ValueError("a")
+        except ValueError as err:
+            err.__traceback__.tb_frame.f_locals #@
+        """)
+        assert node.inferred() == [util.Uninferable]
 
     def test_unicodedecodeerror(self) -> None:
         code = """
