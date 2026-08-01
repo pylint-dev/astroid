@@ -2,9 +2,10 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import doctest
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -18,6 +19,7 @@ sys.path.insert(0, os.path.abspath(".."))
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
@@ -29,12 +31,21 @@ templates_path = ["_templates"]
 # The suffix of source filenames.
 source_suffix = ".rst"
 
+# Pin the language so warning messages are identical for everyone, whatever
+# the locale of the machine running the build happens to be.
+language = "en"
+
+# Single backticks mean code. Without this they mean "title reference", which
+# renders as italics, and the ChangeLog is full of `infer` and `**kwargs` that
+# were plainly meant to be code.
+default_role = "code"
+
 # The master toctree document.
 root_doc = "index"
 
 # General information about the project.
 project = "Astroid"
-current_year = datetime.utcnow().year
+current_year = datetime.now(timezone.utc).year
 contributors = "Logilab, and astroid contributors"
 copyright = f"2003-{current_year}, {contributors}"
 
@@ -75,3 +86,59 @@ intersphinx_mapping = {
     # upcoming Python versions.
     "python": ("https://docs.python.org/dev", None),
 }
+
+# -- Options for the doctest builder -------------------------------------------
+
+# Run the ``>>>`` examples with ``tox -e doctest``, so that one that stops being
+# true is noticed. The examples print nodes, whose repr ends in the address the
+# node happens to live at, so they are written ``at 0x...`` and matched loosely.
+doctest_default_flags = (
+    doctest.DONT_ACCEPT_TRUE_FOR_1
+    | doctest.ELLIPSIS
+    | doctest.IGNORE_EXCEPTION_DETAIL
+    | doctest.NORMALIZE_WHITESPACE
+)
+
+# -- Options for cross-reference checking --------------------------------------
+
+# Warn about every cross-reference that does not resolve. Combined with the
+# ``-W`` passed by ``tox -e docs`` and by ``fail_on_warning`` in
+# ``.readthedocs.yaml``, a reference to something that does not exist (or that
+# is written without its module path) breaks the build instead of silently
+# rendering as plain text.
+nitpicky = True
+
+# Targets that can never resolve, so that ``nitpicky`` only reports mistakes we
+# can actually act on. Both halves of each pair are regexes matched in full.
+#
+# Keep this list short. Every entry hides a category of broken link, so add one
+# only when the target genuinely cannot be documented; a public class or method
+# that is merely written without its module path belongs in the docs, not here.
+nitpick_ignore_regex = [
+    # Private modules, private helpers and TypeVars, e.g.
+    # ``astroid.nodes._base_nodes.Statement``. Autodoc prints the annotations
+    # of public functions as they are written in the source, and these are not
+    # part of the public API, so they have no page to link to.
+    (r"py:.*", r"(?:\w+\.)*_\w+(?:\.\w+)*"),
+    # Same reason, for annotations written relative to their own module, e.g.
+    # ``node_classes.NodeNG``. The name Sphinx sees has no module path in it.
+    (r"py:class", r"(?:arguments|constraint|node_classes|objectmodel|objects)\.\w+"),
+    # ``Uninferable`` is a singleton object, not a class, so it can never be a
+    # ``:class:`` target. Prose should link to :obj:`~astroid.Uninferable`.
+    (r"py:class", r"Uninferable"),
+    # Type aliases and base classes used unqualified in annotations. They exist
+    # only to spell out signatures, and have no page of their own.
+    (r"py:class", r"FrameType|InferenceContext|InferenceResult"),
+    (r"py:class", r"LookupMixIn|SuccessfulInferenceResult"),
+]
+
+# -- Options for the linkcheck builder -----------------------------------------
+
+# Checked by a scheduled workflow rather than on every pull request, because it
+# needs the network and so fails for reasons that have nothing to do with a
+# change.
+linkcheck_ignore = [
+    # Bitbucket dropped Mercurial hosting in 2020 and these two changelog
+    # entries point at repositories that went with it.
+    r"https://bitbucket\.org/.*",
+]

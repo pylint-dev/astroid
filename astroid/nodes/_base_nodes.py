@@ -315,7 +315,7 @@ class LookupMixIn(NodeNG):
 
         :returns: The inferred values of the statements returned from
             :meth:`lookup`.
-        :rtype: iterable
+        :rtype: Iterator
         """
         frame, stmts = self.lookup(name)
         context = InferenceContext()

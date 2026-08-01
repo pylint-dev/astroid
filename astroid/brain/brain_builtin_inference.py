@@ -7,8 +7,9 @@
 from __future__ import annotations
 
 import itertools
+import re
 from collections.abc import Callable, Iterable, Iterator
-from functools import partial
+from functools import lru_cache, partial
 from typing import TYPE_CHECKING, NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
@@ -42,6 +43,36 @@ BuiltContainers = type[tuple] | type[list] | type[set] | type[frozenset]
 CopyResult = nodes.Dict | nodes.List | nodes.Set | objects.FrozenSet
 
 OBJECT_DUNDER_NEW = "object.__new__"
+
+# Largest field width/precision we are willing to materialize when inferring a
+# str.format() call. A crafted template such as "{:>2000000000}" would otherwise
+# eagerly build a multi-gigabyte string during inference.
+_MAX_FORMAT_FIELD_SIZE = int(1e8)
+
+
+@lru_cache(maxsize=1)
+def _get_bounded_formatter():
+    """Build the formatter lazily: importing ``string`` is costly at import time."""
+    import string  # pylint: disable=import-outside-toplevel
+
+    class _BoundedFormatter(string.Formatter):
+        """A ``str.format`` implementation that refuses oversized width/precision.
+
+        The only multi-digit numbers in a format spec are the width and the
+        precision, so bailing when any digit run exceeds the limit covers both.
+        Nested replacement fields ("{:>{}}") are already resolved by ``Formatter``
+        before ``format_field`` runs, so this also catches sizes passed as
+        arguments.
+        """
+
+        def format_field(self, value: object, format_spec: str) -> str:
+            for size in re.findall(r"\d+", format_spec):
+                if int(size) > _MAX_FORMAT_FIELD_SIZE:
+                    raise ValueError("format field size exceeds inference limit")
+            return cast(str, super().format_field(value, format_spec))
+
+    return _BoundedFormatter()
+
 
 STR_CLASS = """
 class whatever(object):
@@ -934,6 +965,16 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         new_node.postinit(elements)
         return new_node
 
+    def _unique_const_keys(keys: Iterable[nodes.Const]) -> list[nodes.Const]:
+        # dict.fromkeys deduplicates its keys, so keep only the first Const seen
+        # for a given value. Emitting one entry per element is wrong
+        # (dict.fromkeys("aab") has keys "a", "b") and lets a repeated string
+        # balloon the inferred dict.
+        seen: dict[object, nodes.Const] = {}
+        for key in keys:
+            seen.setdefault(key.value, key)
+        return list(seen.values())
+
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
@@ -960,7 +1001,9 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in elements]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(elements)
+        ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
@@ -970,8 +1013,12 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         # materializing an oversized dict.
         if len(inferred_values.value) > 1e8:
             return _build_dict_with_elements([])
+        # Deduplicate the characters/bytes before building Const nodes so that a
+        # compact but large string, e.g. dict.fromkeys("x" * 10**8), doesn't
+        # materialize one node per character for what is a single-key dict.
         elements_with_value = [
-            (nodes.Const(element), default) for element in inferred_values.value
+            (nodes.Const(element), default)
+            for element in dict.fromkeys(inferred_values.value)
         ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Dict):
@@ -981,7 +1028,9 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in keys]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(keys)
+        ]
         return _build_dict_with_elements(elements_with_value)
 
     # Fallback to an empty dictionary
@@ -1059,8 +1108,18 @@ def _infer_str_format_call(
 
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
+    formatter = _get_bounded_formatter()
     try:
-        formatted_string = format_template.format(*pos_values, **keyword_values)
+        fields = list(formatter.parse(format_template))
+    except ValueError:
+        return iter([util.Uninferable])
+    if any(spec and util.format_spec_too_large(spec) for _, _, spec, _ in fields):
+        return iter([util.Uninferable])
+
+    try:
+        formatted_string = formatter.format(
+            format_template, *pos_values, **keyword_values
+        )
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
         # AttributeError: named field in format string was not found in the arguments
         # IndexError: there are too few arguments to interpolate

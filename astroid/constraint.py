@@ -171,6 +171,12 @@ class TypeConstraint(Constraint):
         if inferred is util.Uninferable:
             return True
 
+        # This method is called once per inferred value, with the same context.
+        # Use a clone: inferring the classinfo pushes it onto the context's
+        # inference path but only its first value is consumed, so nothing is
+        # cached and a reused context would make the classinfo uninferable
+        # from the second call on.
+        context = context.clone()
         try:
             types = helpers.class_or_tuple_to_container(self.classinfo, context)
             matches_checked_types = helpers.object_isinstance(inferred, types, context)
@@ -243,17 +249,18 @@ class EqualityConstraint(Constraint):
 
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
-) -> dict[nodes.If | nodes.IfExp, set[Constraint]]:
+) -> dict[nodes.NodeNG, set[Constraint]]:
     """Returns the constraints for the given expression.
 
     The returned dictionary maps the node where the constraint was generated to the
     corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
-    Currently this only supports constraints generated from if conditions.
+    Currently this only supports constraints generated from if conditions and
+    comprehension conditions.
     """
     current_node: nodes.NodeNG | None = expr
-    constraints_mapping: dict[nodes.If | nodes.IfExp, set[Constraint]] = {}
+    constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
         if isinstance(parent, (nodes.If, nodes.IfExp)):
@@ -266,9 +273,41 @@ def get_constraints(
 
             if constraints:
                 constraints_mapping[parent] = constraints
+        elif isinstance(parent, nodes.Comprehension):
+            try:
+                index = parent.ifs.index(current_node)
+            except ValueError:
+                pass
+            else:
+                # Preceding conditions of the same generator guard this condition.
+                _add_ifs_constraints(expr, parent.ifs[:index], constraints_mapping)
+        elif isinstance(
+            parent, (nodes.ListComp, nodes.SetComp, nodes.DictComp, nodes.GeneratorExp)
+        ):
+            branch, _ = parent.locate_child(current_node)
+            if branch == "generators":
+                # Conditions guard the iterables of all later generators.
+                index = parent.generators.index(current_node)
+                generators = parent.generators[:index]
+            else:  # elt, key or value: guarded by all conditions
+                generators = parent.generators
+            for comprehension in generators:
+                _add_ifs_constraints(expr, comprehension.ifs, constraints_mapping)
         current_node = parent
 
     return constraints_mapping
+
+
+def _add_ifs_constraints(
+    expr: _NameNodes,
+    ifs: list[nodes.NodeNG],
+    constraints_mapping: dict[nodes.NodeNG, set[Constraint]],
+) -> None:
+    """Add the constraints matching each comprehension condition in ifs."""
+    for if_expr in ifs:
+        constraints = set(_match_constraint(expr, if_expr))
+        if constraints:
+            constraints_mapping[if_expr] = constraints
 
 
 ALL_CONSTRAINT_CLASSES = frozenset(

@@ -27,6 +27,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         ("datetime_as_string", "['2012-02', '2012-03']"),
         ("dot", "[1, 2]", "[1, 2]"),
         ("empty_like", "[1, 2]"),
+        ("fromfile", '"data.bin"'),
         ("inner", "[1, 2]", "[1, 2]"),
         ("is_busday", "['2011-07-01', '2011-07-02', '2011-07-18']"),
         ("lexsort", "(('toto', 'tutu'), ('riri', 'fifi'))"),

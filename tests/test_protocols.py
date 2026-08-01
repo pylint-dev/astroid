@@ -130,6 +130,18 @@ class ProtocolTests(unittest.TestCase):
         assert isinstance(assigned, nodes.List)
         assert assigned.as_string() == "[1, 2]"
 
+    def test_assigned_stmts_starred_for_not_last(self) -> None:
+        """A starred target that isn't last must not truncate to its own arity."""
+        assign_stmts = extract_node("""
+        for a, *b, c in ((1, 2, 3, 4),): #@
+            pass
+        """)
+
+        starred = next(assign_stmts.nodes_of_class(nodes.Starred))
+        assigned = next(starred.assigned_stmts())
+        assert isinstance(assigned, nodes.List)
+        assert assigned.as_string() == "[2, 3]"
+
     def _get_starred_stmts(self, code: str) -> list | UninferableBase:
         assign_stmt = extract_node(f"{code} #@")
         starred = next(assign_stmt.nodes_of_class(nodes.Starred))
@@ -372,6 +384,28 @@ class ProtocolTests(unittest.TestCase):
     def test_uninferable_left_shift() -> None:
         """The shifted integer would be prohibitively expensive to build."""
         parsed = extract_node("1 << 123456789")
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_string_concatenation() -> None:
+        """The concatenated string would be prohibitively expensive to build."""
+        parsed = extract_node('("a" * 60000000) + ("b" * 60000000)')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_bytes_concatenation() -> None:
+        parsed = extract_node('(b"a" * 60000000) + (b"b" * 60000000)')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_string_concatenation_small_still_infers() -> None:
+        parsed = extract_node('"ab" + "cd"')
+        assert parsed.inferred()[0].value == "abcd"
+
+    @staticmethod
+    def test_uninferable_list_concatenation() -> None:
+        """The concatenated list would be prohibitively expensive to build."""
+        parsed = extract_node("([1] * 50000001) + ([1] * 50000001)")
         assert parsed.inferred() == [Uninferable]
 
 

@@ -88,6 +88,44 @@ class BoundMethodModelTest(unittest.TestCase):
         self.assertIsInstance(self_, astroid.Instance)
         self.assertEqual(self_.name, "A")
 
+    def test_bound_method_model_classmethod_on_class(self) -> None:
+        """A classmethod accessed on its class proxies the function directly.
+
+        Reported in https://github.com/pylint-dev/pylint/issues/11198, where
+        ``getattr()`` on ``__func__`` aborted the whole pylint run.
+        """
+        ast_nodes = builder.extract_node("""
+        class A:
+            @classmethod
+            def test(cls): pass
+        A.test.__func__ #@
+        getattr(A.test, "__func__") #@
+        A.test.__self__ #@
+        """)
+        assert isinstance(ast_nodes, list)
+        for node in ast_nodes[:2]:
+            func = next(node.infer())
+            self.assertIsInstance(func, nodes.FunctionDef)
+            self.assertEqual(func.name, "test")
+
+        self_ = next(ast_nodes[2].infer())
+        self.assertIsInstance(self_, nodes.ClassDef)
+        self.assertEqual(self_.name, "A")
+
+    def test_bound_method_model_lambda_class_attribute(self) -> None:
+        """A lambda assigned as a class attribute is proxied directly too."""
+        ast_nodes = builder.extract_node("""
+        class A:
+            test = lambda self: 1
+        a = A()
+        a.test.__func__ #@
+        getattr(a.test, "__func__") #@
+        """)
+        assert isinstance(ast_nodes, list)
+        for node in ast_nodes:
+            func = next(node.infer())
+            self.assertIsInstance(func, nodes.Lambda)
+
 
 class UnboundMethodModelTest(unittest.TestCase):
     def test_unbound_method_model(self) -> None:

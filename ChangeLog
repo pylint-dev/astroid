@@ -7,9 +7,78 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* The documentation build now fails on any Sphinx warning, so a cross-reference
+  that does not resolve is caught by CI instead of quietly rendering as plain
+  text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
+  are documented as part of the public API, and a number of docstrings that
+  Sphinx could not parse were repaired.
+
+* The ``>>>`` examples in the documentation are run when the documentation is
+  built, so one that stops being true is noticed. Most of them could not run
+  before: they printed node addresses recorded in 2018, and the multi-line ones
+  were missing the ``...`` continuation prompt. The example for ``Decorators``
+  reported the wrong line numbers.
+
+* Fix the example in the docstring of ``BoolOp``, which showed the node it was
+  copied from: ``astroid.extract_node("a and b")`` gives a ``BoolOp``, not a
+  ``BinOp``.
+
+* Names written between single backticks in the ChangeLog render as code again,
+  rather than as italics.
+
+* The API documentation now covers the proxies, the objects with no node of
+  their own, the inference context, the manager, the object models and the
+  extension call signatures. The ``EvaluatedObject``, ``Interpolation``,
+  ``NamedExpr`` and ``TemplateStr`` nodes were missing from the list of nodes
+  and are listed now.
+
+* Comprehension conditions now constrain the inference of names used in the
+  comprehension, like ``if`` statement conditions already did:
+  ``[x for x in lst if x is not None]`` no longer infers ``None`` for ``x``
+  in the element expression.
+
+  Refs #3094
+
+* Fix ``isinstance()`` constraints only filtering the first inferred value of
+  a variable: checking a value made the ``isinstance`` classinfo uninferable
+  for the checks of the following values.
+
+* Remove Python 2 era dead code and outdated comments.
+  Notably: the internal ``TreeRebuilder`` constructor no longer takes a
+  ``parser_module`` argument.
+
+  Refs #3154
+
+* Fix inference of a starred target that is not last in a ``for`` loop, such as
+  ``for a, *b, c in ...``. The elements following the starred one were counted
+  from the target's own arity rather than from the end of the iterable, so
+  ``b`` was truncated whenever the iterable was longer than the target.
+
+* Add ``qname()`` method to the ``Slice`` node class, returning
+  ``"builtins.slice"``, so that the node can be used in contexts
+  that require a qualified name (e.g. pylint's ``basic_checker``).
+
+  Closes #3115
+
+* Add brain tip for ``numpy.fromfile`` so that calls to
+  ``np.fromfile(...)`` are correctly inferred as returning
+  ``numpy.ndarray`` instead of ``Uninferable``.
+
+  Closes #600
+
+* Add brain for `decimal` that gets applied if `_decimal` isn't available.
+
 * Removed the `**kwargs` argument from all `infer` functions.
   Users upgrading their `astroid` versions should ensure they do no pass values other than
   `context` to `infer`.
+
+* Deduplicate keys when inferring ``dict.fromkeys``. ``dict.fromkeys("aab")``
+  now infers a dict with keys ``"a"``, ``"b"`` instead of ``"a"``, ``"a"``,
+  ``"b"``, matching the runtime. This also stops ``dict.fromkeys`` from
+  materializing one ``Const`` node per character for a repeated string such as
+  ``dict.fromkeys("x" * 10 ** 8)``, which is a single-key dict.
+
+* Bound str/bytes and list/tuple concatenation (``a + b``) during inference.
 
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
@@ -33,6 +102,14 @@ Release date: TBA
 
   Refs #3107
 
+* Bound the field width and precision when inferring ``str.format`` calls.
+  A template such as ``"{:>2000000000}".format("x")`` (or a width/precision
+  supplied through a nested ``{}`` field) previously built the padded
+  multi-gigabyte string eagerly during inference; such calls now infer as
+  ``Uninferable`` when the field size would be oversized.
+
+  Refs #3131
+
 * Remove the ``asname`` keyword argument from ``Import._infer`` and
   ``ImportFrom._infer``. The alias-to-real-name translation that
   ``asname=True`` performed is now hoisted into ``ImportNode._infer_name``,
@@ -50,6 +127,14 @@ Release date: TBA
   Refs pylint-dev/pylint#10193
   Closes #3007
 
+* Avoid materializing a multi-gigabyte string while inferring a small literal
+  such as ``"{:>2000000000}".format("x")`` or ``f"{1.5:.2000000000f}"``.
+  ``_infer_str_format_call`` and ``FormattedValue._infer`` now yield
+  ``Uninferable`` when a format spec asks for a width or precision over 1e8,
+  mirroring the sequence/repetition caps in ``astroid.protocols``.
+
+Refs #3108
+
 * Fix uncaught ``IndentationError`` when parsing code whose lines end in
   ``\r``: the slice of source tokenized to compute a class or function
   ``position`` is split on ``\n`` only and could be misaligned with the AST
@@ -57,6 +142,13 @@ Release date: TBA
   already done when ``tokenize`` raises ``TokenError``.
 
   Closes #3091
+
+* Support PEP 810 lazy imports (new in Python 3.15). ``Import`` and
+  ``ImportFrom`` nodes gain an ``is_lazy`` integer attribute, mirroring
+  the ``ast`` field of the same name.
+
+* Support PEP 798 comprehension unpacking (``{**d for d in dicts}``,
+  new in Python 3.15).
 
 * Fix astroid bootstrap crash on PyPy 7.3.22 (``TypeError: expected str, got
   getset_descriptor object``) by also catching ``TypeError`` from
@@ -108,6 +200,13 @@ Release date: TBA
   fix from #2762.
 
   Closes #2993
+
+* Bypass ``__init__`` in ``InferenceContext.clone()`` and write the slots
+  directly. ``clone()`` is called ~85k times per pandas/frame.py pylint run;
+  skipping the conditional defaults shaves measurable time off the hottest
+  constructor in inference.
+
+  Refs #1115
 
 * Fix ``TypeError`` in ``brain_random`` when ``random.sample`` is called with a
   sequence containing nodes whose ``__init__`` does not accept ``lineno``
@@ -175,6 +274,24 @@ Release date: TBA
 
   Closes #3068
 
+* Fix detecting static/class methods and inspecting IntFlag types in
+  GObject-based libraries (GLib, Gtk etc)
+
+  * Fix a crash when inferring ``__func__`` on a bound method that proxies its  function directly,
+    such as ``A.method.__func__`` for a classmethod, or a lambda assigned to a class attribute
+    such as ``A().lam.__func__``.
+
+  Closes pylint-dev/pylint#11198
+
+* Add ``qname()`` and ``pytype()`` to the ``TypeVar``, ``ParamSpec``,
+  ``TypeVarTuple`` and ``TypeAlias`` node classes, returning
+  ``"typing.TypeVar"``, ``"typing.ParamSpec"``, ``"typing.TypeVarTuple"``
+  and ``"typing.TypeAliasType"``. PEP 695 type parameters and type aliases
+  are inferred as themselves, so callers that ask an inferred value for its
+  type crashed with an ``AttributeError``, as ``FunctionDef.decoratornames()``
+  did for ``@T`` inside ``class Basket[T]``.
+
+  Refs #3115
 
 What's New in astroid 4.1.2?
 ============================
@@ -286,8 +403,9 @@ Release date: 2026-02-08
   Closes #2870
 
 * Fix ability to detect .py modules inside PATH directories on Windows
-  described by a UNC path with a trailing backslash (`\`)
-    - Example: modutils.modpath_from_file(filename=r"\\Mac\Code\tests\test_resources.py", path=["\\mac\code\"]) == ['tests', 'test_resources']
+  described by a UNC path with a trailing backslash (``\``)
+
+  - Example: ``modutils.modpath_from_file(filename=r"\\Mac\Code\tests\test_resources.py", path=["\\mac\code\"]) == ['tests', 'test_resources']``
 
 * Fix ``random.sample`` inference crash when sequence contains uninferable elements.
 
@@ -510,8 +628,8 @@ What's New in astroid 3.3.6?
 ============================
 Release date: 2024-12-08
 
-* Fix inability to import `collections.abc` in python 3.13.1.
-  _It was later found that this did not resolve the linked issue. It was fixed in astroid 3.3.7_
+* Fix inability to import ``collections.abc`` in python 3.13.1.
+  *It was later found that this did not resolve the linked issue. It was fixed in astroid 3.3.7*
 
   Closes pylint-dev/pylint#10112
 
@@ -827,14 +945,13 @@ Release date: 2023-09-26
   We have tried to minimize the amount of breaking changes caused by this change
   but some are unavoidable.
 
-* ``infer_call_result`` now shares the same interface across all implementations. Namely:
-  ```python
-  def infer_call_result(
-                self,
-                caller: SuccessfulInferenceResult | None,
-                context: InferenceContext | None = None,
-            ) -> Iterator[InferenceResult]:
-  ```
+* ``infer_call_result`` now shares the same interface across all implementations. Namely::
+
+      def infer_call_result(
+          self,
+          caller: SuccessfulInferenceResult | None,
+          context: InferenceContext | None = None,
+      ) -> Iterator[InferenceResult]:
 
   This is a breaking change for ``nodes.FunctionDef`` where previously ``caller`` had a default of
   ``None``. Passing ``None`` again will not create a behaviour change.
