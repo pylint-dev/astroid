@@ -276,6 +276,13 @@ Refs #3108
 * Fix detecting static/class methods and inspecting IntFlag types in
   GObject-based libraries (GLib, Gtk etc)
 
+* Only inject the ``_HAS_DEFAULT_FACTORY`` sentinel into a module's locals when
+  the generated dataclass ``__init__`` actually references it. Parsing a module
+  containing a dataclass without any ``field(default_factory=...)`` no longer
+  exposes an unexpected ``_HAS_DEFAULT_FACTORY`` name.
+
+  Closes #2808
+
   * Fix a crash when inferring ``__func__`` on a bound method that proxies its  function directly,
     such as ``A.method.__func__`` for a classmethod, or a lambda assigned to a class attribute
     such as ``A().lam.__func__``.

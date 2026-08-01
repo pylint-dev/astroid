@@ -508,6 +508,33 @@ def test_init_defaults(module: str):
 
 
 @parametrize_module
+def test_default_factory_sentinel_only_added_when_needed(module: str):
+    """The _HAS_DEFAULT_FACTORY sentinel should not leak into module locals.
+
+    It is only needed as a default for fields using ``default_factory``.
+    """
+    without_factory = astroid.parse(f"""
+    from {module} import dataclass
+
+    @dataclass
+    class A:
+        x: int = 10
+    """)
+    assert "_HAS_DEFAULT_FACTORY" not in without_factory.locals
+
+    with_factory = astroid.parse(f"""
+    from {module} import dataclass
+    from dataclasses import field
+    from typing import List
+
+    @dataclass
+    class A:
+        x: List[int] = field(default_factory=list)
+    """)
+    assert "_HAS_DEFAULT_FACTORY" in with_factory.locals
+
+
+@parametrize_module
 def test_init_initvar(module: str):
     """Test init for a dataclass with attributes and an InitVar."""
     node = astroid.extract_node(f"""
