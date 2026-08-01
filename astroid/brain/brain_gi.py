@@ -2,7 +2,7 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Astroid hooks for the Python 2 GObject introspection bindings.
+"""Astroid hooks for the GObject introspection bindings.
 
 Helps with understanding everything imported from 'gi.repository'
 """
@@ -39,7 +39,6 @@ _special_methods = frozenset(
         "__delitem__",
         "__len__",
         "__bool__",
-        "__nonzero__",
         "__next__",
         "__str__",
         "__contains__",

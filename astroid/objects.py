@@ -47,7 +47,7 @@ class FrozenSet(node_classes.BaseContainer):
         yield self
 
     @cached_property
-    def _proxied(self):  # pylint: disable=method-hidden
+    def _proxied(self):
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("frozenset")[0]
 
@@ -261,9 +261,8 @@ class DictInstance(bases.Instance):
     special_attributes = objectmodel.DictModel()
 
 
-# Custom objects tailored for dictionaries, which are used to
-# disambiguate between the types of Python 2 dict's method returns
-# and Python 3 (where they return set like objects).
+# Custom objects tailored for dictionary views
+# returned by dict.items(), dict.keys() and dict.values().
 class DictItems(bases.Proxy):
     __str__ = node_classes.NodeNG.__str__
     __repr__ = node_classes.NodeNG.__repr__

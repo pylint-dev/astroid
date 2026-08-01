@@ -7,8 +7,9 @@
 from __future__ import annotations
 
 import itertools
+import re
 from collections.abc import Callable, Iterable, Iterator
-from functools import partial
+from functools import lru_cache, partial
 from typing import TYPE_CHECKING, NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
@@ -42,6 +43,36 @@ BuiltContainers = type[tuple] | type[list] | type[set] | type[frozenset]
 CopyResult = nodes.Dict | nodes.List | nodes.Set | objects.FrozenSet
 
 OBJECT_DUNDER_NEW = "object.__new__"
+
+# Largest field width/precision we are willing to materialize when inferring a
+# str.format() call. A crafted template such as "{:>2000000000}" would otherwise
+# eagerly build a multi-gigabyte string during inference.
+_MAX_FORMAT_FIELD_SIZE = int(1e8)
+
+
+@lru_cache(maxsize=1)
+def _get_bounded_formatter():
+    """Build the formatter lazily: importing ``string`` is costly at import time."""
+    import string  # pylint: disable=import-outside-toplevel
+
+    class _BoundedFormatter(string.Formatter):
+        """A ``str.format`` implementation that refuses oversized width/precision.
+
+        The only multi-digit numbers in a format spec are the width and the
+        precision, so bailing when any digit run exceeds the limit covers both.
+        Nested replacement fields ("{:>{}}") are already resolved by ``Formatter``
+        before ``format_field`` runs, so this also catches sizes passed as
+        arguments.
+        """
+
+        def format_field(self, value: object, format_spec: str) -> str:
+            for size in re.findall(r"\d+", format_spec):
+                if int(size) > _MAX_FORMAT_FIELD_SIZE:
+                    raise ValueError("format field size exceeds inference limit")
+            return cast(str, super().format_field(value, format_spec))
+
+    return _BoundedFormatter()
+
 
 STR_CLASS = """
 class whatever(object):
@@ -1066,8 +1097,18 @@ def _infer_str_format_call(
 
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
+    formatter = _get_bounded_formatter()
     try:
-        formatted_string = format_template.format(*pos_values, **keyword_values)
+        fields = list(formatter.parse(format_template))
+    except ValueError:
+        return iter([util.Uninferable])
+    if any(spec and util.format_spec_too_large(spec) for _, _, spec, _ in fields):
+        return iter([util.Uninferable])
+
+    try:
+        formatted_string = formatter.format(
+            format_template, *pos_values, **keyword_values
+        )
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
         # AttributeError: named field in format string was not found in the arguments
         # IndexError: there are too few arguments to interpolate

@@ -317,7 +317,7 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         """An iterator over the elements this node contains.
 
         :returns: The contents of this node.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         return self.elts
 
@@ -404,9 +404,9 @@ class AssignName(
     >>> import astroid
     >>> node = astroid.extract_node('variable = range(10)')
     >>> node
-    <Assign l.1 at 0x7effe1db8550>
+    <Assign l.1 at 0x...>
     >>> list(node.get_children())
-    [<AssignName.variable l.1 at 0x7effe1db8748>, <Call l.1 at 0x7effe1db8630>]
+    [<AssignName.variable l.1 at 0x...>, <Call l.1 at 0x...>]
     >>> list(node.get_children())[0].as_string()
     'variable'
     """
@@ -493,7 +493,7 @@ class DelName(
     >>> import astroid
     >>> node = astroid.extract_node("del variable #@")
     >>> list(node.get_children())
-    [<DelName.variable l.1 at 0x7effe1da4d30>]
+    [<DelName.variable l.1 at 0x...>]
     >>> list(node.get_children())[0].as_string()
     'variable'
     """
@@ -531,9 +531,9 @@ class Name(_base_nodes.LookupMixIn, _base_nodes.NoChildrenNode):
     >>> import astroid
     >>> node = astroid.extract_node('range(10)')
     >>> node
-    <Call l.1 at 0x7effe1db8710>
+    <Call l.1 at 0x...>
     >>> list(node.get_children())
-    [<Name.range l.1 at 0x7effe1db86a0>, <Const.int l.1 at 0x7effe1db8518>]
+    [<Name.range l.1 at 0x...>, <Const.int l.1 at 0x...>]
     >>> list(node.get_children())[0].as_string()
     'range'
     """
@@ -609,20 +609,19 @@ class Arguments(
     >>> import astroid
     >>> node = astroid.extract_node('def foo(bar): pass')
     >>> node
-    <FunctionDef.foo l.1 at 0x7effe1db8198>
+    <FunctionDef.foo l.1 at 0x...>
     >>> node.args
-    <Arguments l.1 at 0x7effe1db82e8>
+    <Arguments l.1 at 0x...>
     """
 
-    # Python 3.4+ uses a different approach regarding annotations,
-    # each argument is a new class, _ast.arg, which exposes an
-    # 'annotation' attribute. In astroid though, arguments are exposed
-    # as is in the Arguments node and the only way to expose annotations
-    # is by using something similar with Python 3.3:
-    #  - we expose 'varargannotation' and 'kwargannotation' of annotations
-    #    of varargs and kwargs.
-    #  - we expose 'annotation', a list with annotations for
-    #    for each normal argument. If an argument doesn't have an
+    # In the ast module, each argument is a new class, _ast.arg, which
+    # exposes an 'annotation' attribute. In astroid though, arguments are
+    # exposed as is in the Arguments node, so annotations are exposed
+    # separately:
+    #  - we expose 'varargannotation' and 'kwargannotation' for the
+    #    annotations of varargs and kwargs.
+    #  - we expose 'annotations', a list with annotations for
+    #    each normal argument. If an argument doesn't have an
     #    annotation, its value will be None.
     _astroid_fields = (
         "args",
@@ -792,11 +791,12 @@ class Arguments(
     @cached_property
     def arguments(self):
         """Get all the arguments for this node. This includes:
+
         * Positional only arguments
         * Positional arguments
         * Keyword arguments
-        * Variable arguments (.e.g *args)
-        * Variable keyword arguments (e.g **kwargs)
+        * Variable arguments (e.g. ``*args``)
+        * Variable keyword arguments (e.g. ``**kwargs``)
         """
         retval = list(itertools.chain((self.posonlyargs or ()), (self.args or ())))
         if self.vararg_node:
@@ -1126,9 +1126,9 @@ class AssignAttr(_base_nodes.LookupMixIn, _base_nodes.ParentAssignNode):
     >>> import astroid
     >>> node = astroid.extract_node('self.attribute = range(10)')
     >>> node
-    <Assign l.1 at 0x7effe1d521d0>
+    <Assign l.1 at 0x...>
     >>> list(node.get_children())
-    [<AssignAttr.attribute l.1 at 0x7effe1d52320>, <Call l.1 at 0x7effe1d522e8>]
+    [<AssignAttr.attribute l.1 at 0x...>, <Call l.1 at 0x...>]
     >>> list(node.get_children())[0].as_string()
     'self.attribute'
     """
@@ -1200,7 +1200,7 @@ class Assert(_base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('assert len(things) == 10, "Not enough things"')
     >>> node
-    <Assert l.1 at 0x7effe1d527b8>
+    <Assert l.1 at 0x...>
     """
 
     _astroid_fields = ("test", "fail")
@@ -1231,7 +1231,7 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('variable = range(10)')
     >>> node
-    <Assign l.1 at 0x7effe1db8550>
+    <Assign l.1 at 0x...>
     """
 
     targets: list[NodeNG]
@@ -1285,7 +1285,7 @@ class AnnAssign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('variable: List[int] = range(10)')
     >>> node
-    <AnnAssign l.1 at 0x7effe1d4c630>
+    <AnnAssign l.1 at 0x...>
     """
 
     _astroid_fields = ("target", "annotation", "value")
@@ -1338,7 +1338,7 @@ class AugAssign(
     >>> import astroid
     >>> node = astroid.extract_node('variable += 1')
     >>> node
-    <AugAssign l.1 at 0x7effe1db4d68>
+    <AugAssign l.1 at 0x...>
     """
 
     _astroid_fields = ("target", "value")
@@ -1388,7 +1388,7 @@ class AugAssign(
     ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BadBinaryOperationMessage` ,
+        Each TypeError is represented by a :class:`~astroid.util.BadBinaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
@@ -1464,7 +1464,7 @@ class BinOp(_base_nodes.OperatorNode):
     >>> import astroid
     >>> node = astroid.extract_node('a + b')
     >>> node
-    <BinOp l.1 at 0x7f23b2e8cfd0>
+    <BinOp l.1 at 0x...>
     """
 
     _astroid_fields = ("left", "right")
@@ -1506,7 +1506,7 @@ class BinOp(_base_nodes.OperatorNode):
     ) -> list[util.BadBinaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
+        Each TypeError is represented by a :class:`~astroid.util.BadBinaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
@@ -1579,7 +1579,7 @@ class BoolOp(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('a and b')
     >>> node
-    <BinOp l.1 at 0x7f23b2e71c50>
+    <BoolOp l.1 at 0x...>
     """
 
     _astroid_fields = ("values",)
@@ -1699,7 +1699,7 @@ class Break(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('break')
     >>> node
-    <Break l.1 at 0x7f23b2e9e5c0>
+    <Break l.1 at 0x...>
     """
 
 
@@ -1711,7 +1711,7 @@ class Call(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('function()')
     >>> node
-    <Call l.1 at 0x7f23b2e71eb8>
+    <Call l.1 at 0x...>
     """
 
     _astroid_fields = ("func", "args", "keywords")
@@ -1816,9 +1816,9 @@ class Compare(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('a <= b <= c')
     >>> node
-    <Compare l.1 at 0x7f23b2e9e6d8>
+    <Compare l.1 at 0x...>
     >>> node.ops
-    [('<=', <Name.b l.1 at 0x7f23b2e9e2b0>), ('<=', <Name.c l.1 at 0x7f23b2e9e390>)]
+    [('<=', <Name.b l.1 at 0x...>), ('<=', <Name.c l.1 at 0x...>)]
     """
 
     _astroid_fields = ("left", "ops")
@@ -1840,7 +1840,7 @@ class Compare(NodeNG):
         strings.
 
         :returns: The children.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         yield self.left
         for _, comparator in self.ops:
@@ -1948,7 +1948,7 @@ class Comprehension(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('[x for x in some_values]')
     >>> list(node.get_children())
-    [<Name.x l.1 at 0x7f23b2e352b0>, <Comprehension l.1 at 0x7f23b2e35320>]
+    [<Name.x l.1 at 0x...>, <Comprehension l.1 at 0x...>]
     >>> list(node.get_children())[1].as_string()
     'for x in some_values'
     """
@@ -2025,13 +2025,13 @@ class Const(_base_nodes.NoChildrenNode, Instance):
     >>> import astroid
     >>> node = astroid.extract_node('(5, "This is a string.", True, None, b"bytes")')
     >>> node
-    <Tuple.tuple l.1 at 0x7f23b2e358d0>
+    <Tuple.tuple l.1 at 0x...>
     >>> list(node.get_children())
-    [<Const.int l.1 at 0x7f23b2e35940>,
-    <Const.str l.1 at 0x7f23b2e35978>,
-    <Const.bool l.1 at 0x7f23b2e359b0>,
-    <Const.NoneType l.1 at 0x7f23b2e359e8>,
-    <Const.bytes l.1 at 0x7f23b2e35a20>]
+    [<Const.int l.1 at 0x...>,
+    <Const.str l.1 at 0x...>,
+    <Const.bool l.1 at 0x...>,
+    <Const.NoneType l.1 at 0x...>,
+    <Const.bytes l.1 at 0x...>]
     """
 
     _other_fields = ("value", "kind")
@@ -2057,7 +2057,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
 
         :param parent: The parent node in the syntax tree.
 
-        :param kind: The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only.
+        :param kind: The string prefix. "u" for u-prefixed strings and ``None`` otherwise.
 
         :param end_lineno: The last line this node appears on in the source code.
 
@@ -2077,7 +2077,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """The value that the constant represents."""
 
         self.kind: str | None = kind  # can be None
-        """"The string prefix. "u" for u-prefixed strings and ``None`` otherwise. Python 3.8+ only."""
+        """"The string prefix. "u" for u-prefixed strings and ``None`` otherwise."""
 
         super().__init__(
             lineno=lineno,
@@ -2159,7 +2159,7 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """An iterator over the elements this node contains.
 
         :returns: The contents of this node.
-        :rtype: iterable(Const)
+        :rtype: Iterator[Const]
 
         :raises TypeError: If this node does not represent something that is iterable.
         """
@@ -2196,7 +2196,7 @@ class Continue(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('continue')
     >>> node
-    <Continue l.1 at 0x7f23b2e35588>
+    <Continue l.1 at 0x...>
     """
 
 
@@ -2208,14 +2208,14 @@ class Decorators(NodeNG):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    @property
-    def my_property(self):
-        return 3
-    ''')
+    ... @property
+    ... def my_property(self):
+    ...     return 3
+    ... ''')
     >>> node
-    <FunctionDef.my_property l.2 at 0x7f23b2e35d30>
+    <FunctionDef.my_property l.3 at 0x...>
     >>> list(node.get_children())[0]
-    <Decorators l.1 at 0x7f23b2e35d68>
+    <Decorators l.2 at 0x...>
     """
 
     _astroid_fields = ("nodes",)
@@ -2258,9 +2258,9 @@ class DelAttr(_base_nodes.ParentAssignNode):
     >>> import astroid
     >>> node = astroid.extract_node('del self.attr')
     >>> node
-    <Delete l.1 at 0x7f23b2e35f60>
+    <Delete l.1 at 0x...>
     >>> list(node.get_children())[0]
-    <DelAttr.attr l.1 at 0x7f23b2e411d0>
+    <DelAttr.attr l.1 at 0x...>
     """
 
     _astroid_fields = ("expr",)
@@ -2305,7 +2305,7 @@ class Delete(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('del self.attr')
     >>> node
-    <Delete l.1 at 0x7f23b2e35f60>
+    <Delete l.1 at 0x...>
     """
 
     _astroid_fields = ("targets",)
@@ -2345,7 +2345,7 @@ class Dict(NodeNG, Instance):
     >>> import astroid
     >>> node = astroid.extract_node('{1: "1"}')
     >>> node
-    <Dict.dict l.1 at 0x7f23b2e35cc0>
+    <Dict.dict l.1 at 0x...>
     """
 
     _astroid_fields = ("items",)
@@ -2393,7 +2393,7 @@ class Dict(NodeNG, Instance):
         code, key first then the value.
 
         :returns: The children.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         for key, value in self.items:
             yield key
@@ -2413,7 +2413,7 @@ class Dict(NodeNG, Instance):
         """An iterator over the keys this node contains.
 
         :returns: The keys of this node.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         return [key for (key, _) in self.items]
 
@@ -2532,9 +2532,9 @@ class Expr(_base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('method()')
     >>> node
-    <Call l.1 at 0x7f23b2e352b0>
+    <Call l.1 at 0x...>
     >>> node.parent
-    <Expr l.1 at 0x7f23b2e35278>
+    <Expr l.1 at 0x...>
     """
 
     _astroid_fields = ("value",)
@@ -2558,7 +2558,7 @@ class Expr(_base_nodes.Statement):
 
 
 class EmptyNode(_base_nodes.NoChildrenNode):
-    """Holds an arbitrary object in the :attr:`LocalsDictNodeNG.locals`."""
+    """Holds an arbitrary object in the :attr:`~astroid.nodes.LocalsDictNodeNG.locals`."""
 
     object = None
 
@@ -2607,15 +2607,15 @@ class ExceptHandler(
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-        try:
-            do_something()
-        except Exception as error:
-            print("Error!")
-        ''')
+    ...     try:
+    ...         do_something()
+    ...     except Exception as error:
+    ...         print("Error!")
+    ...     ''')
     >>> node
-    <Try l.2 at 0x7f23b2e9d908>
+    <Try l.2 at 0x...>
     >>> node.handlers
-    [<ExceptHandler l.4 at 0x7f23b2e9e860>]
+    [<ExceptHandler l.4 at 0x...>]
     """
 
     _astroid_fields = ("type", "name", "body")
@@ -2686,7 +2686,7 @@ class For(
     >>> import astroid
     >>> node = astroid.extract_node('for thing in things: print(thing)')
     >>> node
-    <For l.1 at 0x7f23b2e8cf28>
+    <For l.1 at 0x...>
     """
 
     _astroid_fields = ("target", "iter", "body", "orelse")
@@ -2757,14 +2757,14 @@ class AsyncFor(For):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    async def func(things):
-        async for thing in things:
-            print(thing)
-    ''')
+    ... async def func(things):
+    ...     async for thing in things:
+    ...         print(thing)
+    ... ''')
     >>> node
-    <AsyncFunctionDef.func l.2 at 0x7f23b2e416d8>
+    <AsyncFunctionDef.func l.2 at 0x...>
     >>> node.body[0]
-    <AsyncFor l.3 at 0x7f23b2e417b8>
+    <AsyncFor l.3 at 0x...>
     """
 
 
@@ -2775,15 +2775,15 @@ class Await(NodeNG):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    async def func(things):
-        await other_func()
-    ''')
+    ... async def func(things):
+    ...     await other_func()
+    ... ''')
     >>> node
-    <AsyncFunctionDef.func l.2 at 0x7f23b2e41748>
+    <AsyncFunctionDef.func l.2 at 0x...>
     >>> node.body[0]
-    <Expr l.3 at 0x7f23b2e419e8>
+    <Expr l.3 at 0x...>
     >>> list(node.body[0].get_children())[0]
-    <Await l.3 at 0x7f23b2e41a20>
+    <Await l.3 at 0x...>
     """
 
     _astroid_fields = ("value",)
@@ -2804,10 +2804,10 @@ class ImportFrom(_base_nodes.ImportNode):
     >>> import astroid
     >>> node = astroid.extract_node('from my_package import my_module')
     >>> node
-    <ImportFrom l.1 at 0x7f23b2e415c0>
+    <ImportFrom l.1 at 0x...>
     """
 
-    _other_fields = ("modname", "names", "level")
+    _other_fields = ("modname", "names", "level", "is_lazy")
 
     def __init__(
         self,
@@ -2820,6 +2820,7 @@ class ImportFrom(_base_nodes.ImportNode):
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
+        is_lazy: int = 0,
     ) -> None:
         """
         :param fromname: The module that is being imported from.
@@ -2827,6 +2828,8 @@ class ImportFrom(_base_nodes.ImportNode):
         :param names: What is being imported from the module.
 
         :param level: The level of relative import.
+
+        :param is_lazy: Whether this is a PEP 810 lazy import (``lazy from ...``).
 
         :param lineno: The line that this node appears on in the source code.
 
@@ -2858,6 +2861,12 @@ class ImportFrom(_base_nodes.ImportNode):
 
         Essentially this is the number of dots in the import.
         This is ``None`` for absolute imports.
+        """
+
+        self.is_lazy: int = is_lazy
+        """Whether this is a PEP 810 lazy import (``lazy from ... import ...``).
+
+        Always ``0`` before Python 3.15.
         """
 
         super().__init__(
@@ -2943,7 +2952,7 @@ class Global(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('global a_global')
     >>> node
-    <Global l.1 at 0x7f23b2e9de10>
+    <Global l.1 at 0x...>
     """
 
     _other_fields = ("names",)
@@ -3009,7 +3018,7 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('if condition: print(True)')
     >>> node
-    <If l.1 at 0x7f23b2e9dd30>
+    <If l.1 at 0x...>
     """
 
     _astroid_fields = ("test", "body", "orelse")
@@ -3062,7 +3071,7 @@ class IfExp(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('value if condition else other')
     >>> node
-    <IfExp l.1 at 0x7f23b2e9dbe0>
+    <IfExp l.1 at 0x...>
     """
 
     _astroid_fields = ("test", "body", "orelse")
@@ -3140,10 +3149,10 @@ class Import(_base_nodes.ImportNode):
     >>> import astroid
     >>> node = astroid.extract_node('import astroid')
     >>> node
-    <Import l.1 at 0x7f23b2e4e5c0>
+    <Import l.1 at 0x...>
     """
 
-    _other_fields = ("names",)
+    _other_fields = ("names", "is_lazy")
 
     def __init__(
         self,
@@ -3154,9 +3163,12 @@ class Import(_base_nodes.ImportNode):
         *,
         end_lineno: int | None = None,
         end_col_offset: int | None = None,
+        is_lazy: int = 0,
     ) -> None:
         """
         :param names: The names being imported.
+
+        :param is_lazy: Whether this is a PEP 810 lazy import (``lazy import ...``).
 
         :param lineno: The line that this node appears on in the source code.
 
@@ -3175,6 +3187,12 @@ class Import(_base_nodes.ImportNode):
 
         Each entry is a :class:`tuple` of the name being imported,
         and the alias that the name is assigned to (if any).
+        """
+
+        self.is_lazy: int = is_lazy
+        """Whether this is a PEP 810 lazy import (``lazy import ...``).
+
+        Always ``0`` before Python 3.15.
         """
 
         super().__init__(
@@ -3209,9 +3227,9 @@ class Keyword(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('function(a_kwarg=True)')
     >>> node
-    <Call l.1 at 0x7f23b2e9e320>
+    <Call l.1 at 0x...>
     >>> node.keywords
-    [<Keyword l.1 at 0x7f23b2e9e9b0>]
+    [<Keyword l.1 at 0x...>]
     """
 
     _astroid_fields = ("value",)
@@ -3254,7 +3272,7 @@ class List(BaseContainer):
     >>> import astroid
     >>> node = astroid.extract_node('[1, 2, 3]')
     >>> node
-    <List.list l.1 at 0x7f23b2e9e128>
+    <List.list l.1 at 0x...>
     """
 
     _other_fields = ("ctx",)
@@ -3324,13 +3342,13 @@ class Nonlocal(_base_nodes.NoChildrenNode, _base_nodes.Statement):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    def function():
-        nonlocal var
-    ''')
+    ... def function():
+    ...     nonlocal var
+    ... ''')
     >>> node
-    <FunctionDef.function l.2 at 0x7f23b2e9e208>
+    <FunctionDef.function l.2 at 0x...>
     >>> node.body[0]
-    <Nonlocal l.3 at 0x7f23b2e9e908>
+    <Nonlocal l.3 at 0x...>
     """
 
     _other_fields = ("names",)
@@ -3381,7 +3399,7 @@ class ParamSpec(_base_nodes.AssignTypeNode):
     >>> import astroid
     >>> node = astroid.extract_node('type Alias[**P] = Callable[P, int]')
     >>> node.type_params[0]
-    <ParamSpec l.1 at 0x7f23b2e4e198>
+    <ParamSpec l.1 at 0x...>
     """
 
     _astroid_fields = ("name", "default_value")
@@ -3409,6 +3427,20 @@ class ParamSpec(_base_nodes.AssignTypeNode):
         self.name = name
         self.default_value = default_value
 
+    def pytype(self) -> Literal["typing.ParamSpec"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.ParamSpec"
+
+    def qname(self) -> Literal["typing.ParamSpec"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.ParamSpec"
+
     def _infer(self, context: InferenceContext | None = None) -> Iterator[ParamSpec]:
         yield self
 
@@ -3424,7 +3456,7 @@ class Pass(_base_nodes.NoChildrenNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('pass')
     >>> node
-    <Pass l.1 at 0x7f23b2e9e748>
+    <Pass l.1 at 0x...>
     """
 
 
@@ -3434,7 +3466,7 @@ class Raise(_base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('raise RuntimeError("Something bad happened!")')
     >>> node
-    <Raise l.1 at 0x7f23b2e9e828>
+    <Raise l.1 at 0x...>
     """
 
     _astroid_fields = ("exc", "cause")
@@ -3478,7 +3510,7 @@ class Return(_base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('return True')
     >>> node
-    <Return l.1 at 0x7f23b8211908>
+    <Return l.1 at 0x...>
     """
 
     _astroid_fields = ("value",)
@@ -3506,7 +3538,7 @@ class Set(BaseContainer):
     >>> import astroid
     >>> node = astroid.extract_node('{1, 2, 3}')
     >>> node
-    <Set.set l.1 at 0x7f23b2e71d68>
+    <Set.set l.1 at 0x...>
     """
 
     infer_unary_op = protocols.set_infer_unary_op
@@ -3525,9 +3557,9 @@ class Slice(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('things[1:3]')
     >>> node
-    <Subscript l.1 at 0x7f23b2e71f60>
+    <Subscript l.1 at 0x...>
     >>> node.slice
-    <Slice l.1 at 0x7f23b2e71e80>
+    <Slice l.1 at 0x...>
     """
 
     _astroid_fields = ("lower", "upper", "step")
@@ -3626,7 +3658,7 @@ class Starred(_base_nodes.ParentAssignNode):
     >>> import astroid
     >>> node = astroid.extract_node('*args')
     >>> node
-    <Starred l.1 at 0x7f23b2e41978>
+    <Starred l.1 at 0x...>
     """
 
     _astroid_fields = ("value",)
@@ -3674,7 +3706,7 @@ class Subscript(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('things[1:3]')
     >>> node
-    <Subscript l.1 at 0x7f23b2e71f60>
+    <Subscript l.1 at 0x...>
     """
 
     _SUBSCRIPT_SENTINEL = object()
@@ -3791,15 +3823,15 @@ class Try(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-        try:
-            do_something()
-        except Exception as error:
-            print("Error!")
-        finally:
-            print("Cleanup!")
-        ''')
+    ...     try:
+    ...         do_something()
+    ...     except Exception as error:
+    ...         print("Error!")
+    ...     finally:
+    ...         print("Cleanup!")
+    ...     ''')
     >>> node
-    <Try l.2 at 0x7f23b2e41d68>
+    <Try l.2 at 0x...>
     """
 
     _astroid_fields = ("body", "handlers", "orelse", "finalbody")
@@ -3997,7 +4029,7 @@ class Tuple(BaseContainer):
     >>> import astroid
     >>> node = astroid.extract_node('(1, 2, 3)')
     >>> node
-    <Tuple.tuple l.1 at 0x7f23b2e41780>
+    <Tuple.tuple l.1 at 0x...>
     """
 
     _other_fields = ("ctx",)
@@ -4068,7 +4100,7 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     >>> import astroid
     >>> node = astroid.extract_node('type Point = tuple[float, float]')
     >>> node
-    <TypeAlias l.1 at 0x7f23b2e4e198>
+    <TypeAlias l.1 at 0x...>
     """
 
     _astroid_fields = ("name", "type_params", "value")
@@ -4105,6 +4137,20 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
         self.type_params = type_params
         self.value = value
 
+    def pytype(self) -> Literal["typing.TypeAliasType"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.TypeAliasType"
+
+    def qname(self) -> Literal["typing.TypeAliasType"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.TypeAliasType"
+
     def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeAlias]:
         yield self
 
@@ -4127,7 +4173,7 @@ class TypeVar(_base_nodes.AssignTypeNode):
     >>> import astroid
     >>> node = astroid.extract_node('type Point[T] = tuple[float, float]')
     >>> node.type_params[0]
-    <TypeVar l.1 at 0x7f23b2e4e198>
+    <TypeVar l.1 at 0x...>
     """
 
     _astroid_fields = ("name", "bound", "default_value")
@@ -4163,6 +4209,20 @@ class TypeVar(_base_nodes.AssignTypeNode):
         self.bound = bound
         self.default_value = default_value
 
+    def pytype(self) -> Literal["typing.TypeVar"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.TypeVar"
+
+    def qname(self) -> Literal["typing.TypeVar"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.TypeVar"
+
     def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeVar]:
         yield self
 
@@ -4178,7 +4238,7 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
     >>> import astroid
     >>> node = astroid.extract_node('type Alias[*Ts] = tuple[*Ts]')
     >>> node.type_params[0]
-    <TypeVarTuple l.1 at 0x7f23b2e4e198>
+    <TypeVarTuple l.1 at 0x...>
     """
 
     _astroid_fields = ("name", "default_value")
@@ -4208,6 +4268,20 @@ class TypeVarTuple(_base_nodes.AssignTypeNode):
         self.name = name
         self.default_value = default_value
 
+    def pytype(self) -> Literal["typing.TypeVarTuple"]:
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        """
+        return "typing.TypeVarTuple"
+
+    def qname(self) -> Literal["typing.TypeVarTuple"]:
+        """Get the qualified name of the type that this node represents.
+
+        :returns: The qualified name of the type.
+        """
+        return "typing.TypeVarTuple"
+
     def _infer(self, context: InferenceContext | None = None) -> Iterator[TypeVarTuple]:
         yield self
 
@@ -4221,7 +4295,7 @@ UNARY_OP_METHOD = {
     "+": "__pos__",
     "-": "__neg__",
     "~": "__invert__",
-    "not": None,  # XXX not '__nonzero__'
+    "not": None,  # 'not' delegates to __bool__, there is no dedicated method
 }
 
 
@@ -4231,7 +4305,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     >>> import astroid
     >>> node = astroid.extract_node('-5')
     >>> node
-    <UnaryOp l.1 at 0x7f23b2e4e198>
+    <UnaryOp l.1 at 0x...>
     """
 
     _astroid_fields = ("operand",)
@@ -4269,7 +4343,7 @@ class UnaryOp(_base_nodes.OperatorNode):
     ) -> list[util.BadUnaryOperationMessage]:
         """Get a list of type errors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BadUnaryOperationMessage`,
+        Each TypeError is represented by a :class:`~astroid.util.BadUnaryOperationMessage`,
         which holds the original exception.
 
         If any inferred result is uninferable, an empty list is returned.
@@ -4375,11 +4449,11 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    while condition():
-        print("True")
-    ''')
+    ... while condition():
+    ...     print("True")
+    ... ''')
     >>> node
-    <While l.2 at 0x7f23b2e4e390>
+    <While l.2 at 0x...>
     """
 
     _astroid_fields = ("test", "body", "orelse")
@@ -4438,11 +4512,11 @@ class With(
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    with open(file_path) as file_:
-        print(file_.read())
-    ''')
+    ... with open(file_path) as file_:
+    ...     print(file_.read())
+    ... ''')
     >>> node
-    <With l.2 at 0x7f23b2e4e710>
+    <With l.2 at 0x...>
     """
 
     _astroid_fields = ("items", "body")
@@ -4524,7 +4598,7 @@ class With(
         """Get the child nodes below this node.
 
         :returns: The children.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         for expr, var in self.items:
             yield expr
@@ -4543,7 +4617,7 @@ class Yield(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('yield True')
     >>> node
-    <Yield l.1 at 0x7f23b2e4e5f8>
+    <Yield l.1 at 0x...>
     """
 
     _astroid_fields = ("value",)
@@ -4581,9 +4655,9 @@ class FormattedValue(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('f"Format {type_}"')
     >>> node
-    <JoinedStr l.1 at 0x7f23b2e4ed30>
+    <JoinedStr l.1 at 0x...>
     >>> node.values
-    [<Const.str l.1 at 0x7f23b2e4eda0>, <FormattedValue l.1 at 0x7f23b2e4edd8>]
+    [<Const.str l.1 at 0x...>, <FormattedValue l.1 at 0x...>]
     """
 
     _astroid_fields = ("value", "format_spec")
@@ -4680,6 +4754,12 @@ class FormattedValue(NodeNG):
                 value_to_format = value
                 if isinstance(value, Const):
                     value_to_format = value.value
+                if isinstance(format_spec.value, str) and util.format_spec_too_large(
+                    format_spec.value
+                ):
+                    yield util.Uninferable
+                    uninferable_already_generated = True
+                    continue
                 try:
                     formatted = format(value_to_format, format_spec.value)
                     yield Const(
@@ -4707,7 +4787,7 @@ class JoinedStr(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('f"Format {type_}"')
     >>> node
-    <JoinedStr l.1 at 0x7f23b2e4ed30>
+    <JoinedStr l.1 at 0x...>
     """
 
     _astroid_fields = ("values",)
@@ -4823,7 +4903,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
     >>> import astroid
     >>> module = astroid.parse('if a := 1: pass')
     >>> module.body[0].test
-    <NamedExpr l.1 at 0x7f23b2e4ed30>
+    <NamedExpr l.1 at 0x...>
     """
 
     _astroid_fields = ("target", "value")
@@ -5015,14 +5095,14 @@ class Match(_base_nodes.Statement, _base_nodes.MultiLineBlockNode):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case 200:
-            ...
-        case _:
-            ...
-    ''')
+    ... match x:
+    ...     case 200:
+    ...         ...
+    ...     case _:
+    ...         ...
+    ... ''')
     >>> node
-    <Match l.2 at 0x10c24e170>
+    <Match l.2 at 0x...>
     """
 
     _astroid_fields = ("subject", "cases")
@@ -5066,12 +5146,12 @@ class MatchCase(_base_nodes.MultiLineBlockNode):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case 200:
-            ...
-    ''')
+    ... match x:
+    ...     case 200:
+    ...         ...
+    ... ''')
     >>> node.cases[0]
-    <MatchCase l.3 at 0x10c24e590>
+    <MatchCase l.3 at 0x...>
     """
 
     _astroid_fields = ("pattern", "guard", "body")
@@ -5111,12 +5191,12 @@ class MatchValue(Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case 200:
-            ...
-    ''')
+    ... match x:
+    ...     case 200:
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern
-    <MatchValue l.3 at 0x10c24e200>
+    <MatchValue l.3 at 0x...>
     """
 
     _astroid_fields = ("value",)
@@ -5148,20 +5228,20 @@ class MatchSingleton(Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case True:
-            ...
-        case False:
-            ...
-        case None:
-            ...
-    ''')
+    ... match x:
+    ...     case True:
+    ...         ...
+    ...     case False:
+    ...         ...
+    ...     case None:
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern
-    <MatchSingleton l.3 at 0x10c2282e0>
+    <MatchSingleton l.3 at 0x...>
     >>> node.cases[1].pattern
-    <MatchSingleton l.5 at 0x10c228af0>
+    <MatchSingleton l.5 at 0x...>
     >>> node.cases[2].pattern
-    <MatchSingleton l.7 at 0x10c229f90>
+    <MatchSingleton l.7 at 0x...>
     """
 
     _other_fields = ("value",)
@@ -5191,16 +5271,16 @@ class MatchSequence(Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case [1, 2]:
-            ...
-        case (1, 2, *_):
-            ...
-    ''')
+    ... match x:
+    ...     case [1, 2]:
+    ...         ...
+    ...     case (1, 2, *_):
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern
-    <MatchSequence l.3 at 0x10ca80d00>
+    <MatchSequence l.3 at 0x...>
     >>> node.cases[1].pattern
-    <MatchSequence l.5 at 0x10ca80b20>
+    <MatchSequence l.5 at 0x...>
     """
 
     _astroid_fields = ("patterns",)
@@ -5232,12 +5312,12 @@ class MatchMapping(_base_nodes.AssignTypeNode, Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case {1: "Hello", 2: "World", 3: _, **rest}:
-            ...
-    ''')
+    ... match x:
+    ...     case {1: "Hello", 2: "World", 3: _, **rest}:
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern
-    <MatchMapping l.3 at 0x10c8a8850>
+    <MatchMapping l.3 at 0x...>
     """
 
     _astroid_fields = ("keys", "patterns", "rest")
@@ -5284,16 +5364,16 @@ class MatchClass(Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case Point2D(0, 0):
-            ...
-        case Point3D(x=0, y=0, z=0):
-            ...
-    ''')
+    ... match x:
+    ...     case Point2D(0, 0):
+    ...         ...
+    ...     case Point3D(x=0, y=0, z=0):
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern
-    <MatchClass l.3 at 0x10ca83940>
+    <MatchClass l.3 at 0x...>
     >>> node.cases[1].pattern
-    <MatchClass l.5 at 0x10ca80880>
+    <MatchClass l.5 at 0x...>
     """
 
     _astroid_fields = ("cls", "patterns", "kwd_patterns")
@@ -5339,12 +5419,12 @@ class MatchStar(_base_nodes.AssignTypeNode, Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case [1, *_]:
-            ...
-    ''')
+    ... match x:
+    ...     case [1, *_]:
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern.patterns[1]
-    <MatchStar l.3 at 0x10ca809a0>
+    <MatchStar l.3 at 0x...>
     """
 
     _astroid_fields = ("name",)
@@ -5381,24 +5461,24 @@ class MatchAs(_base_nodes.AssignTypeNode, Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case [1, a]:
-            ...
-        case {'key': b}:
-            ...
-        case Point2D(0, 0) as c:
-            ...
-        case d:
-            ...
-    ''')
+    ... match x:
+    ...     case [1, a]:
+    ...         ...
+    ...     case {'key': b}:
+    ...         ...
+    ...     case Point2D(0, 0) as c:
+    ...         ...
+    ...     case d:
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern.patterns[1]
-    <MatchAs l.3 at 0x10d0b2da0>
+    <MatchAs l.3 at 0x...>
     >>> node.cases[1].pattern.patterns[0]
-    <MatchAs l.5 at 0x10d0b2920>
+    <MatchAs l.5 at 0x...>
     >>> node.cases[2].pattern
-    <MatchAs l.7 at 0x10d0b06a0>
+    <MatchAs l.7 at 0x...>
     >>> node.cases[3].pattern
-    <MatchAs l.9 at 0x10d09b880>
+    <MatchAs l.9 at 0x...>
     """
 
     _astroid_fields = ("pattern", "name")
@@ -5442,12 +5522,12 @@ class MatchOr(Pattern):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    match x:
-        case 400 | 401 | 402:
-            ...
-    ''')
+    ... match x:
+    ...     case 400 | 401 | 402:
+    ...         ...
+    ... ''')
     >>> node.cases[0].pattern
-    <MatchOr l.3 at 0x10d0b0b50>
+    <MatchOr l.3 at 0x...>
     """
 
     _astroid_fields = ("patterns",)
@@ -5480,7 +5560,7 @@ class TemplateStr(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('t"{name} finished {place!s}"')
     >>> node
-    <TemplateStr l.1 at 0x103b7aa50>
+    <TemplateStr l.1 at 0x...>
     """
 
     _astroid_fields = ("values",)
@@ -5516,11 +5596,11 @@ class Interpolation(NodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('t"{name} finished {place!s}"')
     >>> node
-    <TemplateStr l.1 at 0x103b7aa50>
+    <TemplateStr l.1 at 0x...>
     >>> node.values[0]
-    <Interpolation l.1 at 0x103b7acf0>
+    <Interpolation l.1 at 0x...>
     >>> node.values[2]
-    <Interpolation l.1 at 0x10411e5d0>
+    <Interpolation l.1 at 0x...>
     """
 
     _astroid_fields = ("value", "format_spec")
