@@ -357,6 +357,15 @@ Refs #3108
 
   Refs #3115
 
+* Infer the value of a data descriptor of a C-implemented class as unknown
+  instead of as a class named after the attribute. Reading such an attribute,
+  for instance ``exc.__traceback__.tb_frame`` or ``gen.gi_frame``, inferred a
+  class, so the attributes of the value the descriptor returns were reported as
+  missing. ``raw_building.object_build_datadescriptor()`` now returns an
+  ``EmptyNode``.
+
+  Closes pylint-dev/pylint#11218
+
 What's New in astroid 4.1.2?
 ============================
 Release date: 2026-03-22

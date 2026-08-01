@@ -335,9 +335,15 @@ def object_build_function(
 
 def object_build_datadescriptor(
     node: nodes.Module | nodes.ClassDef, member: type
-) -> nodes.ClassDef:
-    """create astroid for a living data descriptor object"""
-    return _base_class_object_build(node, member, [])
+) -> nodes.EmptyNode:
+    """create astroid for a living data descriptor object
+
+    What the descriptor returns is not statically known, so it is modelled as an
+    unknown value. Modelling it as a class named after the attribute made
+    attribute access on the descriptor's value infer that class instead, which
+    reported the value's own attributes as missing.
+    """
+    return build_dummy(_EMPTY_OBJECT_MARKER)
 
 
 def object_build_methoddescriptor(
@@ -511,7 +517,7 @@ class InspectBuilder:
             elif inspect.ismethoddescriptor(member):
                 child: nodes.NodeNG = object_build_methoddescriptor(node, member)
             elif inspect.isdatadescriptor(member):
-                child = object_build_datadescriptor(node, member)
+                child: nodes.NodeNG = object_build_datadescriptor(node, member)
             elif isinstance(member, tuple(node_classes.CONST_CLS)):
                 # Special case: __hash__ = None overrides ObjectModel for unhashable types.
                 # See https://docs.python.org/3/reference/datamodel.html#object.__hash__
