@@ -26,6 +26,11 @@ Release date: TBA
 * Names written between single backticks in the ChangeLog render as code again,
   rather than as italics.
 
+* Prevent crashes while processing extension-module classes whose bases cannot
+  be resolved when applying enum inference transformations.
+
+  Closes pylint-dev/pylint#11179
+
 * The API documentation now covers the proxies, the objects with no node of
   their own, the inference context, the manager, the object models and the
   extension call signatures. The ``EvaluatedObject``, ``Interpolation``,
