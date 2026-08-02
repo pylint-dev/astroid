@@ -7,6 +7,9 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Add support for compound constraints, allowing inferred values to be narrowed
+  using multiple constraints joined by ``and`` or ``or``.
+
 * The documentation build now fails on any Sphinx warning, so a cross-reference
   that does not resolve is caught by CI instead of quietly rendering as plain
   text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
