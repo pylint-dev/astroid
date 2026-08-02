@@ -10,9 +10,10 @@ import itertools
 import re
 from collections.abc import Callable, Iterable, Iterator
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, NoReturn, cast
+from typing import NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
+from astroid.bases import Instance
 from astroid.builder import AstroidBuilder
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -30,9 +31,6 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
-
-if TYPE_CHECKING:
-    from astroid.bases import Instance
 
 ContainerObjects = (
     objects.FrozenSet | objects.DictItems | objects.DictKeys | objects.DictValues
@@ -480,6 +478,30 @@ def infer_dict(node: nodes.Call, context: InferenceContext | None = None) -> nod
     return value
 
 
+def _mro_owner(cls: nodes.ClassDef, context: InferenceContext | None) -> nodes.ClassDef:
+    """Return the class whose mro a ``super()`` call with no argument walks.
+
+    ``super()`` with no argument is ``super(__class__, self)``. It starts the
+    lookup after the class the method is written in, but it walks the mro of the
+    object the method was called on, which can be a subclass, or a class that
+    only meets the method's own class in the mro of that subclass (a mixin).
+    ``context.boundnode`` is that object when it is known.
+    """
+    bound = context.boundnode if context is not None else None
+    if isinstance(bound, Instance):
+        bound_cls = bound._proxied
+    elif isinstance(bound, nodes.ClassDef):
+        bound_cls = bound
+    else:
+        return cls
+    try:
+        if cls in bound_cls.mro():
+            return bound_cls
+    except MroError:
+        pass
+    return cls
+
+
 def infer_super(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> objects.Super:
@@ -511,36 +533,13 @@ def infer_super(
     assert cls is not None
     if not node.args:
         mro_pointer = cls
-        # When context.boundnode is set (e.g. a subclass called this method),
-        # use it as mro_type so that super() resolves against the actual
-        # calling class rather than the lexical class.  This is critical for
-        # three-level (or deeper) inheritance chains where typing.Self must
-        # propagate through super() calls.
-        effective_cls = cls
-        if context is not None and context.boundnode is not None:
-            from astroid.bases import (  # pylint: disable=import-outside-toplevel
-                Instance,
-            )
-
-            bound = context.boundnode
-            if isinstance(bound, Instance):
-                bound_cls = bound._proxied
-            elif isinstance(bound, nodes.ClassDef):
-                bound_cls = bound
-            else:
-                bound_cls = None
-            if bound_cls is not None:
-                try:
-                    if cls in bound_cls.mro():
-                        effective_cls = bound_cls
-                except (MroError, ValueError):
-                    pass
+        mro_owner = _mro_owner(cls, context)
         # In we are in a classmethod, the interpreter will fill
         # automatically the class as the second argument, not an instance.
         if scope.type == "classmethod":
-            mro_type = effective_cls
+            mro_type = mro_owner
         else:
-            mro_type = effective_cls.instantiate_class()
+            mro_type = mro_owner.instantiate_class()
     else:
         try:
             mro_pointer = next(node.args[0].infer(context=context))
