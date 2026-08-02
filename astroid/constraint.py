@@ -365,17 +365,15 @@ def _add_ifs_constraints(
             constraints_mapping[if_expr] = constraints
 
 
-ALL_CONSTRAINT_CLASSES = frozenset(
-    (
-        NoneConstraint,
-        BooleanConstraint,
-        TypeConstraint,
-        EqualityConstraint,
-        AndConstraint,
-        OrConstraint,
-    )
-)
-"""All supported constraint types."""
+_CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]] = {
+    nodes.Attribute: (BooleanConstraint,),
+    nodes.BoolOp: (_CompoundConstraint,),
+    nodes.Call: (TypeConstraint,),
+    nodes.Compare: (NoneConstraint, EqualityConstraint),
+    nodes.Name: (BooleanConstraint,),
+    nodes.UnaryOp: (BooleanConstraint,),
+}
+"""Constraint types that can match each expression node type."""
 
 
 def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
@@ -394,7 +392,7 @@ def _match_constraint(
     node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
 ) -> Iterator[Constraint]:
     """Yields all constraint patterns for node that match."""
-    for constraint_cls in ALL_CONSTRAINT_CLASSES:
+    for constraint_cls in _CONSTRAINTS_BY_NODE_TYPE.get(type(expr), ()):
         constraint = constraint_cls.match(node, expr, invert)
         if constraint:
             yield constraint
