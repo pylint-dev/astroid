@@ -247,104 +247,59 @@ class EqualityConstraint(Constraint):
         return True
 
 
-class AndConstraint(Constraint):
-    """Represents a "x and y" constraint."""
+class _CompoundConstraint(Constraint):
+    """Represents an "x and y" or "x or y" constraint."""
 
     def __init__(
         self,
         node: nodes.NodeNG,
-        negate: bool,
+        op: str,
         children: list[Constraint],
+        negate: bool,
     ) -> None:
         super().__init__(node=node, negate=negate)
+        self.op = op
         self.children = children
 
     @classmethod
     def match(
         cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Self | None:
-        """Return a new constraint for node if expr matches the
-        "x and y" pattern.
-
-        Return None if expr is not an "and" expression, or if any
-        operand does not match a constraint pattern.
-        """
-        if isinstance(expr, nodes.BoolOp) and expr.op == "and":
-            children: list[Constraint] = []
-            for value in expr.values:
-                matches = list(_match_constraint(node, value, negate))
-                if not matches:
-                    return None
-                children.extend(matches)
-            return cls(node=node, negate=negate, children=children)
-
-        return None
-
-    def satisfied_by(
-        self, inferred: InferenceResult, context: InferenceContext
-    ) -> bool:
-        """Return True for uninferable results, or depending on negate flag:
-
-        - negate=False: satisfied when all children constraints are satisfied.
-        - negate=True: satisfied when at least one child constraint is satisfied.
-        """
-        if isinstance(inferred, util.UninferableBase):
-            return True
-
-        children_satisfied = (
-            constraint.satisfied_by(inferred, context) for constraint in self.children
-        )
-        return any(children_satisfied) if self.negate else all(children_satisfied)
-
-
-class OrConstraint(Constraint):
-    """Represents a "x or y" constraint."""
-
-    def __init__(
-        self,
-        node: nodes.NodeNG,
-        negate: bool,
-        children: list[Constraint],
-    ) -> None:
-        super().__init__(node=node, negate=negate)
-        self.children = children
-
-    @classmethod
-    def match(
-        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
-    ) -> Self | None:
-        """Return a new constraint for node if expr matches the
+        """Return a new constraint for node if expr matches an "x and y" or
         "x or y" pattern.
 
-        Return None if expr is not an "or" expression, or if any
+        Return None if expr is not a supported boolean expression, or if any
         operand does not match a constraint pattern.
         """
-        if isinstance(expr, nodes.BoolOp) and expr.op == "or":
-            children: list[Constraint] = []
-            for value in expr.values:
-                matches = list(_match_constraint(node, value, negate))
-                if not matches:
-                    return None
-                children.extend(matches)
-            return cls(node=node, negate=negate, children=children)
+        if not (isinstance(expr, nodes.BoolOp) and expr.op in {"and", "or"}):
+            return None
 
-        return None
+        children: list[Constraint] = []
+        for value in expr.values:
+            matches = list(_match_constraint(node, value, negate))
+            if not matches:
+                return None
+            children.extend(matches)
+
+        return cls(node=node, op=expr.op, children=children, negate=negate)
 
     def satisfied_by(
         self, inferred: InferenceResult, context: InferenceContext
     ) -> bool:
-        """Return True for uninferable results, or depending on negate flag:
+        """Return True for uninferable results, or depending on op and negate:
 
-        - negate=False: satisfied when at least one child constraint is satisfied.
-        - negate=True: satisfied when all children constraints are satisfied.
+        - negate=False: all children must be satisfied for "and", or any for "or".
+        - negate=True: any child must be satisfied for "and", or all for "or".
         """
-        if isinstance(inferred, util.UninferableBase):
+        if inferred is util.Uninferable:
             return True
 
-        children_satisfied = (
+        results = (
             constraint.satisfied_by(inferred, context) for constraint in self.children
         )
-        return all(children_satisfied) if self.negate else any(children_satisfied)
+
+        strict = (self.op == "and") ^ self.negate
+        return all(results) if strict else any(results)
 
 
 def get_constraints(
