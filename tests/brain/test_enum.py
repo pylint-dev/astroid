@@ -22,13 +22,14 @@ class EnumBrainTest(unittest.TestCase):
 
         Regression test for pylint-dev/pylint#11179.
         """
-        module = types.ModuleType("extension_module")
+        module_name = "extension_module"
+        module = types.ModuleType(module_name)
         module.datetime = datetime
         extension_class = type("ExtensionClass", (datetime.datetime,), {})
-        extension_class.__module__ = module.__name__
+        extension_class.__module__ = module_name
         module.ExtensionClass = extension_class
 
-        builder.AstroidBuilder(AstroidManager()).module_build(module, module.__name__)
+        builder.AstroidBuilder(AstroidManager()).module_build(module, module_name)
 
     def test_simple_enum(self) -> None:
         module = builder.parse("""
