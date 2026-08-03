@@ -7255,6 +7255,13 @@ class TestOldStyleStringFormatting:
         node = _extract_single_node(format_string)
         assert next(node.infer()) is util.Uninferable
 
+    def test_old_style_string_formatting_length_modifier(self) -> None:
+        # h/l/L length modifiers are skipped and do not affect the size cap.
+        node = _extract_single_node('"%ld" % 5')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "5"
+
     def test_old_style_string_formatting_star_not_width(self) -> None:
         # Only arguments consumed by a * width/precision count toward the cap.
         node = _extract_single_node('"%*d %d" % (5, 7, 200000001)')
