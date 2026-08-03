@@ -92,7 +92,11 @@ def infer_func_form(
         name, names = _find_func_form_arguments(node, context)
         try:
             attributes: list[str] = names.value.replace(",", " ").split()
-        except AttributeError as exc:
+        except (AttributeError, TypeError) as exc:
+            # ``names`` is not a whitespace-separated string: it is either a
+            # container node, which has no ``value`` (AttributeError), or a
+            # constant of another type such as bytes (TypeError).
+
             # Handle attributes of NamedTuples
             if not enum:
                 attributes = []

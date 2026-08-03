@@ -21,6 +21,12 @@ Release date: TBA
   Closes #2852
   Closes pylint-dev/pylint#10807
 
+* Fix a crash when the field names of a functional ``Enum`` or ``namedtuple``
+  call are bytes, as in ``Enum("", b"")``. Such a definition is invalid, so
+  inference now falls back to its default instead of raising ``TypeError``.
+
+  Closes #3189
+
 * The documentation build now fails on any Sphinx warning, so a cross-reference
   that does not resolve is caught by CI instead of quietly rendering as plain
   text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes

@@ -195,6 +195,18 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``TypeError``; it falls back to default.
         assert next(node.infer()) is util.Uninferable
 
+    def test_enum_func_form_bytes_field_names_no_crash(self) -> None:
+        """A functional Enum whose field names are bytes is invalid.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3189
+        """
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum("", b"")  #@
+        """)
+        # Inference must not raise ``TypeError``; it falls back to default.
+        assert next(node.infer()) is util.Uninferable
+
     def test_infer_enum_value_as_the_right_type(self) -> None:
         string_value, int_value = builder.extract_node("""
         from enum import Enum
