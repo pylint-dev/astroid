@@ -520,6 +520,134 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(inferred, bases.Instance)
         self.assertEqual(inferred._proxied.name, "Child")
 
+    def test_super_method_three_level_chain_return_type(self) -> None:
+        """Test that super().method() infers the leaf type in a 3-level chain.
+
+        Regression test for:
+        https://github.com/pylint-dev/pylint/issues/10807
+        https://github.com/pylint-dev/astroid/issues/2852
+        """
+        node = builder.extract_node("""
+        import typing
+
+        class A:
+            def method(self) -> typing.Self:
+                return self
+
+        class B(A):
+            def method(self) -> typing.Self:
+                return super().method()
+
+        class C(B):
+            clsattr = 1
+
+        C().method() #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "C")
+
+    def test_super_classmethod_three_level_chain_return_type(self) -> None:
+        """Test that super().classmethod() infers the leaf type in a 3-level chain.
+
+        Regression test for:
+        https://github.com/pylint-dev/pylint/issues/9159
+        https://github.com/pylint-dev/astroid/issues/2852
+        """
+        node = builder.extract_node("""
+        import typing
+
+        class C:
+            @classmethod
+            def from_nothing(cls) -> typing.Self:
+                return cls()
+
+        class D(C):
+            @classmethod
+            def from_nothing(cls) -> typing.Self:
+                return super().from_nothing()
+
+        class E(D):
+            clsattr = 1
+
+        E.from_nothing() #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "E")
+
+    def test_super_in_a_mixin_uses_the_mro_of_the_class_using_it(self) -> None:
+        """A mixin has no base of its own to delegate to.
+
+        ``Mixin.sound`` only has something to call because ``Leaf`` puts
+        ``Base`` after ``Mixin`` in its mro.
+        """
+        node = builder.extract_node("""
+        class Base:
+            def sound(self):
+                return "moo"
+
+        class Mixin:
+            def sound(self):
+                return super().sound()
+
+        class Leaf(Mixin, Base):
+            pass
+
+        Leaf().sound() #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred._proxied.name, "str")
+
+    def test_super_follows_the_mro_of_the_calling_class(self) -> None:
+        """``super()`` in ``Left`` reaches ``Right``, which is not an ancestor of it.
+
+        ``Right`` comes after ``Left`` and before ``Base`` in ``Leaf``'s mro, so
+        that is what ``Left.pick`` delegates to when called on a ``Leaf``.
+        """
+        node = builder.extract_node("""
+        class Base:
+            def pick(self):
+                return "apple"
+
+        class Left(Base):
+            def pick(self):
+                return super().pick()
+
+        class Right(Base):
+            def pick(self):
+                return "banana"
+
+        class Leaf(Left, Right):
+            pass
+
+        Leaf().pick() #@
+        """)
+        # ``Base.pick`` is still inferred as a second, stale possibility, but the
+        # value the call really produces comes first.
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, "banana")
+
+    def test_super_when_the_calling_class_has_no_usable_mro(self) -> None:
+        """A class whose mro cannot be computed falls back, it does not raise."""
+        node = builder.extract_node("""
+        class Base:
+            def eat(self):
+                return "yum"
+
+        class Mixin:
+            def eat(self):
+                return super().eat()
+
+        class Broken(Mixin, Base, Mixin):
+            pass
+
+        Broken().eat() #@
+        """)
+        self.assertEqual(list(node.infer()), [util.Uninferable])
+
     def test_super_invalid_types(self) -> None:
         node = builder.extract_node("""
         import collections

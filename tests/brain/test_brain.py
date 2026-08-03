@@ -8,6 +8,7 @@ import io
 import re
 import sys
 import unittest
+from unittest.mock import patch
 
 import pytest
 
@@ -1601,6 +1602,32 @@ def test_infer_dict_from_keys() -> None:
         assert all(isinstance(elem, nodes.Const) for elem in itered)
         actual_values = [elem.value for elem in itered]
         assert sorted(actual_values) == ["a", "b", "c"]
+
+
+def test_container_transform_oversized_str_declines() -> None:
+    """list/set/tuple/frozenset must not build one Const per character for a
+    str/bytes constant longer than the cap."""
+    with patch("astroid.brain.brain_builtin_inference._MAX_INFERABLE_STR_LEN", 4):
+        for builtin in ("list", "set", "tuple", "frozenset"):
+            node = astroid.extract_node(f'{builtin}("abcdef")')
+            inferred = next(node.infer())
+            assert isinstance(inferred, Instance)
+
+    # Small strings still infer their exact contents.
+    node = astroid.extract_node('list("abc")')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [elem.value for elem in inferred.elts] == ["a", "b", "c"]
+
+
+def test_infer_dict_fromkeys_oversized_str_declines() -> None:
+    """dict.fromkeys must not build one key per character for a str/bytes
+    constant longer than the cap."""
+    with patch("astroid.brain.brain_builtin_inference._MAX_INFERABLE_STR_LEN", 4):
+        node = astroid.extract_node('dict.fromkeys("abcdef")')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        assert inferred.items == []
 
 
 def test_infer_dict_from_keys_deduplicates() -> None:

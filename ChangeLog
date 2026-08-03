@@ -14,6 +14,13 @@ Release date: TBA
 
   Closes pylint-dev/pylint#11101
 
+* ``super()`` with no argument now resolves against the class of the object the
+  method was called on, instead of the class the method is written in. One consequence
+  is that a ``typing.Self`` return value survives a chain of ``super()`` calls.
+
+  Closes #2852
+  Closes pylint-dev/pylint#10807
+
 * The documentation build now fails on any Sphinx warning, so a cross-reference
   that does not resolve is caught by CI instead of quietly rendering as plain
   text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
@@ -98,11 +105,30 @@ Release date: TBA
 
 * Bound str/bytes and list/tuple concatenation (``a + b``) during inference.
 
+* Bound oversized old-style (``%``) string/bytes formatting during inference.
+  A tiny literal such as ``"%1000000000d" % 1`` made
+  ``_infer_old_style_string_formatting`` eagerly build a multi-gigabyte
+  ``Const`` while inferring otherwise untrusted source. The width and
+  precision are now read out of the conversion specifiers (including ``*``
+  fields) and the interpolation infers as ``Uninferable`` past ``1e8``,
+  mirroring the repetition, concatenation and ``str.format`` caps. Bytes
+  ``%`` formatting is routed through the same handler so it is bounded too;
+  small format strings keep inferring their exact value.
+
 * Fix crash (``TypeError: 'UninferableBase' object is not iterable``) in the
   ``multiprocessing`` brain when a local package shadows the stdlib
   ``multiprocessing`` module.
 
   Closes pylint-dev/pylint#10014
+
+* Bound the number of nodes built when inferring ``list``/``set``/``tuple``/
+  ``frozenset`` and ``dict.fromkeys`` from a ``str``/``bytes`` constant. These
+  built one ``Const`` node per character with no cap, so ``list(("a" * 10 ** 8)
+  + "b")`` (concatenation is not size-bounded) materialized hundreds of millions
+  of nodes. They now fall back to the default inference past ``1e8`` characters,
+  matching the sequence-repetition guard.
+
+Refs #3127
 
 * Bound string/bytes multiplication (``"x" * n``) and integer left shifts
   (``1 << n``) in ``const_infer_binary_op`` the same way list/tuple
