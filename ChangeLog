@@ -34,6 +34,13 @@ Release date: TBA
 
   Closes #3190
 
+* Fix a crash when a binary operation involves a class whose metaclass is not a
+  class, as in ``class C(metaclass=sum)`` followed by ``C | None``. The type of
+  such a class is a function, which has no bases, so ``has_known_bases()`` now
+  returns ``False`` for anything that is not a class.
+
+  Closes #3191
+
 * The documentation build now fails on any Sphinx warning, so a cross-reference
   that does not resolve is caught by CI instead of quietly rendering as plain
   text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
