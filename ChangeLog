@@ -7,6 +7,13 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* ``super()`` with no argument now resolves against the class of the object the
+  method was called on, instead of the class the method is written in. One consequence
+  is that a ``typing.Self`` return value survives a chain of ``super()`` calls.
+
+  Closes #2852
+  Closes pylint-dev/pylint#10807
+
 * The documentation build now fails on any Sphinx warning, so a cross-reference
   that does not resolve is caught by CI instead of quietly rendering as plain
   text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
@@ -114,7 +121,7 @@ Release date: TBA
   of nodes. They now fall back to the default inference past ``1e8`` characters,
   matching the sequence-repetition guard.
 
-Refs #3127 
+Refs #3127
 
 * Bound string/bytes multiplication (``"x" * n``) and integer left shifts
   (``1 << n``) in ``const_infer_binary_op`` the same way list/tuple
