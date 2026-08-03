@@ -495,6 +495,36 @@ class TypingBrain(unittest.TestCase):
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
 
+    def test_namedtuple_class_form_assignment_targets(self):
+        """An assignment in the body may not bind a single plain name.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3190
+        """
+        attribute, subscript, unpacking = builder.extract_node("""
+        from typing import NamedTuple
+
+        class Attribute(NamedTuple):
+            cat.color = "black"
+
+        class Subscript(NamedTuple):
+            basket[0] = "apple"
+
+        class Unpacking(NamedTuple):
+            apple, banana = "red", "yellow"
+
+        Attribute()  #@
+        Subscript()  #@
+        Unpacking()  #@
+        """)
+        # Inference must not raise ``AttributeError`` or ``KeyError``.
+        for node in (attribute, subscript, unpacking):
+            self.assertIsInstance(next(node.infer()), astroid.Instance)
+
+        # The names bound by unpacking are still class attributes.
+        inferred = next(unpacking.infer())
+        for name, value in (("apple", "red"), ("banana", "yellow")):
+            self.assertEqual(next(inferred.getattr(name)[0].infer()).value, value)
+
     def test_tuple_type(self):
         node = builder.extract_node("""
         from typing import Tuple
