@@ -571,8 +571,12 @@ def infer_typing_namedtuple_class(class_node, context: InferenceContext | None =
     for body_node in class_node.body:
         if isinstance(body_node, nodes.Assign):
             for target in body_node.targets:
-                attr = target.name
-                generated_class_node.locals[attr] = class_node.locals[attr]
+                # A target is not necessarily a single name: ``cat.color = ...``
+                # and ``basket[0] = ...`` define no class attribute at all, while
+                # ``apple, banana = ...`` defines one per unpacked element.
+                for assign_name in target.nodes_of_class(nodes.AssignName):
+                    attr = assign_name.name
+                    generated_class_node.locals[attr] = class_node.locals[attr]
         elif isinstance(body_node, nodes.ClassDef):
             generated_class_node.locals[body_node.name] = [body_node]
 
