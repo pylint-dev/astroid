@@ -231,6 +231,13 @@ Refs #3108
 
   Closes #2993
 
+* Cache the result of ``ClassDef.ancestors()`` per node when called with
+  ``recurs=True``. The recursive walk previously recomputed ancestors of
+  shared base classes on every call; the cache eliminates that amplification
+  on deep MRO chains.
+
+  Closes #1115
+
 * Bypass ``__init__`` in ``InferenceContext.clone()`` and write the slots
   directly. ``clone()`` is called ~85k times per pandas/frame.py pylint run;
   skipping the conditional defaults shaves measurable time off the hottest
