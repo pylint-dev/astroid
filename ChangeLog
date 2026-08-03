@@ -8,12 +8,8 @@ What's New in astroid 4.2.0?
 Release date: TBA
 
 * ``super()`` with no argument now resolves against the class of the object the
-  method was called on, instead of the class the method is written in. It is
-  short for ``super(__class__, self)``, so the lookup starts after the class the
-  method is written in but walks the mro of the caller. A method inherited by a
-  subclass now reaches what that subclass would reach, and a mixin reaches the
-  classes it is mixed in front of. One consequence is that a ``typing.Self``
-  return value survives a chain of ``super()`` calls.
+  method was called on, instead of the class the method is written in. One consequence
+  is that a ``typing.Self`` return value survives a chain of ``super()`` calls.
 
   Closes #2852
   Closes pylint-dev/pylint#10807
