@@ -49,6 +49,10 @@ OBJECT_DUNDER_NEW = "object.__new__"
 # eagerly build a multi-gigabyte string during inference.
 _MAX_FORMAT_FIELD_SIZE = int(1e8)
 
+# Largest str/bytes constant we are willing to expand into one node per
+# character when inferring container calls and dict.fromkeys.
+_MAX_INFERABLE_STR_LEN = int(1e8)
+
 
 @lru_cache(maxsize=1)
 def _get_bounded_formatter():
@@ -322,6 +326,9 @@ def _container_generic_transform(
             for item in arg.items
         ]
     elif isinstance(arg, nodes.Const) and isinstance(arg.value, (str, bytes)):
+        # Don't expand an oversized string into one Const node per character.
+        if len(arg.value) > _MAX_INFERABLE_STR_LEN:
+            return None
         elts = arg.value
     else:
         return None
@@ -1002,6 +1009,9 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
+        # Same cap as the container builders above.
+        if len(inferred_values.value) > _MAX_INFERABLE_STR_LEN:
+            return _build_dict_with_elements([])
         # Deduplicate the characters/bytes before building Const nodes so that a
         # compact but large string, e.g. dict.fromkeys("x" * 10**8), doesn't
         # materialize one node per character for what is a single-key dict.
