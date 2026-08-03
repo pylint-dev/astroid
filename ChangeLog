@@ -323,6 +323,13 @@ Refs #3108
 
   Refs #3115
 
+* Require a C extension to be located in the standard library before its
+  standard library name allows it to be imported. A name such as ``colorsys``
+  was trusted on its own, so an extension of that name sitting next to the
+  analysed sources was imported, and its module initialisation run, without
+  being on ``extension-pkg-allow-list``. Extensions shipped with the
+  interpreter are unaffected.
+
 What's New in astroid 4.1.2?
 ============================
 Release date: 2026-03-22
