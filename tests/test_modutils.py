@@ -5,6 +5,7 @@
 """Unit tests for module modutils (module manipulation utilities)."""
 
 import email
+import importlib.machinery
 import logging
 import os
 import shutil
@@ -418,6 +419,24 @@ class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         assert modutils.is_stdlib_module("_curses")
         assert modutils.is_stdlib_module("msvcrt")
         assert modutils.is_stdlib_module("termios")
+
+
+class IsStdLibPathTest(unittest.TestCase):
+    """
+    Return true if the file is located in the standard library
+    """
+
+    def test_stdlib(self) -> None:
+        assert modutils.is_stdlib_path(os.__file__)
+
+    def test_ext_lib_dirs(self) -> None:
+        # site-packages can sit below a standard library directory, so an
+        # extension there is not a standard library location.
+        for ext_lib_dir in modutils.EXT_LIB_DIRS:
+            planted = os.path.join(
+                ext_lib_dir, "colorsys" + importlib.machinery.EXTENSION_SUFFIXES[0]
+            )
+            assert not modutils.is_stdlib_path(planted)
 
 
 class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):

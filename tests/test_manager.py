@@ -2,9 +2,11 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import importlib.machinery
 import os
 import re
 import sys
+import tempfile
 import time
 import types
 import unittest
@@ -145,6 +147,21 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             self.manager.ast_from_module_name,
             "unhandledModule",
         )
+
+    def test_ast_from_module_name_extension_shadowing_stdlib(self) -> None:
+        """An extension outside the stdlib is stubbed, not imported."""
+        modname = "colorsys"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            extension = modname + importlib.machinery.EXTENSION_SUFFIXES[0]
+            with open(os.path.join(tmpdir, extension), "wb"):
+                pass
+            sys.path.insert(0, tmpdir)
+            try:
+                ast = self.manager.ast_from_module_name(modname)
+            finally:
+                sys.path.remove(tmpdir)
+        self.assertEqual(ast.name, modname)
+        self.assertEqual(ast.items(), [])
 
     def _test_ast_from_old_namespace_package_protocol(self, root: str) -> None:
         origpath = sys.path[:]
