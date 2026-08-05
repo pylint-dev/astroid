@@ -907,6 +907,42 @@ class BrainNamedtupleAnnAssignTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
 
 
+class BrainEnumAutoTest(unittest.TestCase):
+    """Tests for correct type inference of enum members assigned via enum.auto()."""
+
+    def test_int_enum_auto_value_inferred_as_int(self) -> None:
+        """enum.auto() members in IntEnum should have .value inferred as int, not auto."""
+        node = builder.extract_node("""
+        import enum
+
+        class Color(enum.IntEnum):
+            RED = enum.auto()
+            GREEN = enum.auto()
+            BLUE = 10
+
+        Color.RED.value #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsInstance(inferred.value, int)
+
+    def test_int_enum_mixed_auto_and_literal(self) -> None:
+        """IntEnum with both auto() and literal values should not raise false E1101."""
+        node = builder.extract_node("""
+        import enum
+
+        class Status(enum.IntEnum):
+            PENDING = enum.auto()
+            ACTIVE = 2
+            CLOSED = enum.auto()
+
+        Status.PENDING.value #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsInstance(inferred.value, int)
+
+
 class BrainUUIDTest(unittest.TestCase):
     def test_uuid_has_int_member(self) -> None:
         node = builder.extract_node("""

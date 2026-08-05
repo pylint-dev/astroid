@@ -429,6 +429,15 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                         inferred_return_value = repr(stmt.value.value)
                     else:
                         inferred_return_value = stmt.value.value
+                elif (
+                    isinstance(stmt.value, nodes.Call)
+                    and isinstance(stmt.value.func, nodes.Attribute)
+                    and stmt.value.func.attrname == "auto"
+                ):
+                    # enum.auto() is a Call node, not a Const.
+                    # Substituting 1 so the stub correctly infers int
+                    # for IntEnum members instead of the type `auto`.
+                    inferred_return_value = 1
                 else:
                     inferred_return_value = stmt.value.as_string()
 
