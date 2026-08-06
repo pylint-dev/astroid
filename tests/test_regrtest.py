@@ -551,6 +551,23 @@ def test_regression_infer_namedtuple_invalid_fieldname_error() -> None:
     assert inferred.value == Uninferable
 
 
+def test_regression_infer_namedtuple_nfkc_normalized_fieldname() -> None:
+    """Regression test for pylint-dev/pylint#8746.
+
+    ``namedtuple`` accepts any identifier as a field name, but the parser stores
+    identifiers in their NFKC-normalized form, so a field written as "\u00b5"
+    (MICRO SIGN) ends up under "\u03bc" (GREEK SMALL LETTER MU).
+    """
+    code = """
+    from collections import namedtuple
+    namedtuple('mu', ['\u00b5'])
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.ClassDef)
+    assert "\u03bc" in inferred.locals
+
+
 # On Python 3.15+ the parser emits a regular SyntaxError instead of a MemoryError for deeply nested
 # parentheses, so the special-case test here is no longer needed.
 @pytest.mark.skipif(PY315_PLUS, reason="No longer a MemoryError on Python 3.15+")

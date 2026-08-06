@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import functools
 import keyword
+import unicodedata
 from collections.abc import Iterator
 from textwrap import dedent
 from typing import Final
@@ -257,7 +258,12 @@ class {name}(tuple):
     class_node.locals["_replace"] = fake.body[0].locals["_replace"]
     class_node.locals["_fields"] = fake.body[0].locals["_fields"]
     for attr in attributes:
-        class_node.locals[attr] = fake.body[0].locals[attr]
+        # Python normalises identifiers to NFKC, so a field named "\u00b5" (MICRO SIGN)
+        # is stored by the parser as "\u03bc" (GREEK SMALL LETTER MU). Looking the
+        # attribute up under the name as written raises KeyError on a definition
+        # namedtuple itself accepts, so use the name the parser actually used.
+        normalized = unicodedata.normalize("NFKC", attr)
+        class_node.locals[normalized] = fake.body[0].locals[normalized]
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
 
