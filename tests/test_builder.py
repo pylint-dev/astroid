@@ -650,7 +650,6 @@ class BuilderTest(unittest.TestCase):
                 a.custom_attr = 0
             """
         builder.parse(code)
-        # pylint: disable=no-member
         nonetype = nodes.const_factory(None)
         self.assertNotIn("custom_attr", nonetype.locals)
         self.assertNotIn("custom_attr", nonetype.instance_attrs)

@@ -38,7 +38,7 @@ from astroid.bases import (
     _infer_stmts,
 )
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS
+from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS, PY315_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -2109,6 +2109,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "builtins.frozenset")
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="frozendict builtin added in 3.15 (PEP 814)"
+    )
+    def test_frozendict_builtin_inference(self) -> None:
+        node = extract_node("frozendict(x=1, y=2)")
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.qname(), "builtins.frozendict")
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="sentinel builtin added in 3.15 (PEP 661)"
+    )
+    def test_sentinel_builtin_inference(self) -> None:
+        node = extract_node("sentinel('MISSING')")
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.qname(), "builtins.sentinel")
 
     def test_set_builtin_inference(self) -> None:
         code = """
@@ -5360,6 +5378,20 @@ def test_fstring_large_width_no_memory_error() -> None:
     assert inferred[0] is util.Uninferable
 
 
+@pytest.mark.parametrize(
+    "code",
+    [
+        "f'{1:>2000000000}'",
+        "f'{0:030000000000}'",
+        "f'{1.5:.2000000000f}'",
+    ],
+)
+def test_fstring_oversized_width_uninferable(code: str) -> None:
+    """A huge width/precision must not materialize a multi-gigabyte string."""
+    node = extract_node(code)
+    assert list(node.infer()) == [util.Uninferable]
+
+
 def test_augassign_recursion() -> None:
     """Make sure inference doesn't throw a RecursionError.
 
@@ -6430,6 +6462,28 @@ def test_inference_is_limited_to_the_boundnode(code, instance_name) -> None:
     assert inferred.name == instance_name
 
 
+def test_classmethod_returned_tuple_subscript_ignores_unrelated_boundnode() -> None:
+    node = extract_node("""
+    class A:
+        def b(self):
+            return 0
+
+        @classmethod
+        def c(cls):
+            return cls(), 0
+
+    class D:
+        def e(self):
+            self.f = A.c()[0]
+            self.f #@
+    """)
+
+    inferred = next(node.infer())
+
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "A"
+
+
 def test_property_inference() -> None:
     code = """
     class A:
@@ -7203,6 +7257,40 @@ class TestOldStyleStringFormatting:
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
 
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            '"%1000000000d" % 1',
+            '"%-1000000000s" % "x"',
+            '"%.1000000000f" % 1.0',
+            '"%*s" % (1000000000, "x")',
+            '"%*s" % (-1000000000, "x")',
+            '"%.*f" % (1000000000, 1.0)',
+            '"%(x)1000000000s" % {"x": "y"}',
+            '"%((x))1000000000s" % {"(x)": "y"}',
+            'b"%1000000000d" % 1',
+            'x = "%1000000000d"\nx %= 1\nx',
+        ],
+    )
+    def test_old_style_string_formatting_oversized(self, format_string: str) -> None:
+        # A tiny literal must not materialize a multi-gigabyte string.
+        node = _extract_single_node(format_string)
+        assert next(node.infer()) is util.Uninferable
+
+    def test_old_style_string_formatting_length_modifier(self) -> None:
+        # h/l/L length modifiers are skipped and do not affect the size cap.
+        node = _extract_single_node('"%ld" % 5')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "5"
+
+    def test_old_style_string_formatting_star_not_width(self) -> None:
+        # Only arguments consumed by a * width/precision count toward the cap.
+        node = _extract_single_node('"%*d %d" % (5, 7, 200000001)')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "    7 200000001"
+
 
 def test_sys_argv_uninferable() -> None:
     """Regression test for https://github.com/pylint-dev/pylint/issues/7710."""
@@ -7221,6 +7309,32 @@ def test_empty_format_spec() -> None:
     assert isinstance(node, nodes.JoinedStr)
 
     assert list(node.infer()) == [util.Uninferable]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        '"{:>2000000000}".format("x")',
+        '"{:.2000000000f}".format(1.5)',
+    ],
+)
+def test_str_format_oversized_width_uninferable(code: str) -> None:
+    """str.format() with a huge width/precision must stay Uninferable."""
+    node = _extract_single_node(code)
+    assert next(node.infer()) is util.Uninferable
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        '"{".format()',
+        '"}{".format()',
+    ],
+)
+def test_str_format_malformed_template_uninferable(code: str) -> None:
+    """A template Formatter().parse() rejects must stay Uninferable."""
+    node = _extract_single_node(code)
+    assert next(node.infer()) is util.Uninferable
 
 
 @pytest.mark.parametrize(
@@ -7306,3 +7420,19 @@ def test_overloaded_dunder_uses_implementation() -> None:
     binop, unaryop = extract_node(code)
     assert isinstance(next(binop.infer()), nodes.List)
     assert isinstance(next(unaryop.infer()), nodes.List)
+
+
+def test_decimal_inference():
+    """
+    Test we can infer the Decimal class from both the decimal and _pydecimal modules.
+
+    decimal uses _decimal by default, but that can be unavailable. The fallback can't be inferred
+    by default so we have a brain.
+    """
+    code = """
+    from decimal import Decimal #@
+    from _pydecimal import Decimal #@
+    """
+    for node in extract_node(code):
+        module = node.do_import_module(node.modname)
+        module.getattr(node.names[0][0])
