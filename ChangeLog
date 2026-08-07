@@ -29,6 +29,11 @@ Release date: TBA
   Closes #2852
   Closes pylint-dev/pylint#10807
 
+* ``typing.overload`` stubs no longer shadow the implementation when a special
+  method is looked up in the MRO. 
+
+  Closes #2448
+
 * Fix a crash when the field names of a functional ``Enum`` or ``namedtuple``
   call are bytes, as in ``Enum("", b"")``. Such a definition is invalid, so
   inference now falls back to its default instead of raising ``TypeError``.
