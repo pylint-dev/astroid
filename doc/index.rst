@@ -70,7 +70,7 @@ tools.
 
    api/index
 
-   whatsnew
+   whatsnew/index
 
 .. toctree::
    :hidden:
