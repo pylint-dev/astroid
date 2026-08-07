@@ -8,10 +8,8 @@ So, you want to release the `X.Y.Z` version of astroid ?
 the maintenance branch. If so, release a last patch release first. See
 `Releasing a patch version`.**
 
-- Remove the empty changelog for the last unreleased patch version `X.Y-1.Z'`. (For
-  example: `v2.3.5`)
-- Check the result of `git diff vX.Y-1.Z' ChangeLog`. (For example:
-  `git diff v2.3.4 ChangeLog`)
+- Preview the changelog that will be generated from the news fragments in
+  `doc/whatsnew/fragments/` with `towncrier build --draft`.
 - Install the release dependencies: `pip3 install -r requirements_minimal.txt`
 - Bump the version and release by using `tbump X.Y.0 --no-push --no-tag`. (For example:
   `tbump 2.4.0 --no-push --no-tag`)
@@ -32,6 +30,8 @@ git commit -am "Upgrade the version to 2.5.0-dev0 following 2.4.0 release"
 
 Check the commit and then push to a release branch:
 
+- tbump will have created a new `What's New in astroid X.Y+1` document. Add it to
+  `doc/whatsnew/X/index.rst`. Commit that with `git commit -a --amend`.
 - Open a merge request with the two commits (no one can push directly on `main`)
 - After the merge, recover the merged commits on `main` and tag the first one (the
   version should be `X.Y.Z`) as `vX.Y.Z` (For example: `v2.4.0`)
@@ -75,8 +75,9 @@ cherry-picked on the maintenance branch. Below, we will be releasing X.Y-1.Z (wh
 is the version under development on `main`.)
 
 - Branch `release/X.Y-1.Z` off of `maintenance/X.Y.x`
-- Check the result of `git diff vX.Y-1.Z-1 ChangeLog`. (For example:
-  `git diff v2.3.4 ChangeLog`)
+- Preview the changelog that will be generated from the news fragments in
+  `doc/whatsnew/fragments/` with `towncrier build --draft`. The patch release notes are
+  added to the existing `doc/whatsnew/X/X.Y-1/index.rst` document.
 - Install the release dependencies: `pip3 install -r requirements_minimal.txt`
 - Bump the version and release by using `tbump X.Y-1.Z --no-tag --no-push`. (For
   example: `tbump 2.3.5 --no-tag --no-push`. We're not ready to tag before code review.)
