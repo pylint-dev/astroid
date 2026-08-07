@@ -1032,9 +1032,10 @@ class PropertyModel(ObjectModel):
 
         func_setter = find_setter(func)
         if not func_setter:
-            raise InferenceError(
-                f"Unable to find the setter of property {func.function.name}"
-            )
+            # A property without a setter has fset set to None; looking the attribute
+            # up is not an error. Raising here escapes as a bare StopIteration and is
+            # reported as a crash instead of inferring the None it should.
+            return node_classes.Const(None)
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(

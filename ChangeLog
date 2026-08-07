@@ -14,6 +14,11 @@ Release date: TBA
   ``namedtuple`` itself accepts.
 
   Closes pylint-dev/pylint#8746
+* Infer ``None`` for the ``fset`` of a property that has no setter, as CPython does,
+  instead of raising. The lookup escaped as a bare ``StopIteration`` and was reported
+  as a crash on code as simple as ``C.p.fset``.
+
+  Closes pylint-dev/pylint#8739
 
 * Fix inference of a method's first argument (``self`` or ``cls``) when the
   method's return value is stored on an unrelated object. This avoids inferring
@@ -30,7 +35,7 @@ Release date: TBA
   Closes pylint-dev/pylint#10807
 
 * ``typing.overload`` stubs no longer shadow the implementation when a special
-  method is looked up in the MRO. 
+  method is looked up in the MRO.
 
   Closes #2448
 
