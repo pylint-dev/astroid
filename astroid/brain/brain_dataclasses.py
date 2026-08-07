@@ -188,8 +188,14 @@ def _find_arguments_from_base_classes(
         if not base.is_dataclass:
             continue
         try:
-            base_init: nodes.FunctionDef = base.locals["__init__"][0]
+            base_init = base.locals["__init__"][0]
         except KeyError:
+            continue
+
+        # A base can bind "__init__" to something that is not a function, for
+        # example by annotating it as a field: "__init__: int". There are no
+        # arguments to inherit from such a base.
+        if not isinstance(base_init, nodes.FunctionDef):
             continue
 
         pos_only, kw_only = base_init.args._get_arguments_data()

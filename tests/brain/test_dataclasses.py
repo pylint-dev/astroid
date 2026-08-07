@@ -1359,3 +1359,31 @@ def test_dataclass_with_duplicate_bases_field_default():
     # Should not raise DuplicateBasesError in _get_previous_field_default
     inferred = next(node.infer())
     assert inferred is not None
+
+
+def test_dataclass_base_with_annotated_init_no_crash():
+    """Regression test for https://github.com/pylint-dev/astroid/issues/3200.
+
+    A base dataclass can bind ``__init__`` to something that is not a function
+    by annotating it as a field. Collecting the arguments of such a base should
+    not crash with an AttributeError.
+    """
+    node = astroid.extract_node(
+        """
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:
+        __init__: int
+
+    @dataclass
+    class B(A):
+        pass
+
+    B.__init__  #@
+    """
+    )
+
+    inferred = next(node.infer())
+    assert isinstance(inferred, bases.UnboundMethod)
+    assert [a.name for a in inferred.args.args] == ["self"]
