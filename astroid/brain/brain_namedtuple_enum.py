@@ -429,14 +429,15 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                         inferred_return_value = repr(stmt.value.value)
                     else:
                         inferred_return_value = stmt.value.value
-                elif (
-                    isinstance(stmt.value, nodes.Call)
-                    and isinstance(stmt.value.func, nodes.Attribute)
-                    and stmt.value.func.attrname == "auto"
+                elif isinstance(stmt.value, nodes.Call) and _looks_like(
+                    stmt.value, "auto"
                 ):
-                    # enum.auto() is a Call node, not a Const.
-                    # Substituting 1 so the stub correctly infers int
-                    # for IntEnum members instead of the type `auto`.
+                    # enum.auto() is a Call node, not a Const. Handles both
+                    # spellings: `enum.auto()` and `auto()` (after
+                    # `from enum import auto`). Substituting 1 so the stub
+                    # infers the correct type (int) for IntEnum members;
+                    # note the value itself may differ at runtime for later
+                    # members but only the type is consulted for E1101.
                     inferred_return_value = 1
                 else:
                     inferred_return_value = stmt.value.as_string()

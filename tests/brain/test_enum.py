@@ -586,3 +586,35 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``DuplicateBasesError``.
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
+
+    def test_int_enum_auto_value_inferred_as_int(self) -> None:
+        """enum.auto() members in IntEnum should have .value inferred as int, not auto."""
+        node = builder.extract_node("""
+        import enum
+
+        class Color(enum.IntEnum):
+            RED = enum.auto()
+            GREEN = enum.auto()
+            BLUE = 10
+
+        Color.RED.value #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsInstance(inferred.value, int)
+
+    def test_int_enum_auto_unqualified_inferred_as_int(self) -> None:
+        """auto() (unqualified) in IntEnum should also infer .value as int."""
+        node = builder.extract_node("""
+        from enum import IntEnum, auto
+
+        class Status(IntEnum):
+            PENDING = auto()
+            ACTIVE = 2
+            CLOSED = auto()
+
+        Status.PENDING.value #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsInstance(inferred.value, int)
