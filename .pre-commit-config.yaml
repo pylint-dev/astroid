@@ -40,6 +40,13 @@ repos:
         exclude: tests/testdata
   - repo: local
     hooks:
+      - id: check-newsfragments
+        name: Check newsfragments
+        entry: python3 script/check_newsfragments.py
+        language: system
+        types: [text]
+        files: ^(doc/whatsnew/fragments)
+        exclude: doc/whatsnew/fragments/_.*.rst
       - id: pylint
         name: pylint
         entry: pylint
