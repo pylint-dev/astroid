@@ -151,7 +151,8 @@ Release date: TBA
 Refs #3127
 
 * PEP 695 type parameters now also live in their own scope (a new
-  :class:`nodes.TypeParamScope`), matching CPython's annotation scope. Type
+  :class:`astroid.nodes.TypeParamScope`), matching CPython's annotation
+  scope. Type
   parameter bounds and defaults are resolved lazily, so they may
   forward-reference names defined later in an enclosing scope (e.g.
   ``class Basket[T: Fruit]`` where ``Fruit`` is defined afterwards) and may

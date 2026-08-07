@@ -326,6 +326,12 @@ def test_type_param_scope_qname_of_type_alias() -> None:
     assert module.body[0].value.scope().qname() == "mymod"
 
 
+def test_type_param_scope_as_string() -> None:
+    """The scope prints as the bracketed type parameter list it spans."""
+    cls = extract_node("class C[T: int, *Ts, **P]: ...")
+    assert cls.type_param_scope.as_string() == "[T: int, *Ts, **P]"
+
+
 def test_type_param_scope_is_not_in_the_visitable_tree() -> None:
     """The scope is reachable as a parent, but nothing yields it as a child."""
     module = parse("class C[T]: ...")
