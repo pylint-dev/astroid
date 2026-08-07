@@ -1,0 +1,45 @@
+name: changelog
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, unlabeled, reopened]
+    branches-ignore:
+      - "maintenance/**"
+
+env:
+  DEFAULT_PYTHON: "3.14"
+
+permissions:
+  contents: read
+
+jobs:
+  check-changelog:
+    if: >-
+      ${{ !contains(github.event.pull_request.labels.*.name, 'Skip news :mute:') &&
+      !contains(github.event.pull_request.labels.*.name, 'dependency') }}
+    name: Changelog Entry Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v7.0.1
+        with:
+          # `towncrier check` runs `git diff --name-only origin/main...`, which
+          # needs a non-shallow clone.
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          check-latest: true
+      - name: Install towncrier
+        run: pip install "towncrier>=24.8,<26"
+      - name: Emit warning if news fragment is missing
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: |
+          # Fetch the pull request's base branch so towncrier will be able to
+          # compare the current branch with the base branch.
+          git fetch --no-tags origin +refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}
+          towncrier check --compare-with origin/${BASE_BRANCH}
