@@ -7,6 +7,14 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix a crash on a functional ``namedtuple`` whose field name changes under NFKC
+  normalization, such as ``namedtuple("mu", ["µ"])``. Python normalizes
+  identifiers, so the parsed class stores the field under ``"μ"`` while the
+  brain looked it up as written, raising ``KeyError`` on a definition that
+  ``namedtuple`` itself accepts.
+
+  Closes pylint-dev/pylint#8746
+
 * Fix inference of a method's first argument (``self`` or ``cls``) when the
   method's return value is stored on an unrelated object. This avoids inferring
   ``cls`` as the caller's class when indexing a tuple returned by a
