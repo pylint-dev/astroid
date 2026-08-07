@@ -7,9 +7,7 @@
 import email
 import logging
 import os
-import shutil
 import sys
-import tempfile
 import unittest
 import xml
 from pathlib import Path
@@ -188,114 +186,104 @@ class ModPathFromFileTest(unittest.TestCase):
     def test_raise_modpath_from_file_exception(self) -> None:
         self.assertRaises(ImportError, modutils.modpath_from_file, "/turlututu")
 
-    def test_import_symlink_with_source_outside_of_path(self) -> None:
-        with tempfile.NamedTemporaryFile() as tmpfile:
-            linked_file_name = "symlinked_file.py"
-            try:
-                os.symlink(tmpfile.name, linked_file_name)
-                self.assertEqual(
-                    modutils.modpath_from_file(linked_file_name), ["symlinked_file"]
-                )
-            finally:
-                os.remove(linked_file_name)
 
-    def test_modpath_from_file_path_order(self) -> None:
-        """Test for ordering of paths.
-        The test does the following:
-        1. Add a tmp directory to beginning of sys.path via augmented_sys_path
-        2. Create a module file in sub directory of tmp directory
-        3. If the sub directory is passed as additional directory, module name
-           should be relative to the subdirectory since additional directory has
-           higher precedence."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            with resources.augmented_sys_path([tmp_dir]):
-                mod_name = "module"
-                sub_dirname = "subdir"
-                sub_dir = tmp_dir + "/" + sub_dirname
-                os.mkdir(sub_dir)
-                module_file = f"{sub_dir}/{mod_name}.py"
+def test_import_symlink_with_source_outside_of_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "source.py"
+    source.write_text("# dummy source", encoding="utf-8")
+    linked_file_name = tmp_path / "symlinked_file.py"
+    os.symlink(source, linked_file_name)
+    monkeypatch.syspath_prepend(str(tmp_path))
+    assert modutils.modpath_from_file(str(linked_file_name)) == ["symlinked_file"]
 
-                with open(module_file, "w+", encoding="utf-8"):
-                    pass
 
-                # Without additional directory, return relative to tmp_dir
-                self.assertEqual(
-                    modutils.modpath_from_file(module_file), [sub_dirname, mod_name]
-                )
+def test_modpath_from_file_path_order(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test for ordering of paths.
+    The test does the following:
+    1. Add a tmp directory to beginning of sys.path via augmented_sys_path
+    2. Create a module file in sub directory of tmp directory
+    3. If the sub directory is passed as additional directory, module name
+       should be relative to the subdirectory since additional directory has
+       higher precedence."""
+    with resources.augmented_sys_path([str(tmp_path)]):
+        mod_name = "module"
+        sub_dirname = "subdir"
+        sub_dir = tmp_path / sub_dirname
+        sub_dir.mkdir()
+        module_file = sub_dir / f"{mod_name}.py"
+        module_file.write_text("# dummy", encoding="utf-8")
 
-                # With sub directory as additional directory, return relative to
-                # sub directory
-                self.assertEqual(
-                    modutils.modpath_from_file(f"{sub_dir}/{mod_name}.py", [sub_dir]),
-                    [mod_name],
-                )
+        # Without additional directory, return relative to tmp_path
+        assert modutils.modpath_from_file(str(module_file)) == [sub_dirname, mod_name]
 
-    def test_import_symlink_both_outside_of_path(self) -> None:
-        with tempfile.NamedTemporaryFile() as tmpfile:
-            linked_file_name = os.path.join(tempfile.gettempdir(), "symlinked_file.py")
-            try:
-                os.symlink(tmpfile.name, linked_file_name)
-                self.assertRaises(
-                    ImportError, modutils.modpath_from_file, linked_file_name
-                )
-            finally:
-                os.remove(linked_file_name)
+        # With sub directory as additional directory, return relative to
+        # sub directory
+        assert modutils.modpath_from_file(str(module_file), [str(sub_dir)]) == [
+            mod_name
+        ]
 
-    def test_load_from_module_symlink_on_symlinked_paths_in_syspath(self) -> None:
-        # constants
-        tmp = tempfile.gettempdir()
-        deployment_path = os.path.join(tmp, "deployment")
-        path_to_include = os.path.join(tmp, "path_to_include")
-        real_secret_path = os.path.join(tmp, "secret.py")
-        symlink_secret_path = os.path.join(path_to_include, "secret.py")
 
-        # setup double symlink
-        # /tmp/deployment
-        # /tmp/path_to_include (symlink to /tmp/deployment)
-        # /tmp/secret.py
-        # /tmp/deployment/secret.py (points to /tmp/secret.py)
-        try:
-            os.mkdir(deployment_path)
-            self.addCleanup(shutil.rmtree, deployment_path)
-            os.symlink(deployment_path, path_to_include)
-            self.addCleanup(os.remove, path_to_include)
-        except OSError:
-            pass
-        with open(real_secret_path, "w", encoding="utf-8"):
-            pass
-        os.symlink(real_secret_path, symlink_secret_path)
-        self.addCleanup(os.remove, real_secret_path)
+def test_import_symlink_both_outside_of_path(tmp_path: Path) -> None:
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    source = outside_dir / "source.py"
+    source.write_text("# dummy source", encoding="utf-8")
+    linked_file_name = tmp_path / "symlinked_file.py"
+    os.symlink(source, linked_file_name)
+    # Neither the symlink location nor its target is on sys.path, so the
+    # module cannot be found.
+    with pytest.raises(ImportError):
+        modutils.modpath_from_file(str(linked_file_name))
 
-        # add the symlinked path to sys.path
-        sys.path.append(path_to_include)
-        self.addCleanup(sys.path.pop)
 
-        # this should be equivalent to: import secret
-        self.assertEqual(modutils.modpath_from_file(symlink_secret_path), ["secret"])
+def test_load_from_module_symlink_on_symlinked_paths_in_syspath(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # setup double symlink
+    # <tmp>/deployment
+    # <tmp>/path_to_include (symlink to <tmp>/deployment)
+    # <tmp>/secret.py
+    # <tmp>/deployment/secret.py (points to <tmp>/secret.py)
+    deployment_path = tmp_path / "deployment"
+    deployment_path.mkdir()
+    path_to_include = tmp_path / "path_to_include"
+    os.symlink(deployment_path, path_to_include)
+    real_secret_path = tmp_path / "secret.py"
+    real_secret_path.write_text("# dummy", encoding="utf-8")
+    symlink_secret_path = path_to_include / "secret.py"
+    os.symlink(real_secret_path, symlink_secret_path)
 
-    def test_load_packages_without_init(self) -> None:
-        """Test that we correctly find packages with an __init__.py file.
+    # add the symlinked path to sys.path
+    monkeypatch.syspath_prepend(str(path_to_include))
 
-        Regression test for issue reported in:
-        https://github.com/pylint-dev/astroid/issues/1327
-        """
-        tmp_dir = Path(tempfile.gettempdir())
-        self.addCleanup(os.chdir, os.getcwd())
-        os.chdir(tmp_dir)
+    # this should be equivalent to: import secret
+    assert modutils.modpath_from_file(str(symlink_secret_path)) == ["secret"]
 
-        self.addCleanup(shutil.rmtree, tmp_dir / "src")
-        os.mkdir(tmp_dir / "src")
-        os.mkdir(tmp_dir / "src" / "package")
-        with open(tmp_dir / "src" / "__init__.py", "w", encoding="utf-8"):
-            pass
-        with open(tmp_dir / "src" / "package" / "file.py", "w", encoding="utf-8"):
-            pass
 
-        # this should be equivalent to: import secret
-        self.assertEqual(
-            modutils.modpath_from_file(str(Path("src") / "package"), ["."]),
-            ["src", "package"],
-        )
+def test_load_packages_without_init(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that we correctly find packages with an __init__.py file.
+
+    Regression test for issue reported in:
+    https://github.com/pylint-dev/astroid/issues/1327
+    """
+    monkeypatch.chdir(tmp_path)
+
+    src_dir = tmp_path / "src"
+    package_dir = src_dir / "package"
+    package_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").write_text("", encoding="utf-8")
+    (package_dir / "file.py").write_text("", encoding="utf-8")
+
+    # this should be equivalent to: import secret
+    assert modutils.modpath_from_file(str(Path("src") / "package"), ["."]) == [
+        "src",
+        "package",
+    ]
 
 
 class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
