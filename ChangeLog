@@ -35,7 +35,7 @@ Release date: TBA
   Closes pylint-dev/pylint#10807
 
 * ``typing.overload`` stubs no longer shadow the implementation when a special
-  method is looked up in the MRO. 
+  method is looked up in the MRO.
 
   Closes #2448
 
