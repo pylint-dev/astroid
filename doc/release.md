@@ -8,10 +8,8 @@ So, you want to release the `X.Y.Z` version of astroid ?
 the maintenance branch. If so, release a last patch release first. See
 `Releasing a patch version`.**
 
-- Remove the empty changelog for the last unreleased patch version `X.Y-1.Z'`. (For
-  example: `v2.3.5`)
-- Check the result of `git diff vX.Y-1.Z' ChangeLog`. (For example:
-  `git diff v2.3.4 ChangeLog`)
+- Preview the changelog that will be generated from the news fragments in
+  `doc/whatsnew/fragments/` with `towncrier build --draft`.
 - Install the release dependencies: `pip3 install -r requirements_minimal.txt`
 - Bump the version and release by using `tbump X.Y.0 --no-push --no-tag`. (For example:
   `tbump 2.4.0 --no-push --no-tag`)
@@ -32,16 +30,25 @@ git commit -am "Upgrade the version to 2.5.0-dev0 following 2.4.0 release"
 
 Check the commit and then push to a release branch:
 
+- tbump will have created a new `What's New in astroid X.Y+1` document. Add it to
+  `doc/whatsnew/X/index.rst`. Commit that with `git commit -a --amend`.
 - Open a merge request with the two commits (no one can push directly on `main`)
 - After the merge, recover the merged commits on `main` and tag the first one (the
   version should be `X.Y.Z`) as `vX.Y.Z` (For example: `v2.4.0`)
 - Push the tag.
 - Release the version on GitHub with the same name as the tag and copy and paste the
   appropriate changelog in the description. This triggers the PyPI release.
-- Delete the `maintenance/X.Y-1.x` branch. (For example: `maintenance/2.3.x`)
 - Create a `maintenance/X.Y.x` (For example: `maintenance/2.4.x` from the `v2.4.0` tag.)
   based on the tag from the release. The maintenance branch are protected you won't be
   able to fix it after the fact if you create it from main.
+- Update the branch protection rule so it covers the new maintenance branch: in
+  `Settings` → `Branches`, change the pattern of the `maintenance/X.Y-1.*` rule to
+  `maintenance/X.Y.*`. (For example: `maintenance/2.3.*` becomes `maintenance/2.4.*`.)
+  This also unprotects the old branch so it can be deleted.
+- Delete the `maintenance/X.Y-1.x` branch. (For example: `maintenance/2.3.x`)
+- Rename the `backport maintenance/X.Y-1.x` label to `backport maintenance/X.Y.x`. (For
+  example: `backport maintenance/2.3.x` becomes `backport maintenance/2.4.x`.) Renaming
+  keeps the label attached to the issues and pull requests that already carry it.
 
 ## Backporting a fix from `main` to the maintenance branch
 
@@ -68,8 +75,9 @@ cherry-picked on the maintenance branch. Below, we will be releasing X.Y-1.Z (wh
 is the version under development on `main`.)
 
 - Branch `release/X.Y-1.Z` off of `maintenance/X.Y.x`
-- Check the result of `git diff vX.Y-1.Z-1 ChangeLog`. (For example:
-  `git diff v2.3.4 ChangeLog`)
+- Preview the changelog that will be generated from the news fragments with
+  `towncrier build --draft`. (On `maintenance/4.3.x`, which predates `towncrier`, check
+  the flat `ChangeLog` file instead: `git diff vX.Y-1.Z-1 ChangeLog`.)
 - Install the release dependencies: `pip3 install -r requirements_minimal.txt`
 - Bump the version and release by using `tbump X.Y-1.Z --no-tag --no-push`. (For
   example: `tbump 2.3.5 --no-tag --no-push`. We're not ready to tag before code review.)
