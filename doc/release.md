@@ -38,10 +38,17 @@ Check the commit and then push to a release branch:
 - Push the tag.
 - Release the version on GitHub with the same name as the tag and copy and paste the
   appropriate changelog in the description. This triggers the PyPI release.
-- Delete the `maintenance/X.Y-1.x` branch. (For example: `maintenance/2.3.x`)
 - Create a `maintenance/X.Y.x` (For example: `maintenance/2.4.x` from the `v2.4.0` tag.)
   based on the tag from the release. The maintenance branch are protected you won't be
   able to fix it after the fact if you create it from main.
+- Update the branch protection rule so it covers the new maintenance branch: in
+  `Settings` → `Branches`, change the pattern of the `maintenance/X.Y-1.*` rule to
+  `maintenance/X.Y.*`. (For example: `maintenance/2.3.*` becomes `maintenance/2.4.*`.)
+  This also unprotects the old branch so it can be deleted.
+- Delete the `maintenance/X.Y-1.x` branch. (For example: `maintenance/2.3.x`)
+- Rename the `backport maintenance/X.Y-1.x` label to `backport maintenance/X.Y.x`. (For
+  example: `backport maintenance/2.3.x` becomes `backport maintenance/2.4.x`.) Renaming
+  keeps the label attached to the issues and pull requests that already carry it.
 
 ## Backporting a fix from `main` to the maintenance branch
 
