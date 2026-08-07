@@ -83,6 +83,7 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_typing,
         brain_unittest,
         brain_uuid,
+        brain_wave,
     )
 
     brain_argparse.register(manager)
@@ -136,6 +137,7 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_typing.register(manager)
     brain_unittest.register(manager)
     brain_uuid.register(manager)
+    brain_wave.register(manager)
 
 
 def is_class_var(node: NodeNG) -> bool:
