@@ -161,10 +161,6 @@ Refs #3127
   well, so consumers building their own scope model out of ``locals`` keep
   working unchanged.
 
-  A ``global`` statement in the owner's body no longer binds a type parameter
-  of the same name in the module: ``def f[T](): global T`` declares the
-  module's ``T`` for the body only, it does not make the type parameter global.
-
   Refs pylint-dev/pylint#11115
 
 * Bound string/bytes multiplication (``"x" * n``) and integer left shifts
