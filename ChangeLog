@@ -41,6 +41,13 @@ Release date: TBA
 
   Closes #3191
 
+* Fix a crash when a dataclass inherits from a dataclass that annotates
+  ``__init__`` as a field, as in ``__init__: int``. Such a base binds
+  ``__init__`` to a name instead of a function, so it no longer contributes
+  arguments to the generated ``__init__``.
+
+  Closes #3200
+
 * The documentation build now fails on any Sphinx warning, so a cross-reference
   that does not resolve is caught by CI instead of quietly rendering as plain
   text. ``Uninferable``, ``Position`` and the ``BadOperationMessage`` classes
