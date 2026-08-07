@@ -1368,8 +1368,7 @@ def test_dataclass_base_with_annotated_init_no_crash():
     by annotating it as a field. Collecting the arguments of such a base should
     not crash with an AttributeError.
     """
-    node = astroid.extract_node(
-        """
+    node = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
@@ -1381,8 +1380,7 @@ def test_dataclass_base_with_annotated_init_no_crash():
         pass
 
     B.__init__  #@
-    """
-    )
+    """)
 
     inferred = next(node.infer())
     assert isinstance(inferred, bases.UnboundMethod)
