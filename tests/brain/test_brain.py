@@ -665,6 +665,29 @@ class TypingBrain(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.Instance)
 
+    def test_typing_namedtuple_fields_as_keyword_arguments(self) -> None:
+        node = builder.extract_node("""
+        from typing import NamedTuple
+
+        Point = NamedTuple("Point", x=float, y=float)
+        Point #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, "Point")
+        self.assertIn("x", inferred.locals)
+        self.assertIn("y", inferred.locals)
+
+        instance = builder.extract_node("""
+        from typing import NamedTuple
+
+        Point = NamedTuple("Point", x=float, y=float)
+        p = Point(1, 2)
+        p #@
+        """)
+        inferred = next(instance.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+
     def test_typed_dict(self):
         code = builder.extract_node("""
         from typing import TypedDict
@@ -939,6 +962,21 @@ class ReBrainTest(unittest.TestCase):
         inferred2 = next(node2.infer())
         assert isinstance(inferred2, nodes.ClassDef)
         assert isinstance(inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef)
+
+    def test_re_compile_inferred_as_pattern(self):
+        """Test re.compile is inferred as an instance of re.Pattern."""
+        node = builder.extract_node("""
+        import re
+        _ENCODING_RGX = re.compile(r"f")
+        _ENCODING_RGX
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+        assert inferred.qname() == "re.Pattern"
+        # The pattern exposes the usual regular expression methods.
+        assert "match" in inferred._proxied.locals
+        assert "search" in inferred._proxied.locals
+        assert "findall" in inferred._proxied.locals
 
 
 class BrainNamedtupleAnnAssignTest(unittest.TestCase):
