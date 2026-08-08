@@ -65,7 +65,7 @@ class AstroidError(Exception):
     def __str__(self) -> str:
         try:
             return self.message.format(**vars(self))
-        except ValueError:
+        except (ValueError, IndexError, KeyError):
             return self.message  # Return raw message if formatting fails
 
 
