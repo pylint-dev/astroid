@@ -222,6 +222,24 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
+def _is_builtin_call(node: nodes.Call) -> bool:
+    """Check that the callable of *node* really resolves to a builtin.
+
+    ``_builtin_filter_predicate`` only matches on the identifier, so a name
+    shadowing a builtin (say a parameter called ``type``) selects the transform
+    too. Resolve the identifier the way Python would before trusting it, like
+    ``brain_type`` does for ``type[...]`` subscripts.
+    """
+    func = node.func
+    if isinstance(func, nodes.Attribute):
+        # ``dict.fromkeys``: what matters is where ``dict`` comes from.
+        func = func.expr
+    if not isinstance(func, nodes.Name):
+        return False
+    node_scope, _ = node.scope().lookup(func.name)
+    return isinstance(node_scope, nodes.Module) and node_scope.qname() == "builtins"
+
+
 def register_builtin_transform(
     manager: AstroidManager, transform, builtin_name
 ) -> None:
@@ -234,6 +252,8 @@ def register_builtin_transform(
     def _transform_wrapper(
         node: nodes.Call, context: InferenceContext | None = None
     ) -> Iterator:
+        if not _is_builtin_call(node):
+            raise UseInferenceDefault
         result = transform(node, context=context)
         if result:
             if not result.parent:

@@ -1,0 +1,8 @@
+The builtin inference tips no longer fire on a name that shadows the builtin
+they are registered for. They were selected on the identifier alone, so a
+parameter named ``type`` or a function named ``len`` was still inferred as a
+call to the builtin. The identifier is now resolved with ``lookup()`` first,
+as ``brain_type`` already does for ``type[...]`` subscripts.
+
+Refs #3211
+Closes pylint-dev/pylint#10994
