@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from astroid import nodes, objects, util
+from astroid import bases, nodes, objects, util
 from astroid.builder import _extract_single_node, extract_node
 
 
@@ -156,3 +156,143 @@ class Number:
 """)
         inferit = function_def.infer_call_result(function_def, context=None)
         assert [a.name for a in inferit] == [util.Uninferable]
+
+
+class TestShadowedBuiltins:
+    """A name shadowing a builtin must not be inferred as that builtin.
+
+    The transforms registered by ``register_builtin_transform`` are selected on
+    the identifier alone, so every one of them used to fire on a shadowing name.
+    """
+
+    @pytest.mark.parametrize(
+        "code",
+        [
+            pytest.param(
+                """
+                def bool(x):
+                    return "shadowed"
+                bool(1) #@
+                """,
+                id="bool",
+            ),
+            pytest.param(
+                """
+                def int(x):
+                    return "shadowed"
+                int("1") #@
+                """,
+                id="int",
+            ),
+            pytest.param(
+                """
+                def isinstance(obj, cls):
+                    return "shadowed"
+                isinstance(1, int) #@
+                """,
+                id="isinstance",
+            ),
+            pytest.param(
+                """
+                def len(x):
+                    return "shadowed"
+                len([1, 2, 3]) #@
+                """,
+                id="len",
+            ),
+            pytest.param(
+                """
+                def list(x):
+                    return "shadowed"
+                list("ab") #@
+                """,
+                id="list",
+            ),
+            pytest.param(
+                """
+                def str(x):
+                    return "shadowed"
+                str(42) #@
+                """,
+                id="str",
+            ),
+            pytest.param(
+                """
+                def type(x):
+                    return "shadowed"
+                type(1) #@
+                """,
+                id="type",
+            ),
+            pytest.param(
+                """
+                len = lambda x: "shadowed"
+                len([1, 2, 3]) #@
+                """,
+                id="assignment-instead-of-def",
+            ),
+            pytest.param(
+                """
+                class dict:
+                    @staticmethod
+                    def fromkeys(keys):
+                        return "shadowed"
+                dict.fromkeys("ab") #@
+                """,
+                id="dict.fromkeys",
+            ),
+        ],
+    )
+    def test_shadowed_builtin_call(self, code: str) -> None:
+        node: nodes.Call = _extract_single_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "shadowed"
+
+    def test_shadowed_by_a_parameter_pylint10994(self) -> None:
+        """https://github.com/pylint-dev/pylint/issues/10994"""
+        node: nodes.Call = _extract_single_node("""
+        def convert_type(x, type):
+            return type(x)
+
+        convert_type(12.34, str) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == "builtins.str"
+
+    @pytest.mark.parametrize(
+        "code,expected",
+        [
+            pytest.param("bool(0) #@", nodes.Const, id="bool"),
+            pytest.param("callable(len) #@", nodes.Const, id="callable"),
+            pytest.param("dict(a=1) #@", nodes.Dict, id="dict"),
+            pytest.param("dict.fromkeys(['a']) #@", nodes.Dict, id="dict.fromkeys"),
+            pytest.param("frozenset([1]) #@", objects.FrozenSet, id="frozenset"),
+            pytest.param("int('42') #@", nodes.Const, id="int"),
+            pytest.param("isinstance(1, int) #@", nodes.Const, id="isinstance"),
+            pytest.param("issubclass(bool, int) #@", nodes.Const, id="issubclass"),
+            pytest.param("len([1, 2, 3]) #@", nodes.Const, id="len"),
+            pytest.param("list((1, 2)) #@", nodes.List, id="list"),
+            pytest.param("set([1]) #@", nodes.Set, id="set"),
+            pytest.param("slice(1, 2) #@", nodes.Slice, id="slice"),
+            pytest.param("str(42) #@", nodes.Const, id="str"),
+            pytest.param("tuple([1, 2]) #@", nodes.Tuple, id="tuple"),
+            pytest.param("type(1) #@", nodes.ClassDef, id="type"),
+        ],
+    )
+    def test_unshadowed_builtin_call(self, code: str, expected: type) -> None:
+        """The brains must keep firing when the builtin is not shadowed."""
+        node: nodes.Call = _extract_single_node(code)
+        assert isinstance(next(node.infer()), expected)
+
+    def test_shadowing_in_another_scope_is_ignored(self) -> None:
+        node: nodes.Call = _extract_single_node("""
+        def takes_a_len(len):
+            return len
+
+        len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
