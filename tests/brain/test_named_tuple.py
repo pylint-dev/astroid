@@ -218,6 +218,16 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)  # would raise ValueError
 
+    def test_format_placeholder_typename_does_not_crash_inference(self) -> None:
+        """Reported in https://github.com/pylint-dev/astroid/issues/3199 as a crash."""
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{0}", "abc")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise IndexError
+
     def test_keyword_typename_does_not_crash_inference(self) -> None:
         node = builder.extract_node("""
         from collections import namedtuple
