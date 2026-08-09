@@ -282,9 +282,7 @@ class TestShadowedBuiltins:
             pytest.param(
                 'getattr("apple", "upper") #@', bases.BoundMethod, id="getattr"
             ),
-            pytest.param(
-                'hasattr("apple", "upper") #@', nodes.Const, id="hasattr"
-            ),
+            pytest.param('hasattr("apple", "upper") #@', nodes.Const, id="hasattr"),
             pytest.param(
                 "property(lambda self: 1) #@", objects.Property, id="property"
             ),
@@ -349,24 +347,20 @@ class TestShadowedBuiltins:
 
     def test_default_arg_uses_enclosing_builtin(self) -> None:
         """Defaults are evaluated in the enclosing scope, not the function body."""
-        func: nodes.FunctionDef = extract_node(
-            """
+        func: nodes.FunctionDef = extract_node("""
             def h(x, len=len([1, 2, 3])):
                 return x
-            """
-        )
+            """)
         call = next(d for d in func.args.defaults if isinstance(d, nodes.Call))
         inferred = next(call.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 3
 
     def test_kwonly_default_uses_enclosing_builtin(self) -> None:
-        func: nodes.FunctionDef = extract_node(
-            """
+        func: nodes.FunctionDef = extract_node("""
             def h(x, *, len=len([1, 2, 3])):
                 return x
-            """
-        )
+            """)
         call = next(
             d for d in (func.args.kw_defaults or ()) if isinstance(d, nodes.Call)
         )
