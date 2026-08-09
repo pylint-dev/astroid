@@ -222,22 +222,65 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
-def _is_builtin_call(node: nodes.Call) -> bool:
-    """Check that the callable of *node* really resolves to a builtin.
+def _name_lookup_frame(
+    name_node: nodes.Name,
+) -> tuple[nodes.LocalsDictNodeNG, list[nodes.NodeNG]]:
+    """Resolve *name_node* the way Python would at that point.
 
-    ``_builtin_filter_predicate`` only matches on the identifier, so a name
-    shadowing a builtin (say a parameter called ``type``) selects the transform
-    too. Resolve the identifier the way Python would before trusting it, like
-    ``brain_type`` does for ``type[...]`` subscripts.
+    ``Name.lookup`` already ignores later assignments in the same scope, so
+    things like ``len(...)`` before a later ``def len`` work. Defaults are the
+    awkward bit: they run in the enclosing scope, and ``FunctionDef.scope_lookup``
+    only special-cases that when the looked-up node *is* the default, not a name
+    inside it. Detect that and look up from the parent frame instead.
+    """
+    scope = name_node.scope()
+    if isinstance(scope, (nodes.FunctionDef, nodes.Lambda)):
+        args = scope.args
+        if args is not None:
+            for default in itertools.chain(
+                args.defaults or (),
+                (d for d in (args.kw_defaults or ()) if d is not None),
+            ):
+                if default is name_node or default.parent_of(name_node):
+                    parent = scope.parent
+                    if parent is None:
+                        break
+                    # Same offset as FunctionDef.scope_lookup uses for defaults,
+                    # so ``def f(f=f)`` does not resolve the default to itself.
+                    return parent.frame()._scope_lookup(
+                        name_node, name_node.name, offset=-1
+                    )
+    return name_node.lookup(name_node.name)
+
+
+def _is_from_builtins_import(stmt: nodes.NodeNG, name: str) -> bool:
+    """True if *stmt* is ``from builtins import ...`` binding *name*."""
+    if not isinstance(stmt, nodes.ImportFrom) or stmt.modname != "builtins":
+        return False
+    for imported, alias in stmt.names:
+        if imported == "*":
+            return True
+        if (alias or imported) == name:
+            return True
+    return False
+
+
+def _is_builtin_call(node: nodes.Call) -> bool:
+    """True if the callable on *node* actually comes from builtins.
+
+    The filter only matches the name text, so a parameter called ``type`` still
+    picks the transform. Check where the name resolves before trusting it.
     """
     func = node.func
     if isinstance(func, nodes.Attribute):
-        # ``dict.fromkeys``: what matters is where ``dict`` comes from.
+        # dict.fromkeys: what matters is where ``dict`` comes from.
         func = func.expr
     if not isinstance(func, nodes.Name):
         return False
-    node_scope, _ = node.scope().lookup(func.name)
-    return isinstance(node_scope, nodes.Module) and node_scope.qname() == "builtins"
+    frame, stmts = _name_lookup_frame(func)
+    if isinstance(frame, nodes.Module) and frame.qname() == "builtins":
+        return True
+    return any(_is_from_builtins_import(stmt, func.name) for stmt in stmts)
 
 
 def register_builtin_transform(
