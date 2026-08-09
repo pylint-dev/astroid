@@ -279,12 +279,100 @@ class TestShadowedBuiltins:
             pytest.param("str(42) #@", nodes.Const, id="str"),
             pytest.param("tuple([1, 2]) #@", nodes.Tuple, id="tuple"),
             pytest.param("type(1) #@", nodes.ClassDef, id="type"),
+            pytest.param(
+                'getattr("apple", "upper") #@', bases.BoundMethod, id="getattr"
+            ),
+            pytest.param(
+                'hasattr("apple", "upper") #@', nodes.Const, id="hasattr"
+            ),
+            pytest.param(
+                "property(lambda self: 1) #@", objects.Property, id="property"
+            ),
+            pytest.param(
+                """
+                class Animal:
+                    def speak(self):
+                        return "generic"
+
+                class Cat(Animal):
+                    def speak(self):
+                        super() #@
+                """,
+                objects.Super,
+                id="super",
+            ),
+            pytest.param(
+                """
+                from builtins import str
+                str(42) #@
+                """,
+                nodes.Const,
+                id="from-builtins-import",
+            ),
+            pytest.param(
+                """
+                from builtins import *
+                str(42) #@
+                """,
+                nodes.Const,
+                id="from-builtins-star-import",
+            ),
+            pytest.param(
+                """
+                class Fruit:
+                    size = len("apple")  #@
+                    def len(self):
+                        return 0
+                """,
+                nodes.Const,
+                id="class-body-before-method-shadow",
+            ),
+            pytest.param(
+                """
+                len([1, 2, 3])  #@
+                def len(x):
+                    return "shadowed"
+                """,
+                nodes.Const,
+                id="module-use-before-def",
+            ),
         ],
     )
     def test_unshadowed_builtin_call(self, code: str, expected: type) -> None:
         """The brains must keep firing when the builtin is not shadowed."""
-        node: nodes.Call = _extract_single_node(code)
-        assert isinstance(next(node.infer()), expected)
+        node = _extract_single_node(code)
+        if isinstance(node, nodes.Assign):
+            node = node.value
+        assert isinstance(node, nodes.Call)
+        inferred = next(node.infer())
+        assert isinstance(inferred, expected)
+
+    def test_default_arg_uses_enclosing_builtin(self) -> None:
+        """Defaults are evaluated in the enclosing scope, not the function body."""
+        func: nodes.FunctionDef = extract_node(
+            """
+            def h(x, len=len([1, 2, 3])):
+                return x
+            """
+        )
+        call = next(d for d in func.args.defaults if isinstance(d, nodes.Call))
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
+    def test_kwonly_default_uses_enclosing_builtin(self) -> None:
+        func: nodes.FunctionDef = extract_node(
+            """
+            def h(x, *, len=len([1, 2, 3])):
+                return x
+            """
+        )
+        call = next(
+            d for d in (func.args.kw_defaults or ()) if isinstance(d, nodes.Call)
+        )
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
 
     def test_shadowing_in_another_scope_is_ignored(self) -> None:
         node: nodes.Call = _extract_single_node("""
