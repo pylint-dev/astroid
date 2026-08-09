@@ -149,6 +149,10 @@ def infer_func_form(
         # ``Enum("e", (1,))``) means the definition is invalid, so fall back to
         # the default inference instead of crashing.
         raise UseInferenceDefault
+    if enum and not isinstance(name, str):
+        # Enum class names must be strings; inferring a class with any other
+        # name can make consumers crash when they perform string operations.
+        raise UseInferenceDefault
     attributes = [attr for attr in attributes if " " not in attr]
 
     # If we can't infer the name of the class, don't crash, up to this point
