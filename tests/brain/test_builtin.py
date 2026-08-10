@@ -368,6 +368,24 @@ class TestShadowedBuiltins:
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 3
 
+    @pytest.mark.parametrize(
+        "default",
+        [
+            pytest.param("[len(y) for y in ([1, 2, 3],)]", id="comprehension"),
+            pytest.param("lambda: len([1, 2, 3])", id="lambda"),
+        ],
+    )
+    def test_nested_scope_in_default_uses_enclosing_builtin(self, default: str) -> None:
+        """A comprehension or lambda in a default is still in the enclosing scope."""
+        func: nodes.FunctionDef = extract_node(f"""
+            def h(x, len={default}):
+                return x
+            """)
+        call = next(func.args.defaults[0].nodes_of_class(nodes.Call))
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
     def test_shadowing_in_another_scope_is_ignored(self) -> None:
         node: nodes.Call = _extract_single_node("""
         def takes_a_len(len):

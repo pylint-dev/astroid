@@ -874,6 +874,36 @@ def _infer_decorator_callchain(node):
     return None
 
 
+def _is_in_default_value(args: Arguments, node: NodeNG) -> bool:
+    """Whether *node* is part of one of the default values in *args*.
+
+    Default values are evaluated in the enclosing scope, so a name inside one
+    must not resolve to the parameters it sits next to. That goes for a name
+    nested in the default too, not just the default itself, which is why this
+    cannot be a plain identity test.
+
+    Walk up from *node* rather than down from each default: the walk stops at
+    the arguments (found) or at the function they belong to (not found), so
+    this stays cheap for the common case of a name in the body.
+    """
+    child = node
+    parent = child.parent
+    while parent is not None:
+        if parent is args:
+            return any(
+                child is default
+                for default in itertools.chain(
+                    args.defaults or (), args.kw_defaults or ()
+                )
+            )
+        if parent is args.parent:
+            # Reached the function or lambda without going through its
+            # arguments, so the node lives somewhere else in it.
+            return False
+        child, parent = parent, parent.parent
+    return False
+
+
 class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
@@ -1002,9 +1032,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             given name according to the scope where it has been found (locals,
             globals or builtin).
         """
-        if (self.args.defaults and node in self.args.defaults) or (
-            self.args.kw_defaults and node in self.args.kw_defaults
-        ):
+        if _is_in_default_value(self.args, node):
             if not self.parent:
                 raise ParentMissingError(target=self)
             frame = self.parent.frame()
@@ -1672,9 +1700,7 @@ class FunctionDef(
             if self.parent and isinstance(frame := self.parent.frame(), ClassDef):
                 return self, [frame]
 
-        if (self.args.defaults and node in self.args.defaults) or (
-            self.args.kw_defaults and node in self.args.kw_defaults
-        ):
+        if _is_in_default_value(self.args, node):
             if not self.parent:
                 raise ParentMissingError(target=self)
             frame = self.parent.frame()
