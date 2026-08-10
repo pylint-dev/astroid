@@ -222,47 +222,13 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
-def _name_lookup_frame(
-    name_node: nodes.Name,
-) -> tuple[nodes.LocalsDictNodeNG, list[nodes.NodeNG]]:
-    """Resolve *name_node* the way Python would at that point.
-
-    ``Name.lookup`` already ignores later assignments in the same scope, so
-    things like ``len(...)`` before a later ``def len`` work. Defaults are the
-    awkward bit: they run in the enclosing scope, and ``FunctionDef.scope_lookup``
-    only special-cases that when the looked-up node *is* the default, not a name
-    inside it. Detect that and look up from the parent frame instead.
-    """
-    scope = name_node.scope()
-    if isinstance(scope, (nodes.FunctionDef, nodes.Lambda)):
-        args = scope.args
-        if args is not None:
-            for default in itertools.chain(
-                args.defaults or (),
-                (d for d in (args.kw_defaults or ()) if d is not None),
-            ):
-                if default is name_node or default.parent_of(name_node):
-                    parent = scope.parent
-                    if parent is None:
-                        break
-                    # Same offset as FunctionDef.scope_lookup uses for defaults,
-                    # so ``def f(f=f)`` does not resolve the default to itself.
-                    return parent.frame()._scope_lookup(
-                        name_node, name_node.name, offset=-1
-                    )
-    return name_node.lookup(name_node.name)
-
-
 def _is_from_builtins_import(stmt: nodes.NodeNG, name: str) -> bool:
     """True if *stmt* is ``from builtins import ...`` binding *name*."""
     if not isinstance(stmt, nodes.ImportFrom) or stmt.modname != "builtins":
         return False
-    for imported, alias in stmt.names:
-        if imported == "*":
-            return True
-        if (alias or imported) == name:
-            return True
-    return False
+    return any(
+        imported == "*" or (alias or imported) == name for imported, alias in stmt.names
+    )
 
 
 def _is_builtin_call(node: nodes.Call) -> bool:
@@ -270,14 +236,18 @@ def _is_builtin_call(node: nodes.Call) -> bool:
 
     The filter only matches the name text, so a parameter called ``type`` still
     picks the transform. Check where the name resolves before trusting it.
+    ``lookup`` handles the ordering rules for us: later assignments in the same
+    scope do not count, and a name in a default value resolves in the enclosing
+    scope.
     """
     func = node.func
     if isinstance(func, nodes.Attribute):
         # dict.fromkeys: what matters is where ``dict`` comes from.
         func = func.expr
-    if not isinstance(func, nodes.Name):
+    if not isinstance(func, nodes.Name):  # pragma: no cover
+        # The predicate only lets through a Name or ``dict.fromkeys``.
         return False
-    frame, stmts = _name_lookup_frame(func)
+    frame, stmts = func.lookup(func.name)
     if isinstance(frame, nodes.Module) and frame.qname() == "builtins":
         return True
     return any(_is_from_builtins_import(stmt, func.name) for stmt in stmts)

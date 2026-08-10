@@ -4,5 +4,10 @@ parameter named ``type`` or a function named ``len`` was still inferred as a
 call to the builtin. The identifier is now resolved with ``lookup()`` first,
 as ``brain_type`` already does for ``type[...]`` subscripts.
 
+``Lambda.scope_lookup`` and ``FunctionDef.scope_lookup`` now send any name
+nested inside a default value to the enclosing scope, not just the default
+itself. A comprehension or a lambda in a default used to resolve names against
+the parameters it sits next to.
+
 Refs #3211
 Closes pylint-dev/pylint#10994

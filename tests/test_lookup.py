@@ -101,6 +101,29 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(base.name, "YO")
         self.assertEqual(base.root().name, "data.module")
 
+    def test_name_nested_in_default_looks_up_in_enclosing_scope(self) -> None:
+        """A name inside a default value is evaluated in the enclosing scope.
+
+        That holds for a name nested in the default, not only for the default
+        itself, so a comprehension or a lambda there must not see the
+        parameters it sits next to.
+        """
+        for default in ("[x for x in (v,)]", "lambda: v"):
+            with self.subTest(default=default):
+                module = builder.parse(f"""
+                    v = 42
+                    def func(v={default}):
+                        return v
+                """)
+                name = next(
+                    n
+                    for n in module["func"].args.defaults[0].nodes_of_class(nodes.Name)
+                    if n.name == "v"
+                )
+                _, stmts = name.lookup("v")
+                self.assertEqual(len(stmts), 1)
+                self.assertEqual(stmts[0].lineno, 2)
+
     def test_class(self) -> None:
         klass = self.module["YOUPI"]
         my_dict = next(klass.ilookup("MY_DICT"))
