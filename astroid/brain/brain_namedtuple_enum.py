@@ -233,6 +233,18 @@ def infer_named_tuple(
     except AstroidValueError as exc:
         raise UseInferenceDefault("ValueError: " + str(exc)) from exc
 
+    if tuple(class_node.instance_attrs) != tuple(attributes):
+        # ``infer_func_form`` recorded the field names as written, but ``rename=True``
+        # replaces invalid, keyword or duplicate names with ``_N``, so the instance
+        # would otherwise carry names the namedtuple does not actually have (and lose
+        # the duplicated ones entirely). Rebuild them from the renamed fields.
+        class_node.instance_attrs.clear()
+        for attr in attributes:
+            fake_node = nodes.EmptyNode()
+            fake_node.parent = class_node
+            fake_node.attrname = attr
+            class_node.instance_attrs[attr] = [fake_node]
+
     replace_args = ", ".join(f"{arg}=None" for arg in attributes)
     field_def = (
         "    {name} = property(lambda self: self[{index:d}], "
