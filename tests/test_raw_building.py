@@ -25,7 +25,7 @@ import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
 import tests.testdata.python3.data.fake_module_with_collection_getattribute as fm_collection
 import tests.testdata.python3.data.fake_module_with_warnings as fm
 from astroid import nodes, util
-from astroid.builder import AstroidBuilder
+from astroid.builder import AstroidBuilder, extract_node
 from astroid.const import IS_PYPY, PY312_PLUS
 from astroid.manager import AstroidManager
 from astroid.raw_building import (
@@ -119,6 +119,11 @@ class RawBuildingTC(unittest.TestCase):
         buffered_reader = module.getattr("BufferedReader")[0]
         expected = "_io" if PY312_PLUS else "io"
         self.assertEqual(buffered_reader.root().name, expected)
+        # The name of the root is the same whether the member was built here or
+        # recorded as an import, so check that the cycle is really gone.
+        inferred = extract_node("import io; io.BufferedReader").inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.ClassDef)
 
     def test_build_function_deepinspect_deprecation(self) -> None:
         # Tests https://github.com/pylint-dev/astroid/issues/1717
@@ -218,3 +223,25 @@ def test_build_module_getattr_catch_output(
 def test_missing__dict__():
     # This shouldn't raise an exception.
     object_build_class(DUMMY_MOD, mypy.build.ModuleNotFound)
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "import ast; ast.AST",
+        "import ast; ast.expr",
+        "from ast import AST; AST",
+    ],
+)
+def test_c_accelerator_star_import(code: str) -> None:
+    """The classes of a C accelerator module are inferable.
+
+    ``_ast.AST.__module__`` is ``"ast"``, not ``"_ast"``, and ``ast.py`` only
+    gets the name through ``from _ast import *``. Recording the member as an
+    import back to ``ast`` made the two modules point at each other, and
+    everything defined that way was uninferable.
+    """
+    inferred = extract_node(code).inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.ClassDef)
+    assert inferred[0].root().name == "_ast"
