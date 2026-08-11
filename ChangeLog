@@ -16,13 +16,15 @@ Release date: TBA
 
   Closes #242
 
-
-
 What's New in astroid 4.3.1?
 ============================
 Release date: TBA
 
+* Do not infer a functional ``Enum`` whose class name is not a string. Such a
+  definition is invalid at runtime and could expose a non-string class name to
+  consumers.
 
+  Refs pylint-dev/pylint#11229
 
 What's New in astroid 4.3.0?
 ============================
