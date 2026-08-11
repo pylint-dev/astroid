@@ -23,6 +23,16 @@ def test_infer_typevar() -> None:
         call_node.inferred()
 
 
+def test_infer_typevar_name_injection() -> None:
+    """A crafted TypeVar name must not be spliced into the synthesized class."""
+    call_node = builder.extract_node("""
+    from typing import TypeVar
+    TypeVar('T(EvilBase): #')
+    """)
+    with pytest.raises(InferenceError):
+        call_node.inferred()
+
+
 class TestTypingAlias:
     def test_infer_typing_alias(self) -> None:
         """
