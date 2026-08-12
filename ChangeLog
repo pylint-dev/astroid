@@ -7,6 +7,17 @@ What's New in astroid 4.4.0?
 ============================
 Release date: TBA
 
+* Read a C accelerator module from the pure Python twin the standard library
+  ships for it, ``_decimal`` from ``_pydecimal`` and ``_io`` from ``_pyio``,
+  instead of introspecting the compiled module. Introspection cannot see
+  signatures, bodies or return values, so ``open("apple.txt")`` and
+  ``Decimal("1").sqrt()`` were uninferable and are not anymore.
+
+  The ``datetime`` and ``decimal`` brains stay. ``datetime`` already reaches
+  its twin through its brain, and redirecting the accelerator too would only
+  rename the classes, which consumers match on. PyPy ships no ``_decimal`` at
+  all, and there a redirection has no C module to start from.
+
 * Infer the classes of the C accelerator modules that the standard library
   re-exports with a star import. ``_ast.AST.__module__`` is ``"ast"``, not
   ``"_ast"``, so ``AST`` was recorded inside ``_ast`` as an import from ``ast``
