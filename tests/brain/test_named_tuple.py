@@ -244,6 +244,19 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)  # would raise ValueError
 
+    def test_format_placeholder_typename_does_not_crash_inference(self) -> None:
+        """A typename containing str.format placeholders must not be formatted.
+
+        Reported in https://github.com/pylint-dev/astroid/issues/3199.
+        """
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{0}", "")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise IndexError
+
     def test_keyword_typename_does_not_crash_inference(self) -> None:
         node = builder.extract_node("""
         from collections import namedtuple
