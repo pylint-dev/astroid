@@ -7436,3 +7436,155 @@ def test_decimal_inference():
     for node in extract_node(code):
         module = node.do_import_module(node.modname)
         module.getattr(node.names[0][0])
+
+
+def test_infer_adjacent_literal_dict_assignment() -> None:
+    """Infer a literal dict assigned to a literal dict's existing slot."""
+    assignment = extract_node("""
+    if __name__ == "__main__":
+        container = {"outer": None}
+        container["outer"] = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+    """)
+
+    inferred = next(assignment.targets[0].value.infer())
+
+    assert isinstance(inferred, nodes.Dict)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        """
+        class DiscardingMapping:
+            def __getitem__(self, key):
+                return None
+
+            def __setitem__(self, key, value):
+                pass
+
+        container = DiscardingMapping()
+        container["outer"] = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        class Holder:
+            @property
+            def mapping(self):
+                return {"outer": None}
+
+        holder = Holder()
+        holder.mapping["outer"] = {"inner": None}
+        holder.mapping["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        alias = container
+        alias["outer"] = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        key = "outer"
+        container[key] = {"inner": None}
+        container[key]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = {"inner": None}
+        unrelated = 1
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        alias = container
+        alias["outer"] = {"inner": None}
+        alias["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = container = {"outer": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        class DiscardingMapping:
+            def __getitem__(self, key):
+                return None
+
+            def __setitem__(self, key, value):
+                pass
+
+        container = {"outer": DiscardingMapping()}
+        container["outer"]["inner"] = {"key": None}
+        container["outer"]["inner"]["key"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = {"leaf": None}
+        container["outer"]["leaf"] = (container := {"outer": None})  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = {"leaf": None}
+        container["outer"]["leaf"] = container.clear()  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = {"leaf": mutate_container()}
+        container["outer"]["leaf"] = 1  #@
+        """,
+        """
+        container = {"outer": None, "outer": Reentrant()}
+        container["outer"] = {"leaf": None}
+        container["outer"]["leaf"] = 1  #@
+        """,
+        """
+        container = [None]
+        container[0] = {"leaf": None}
+        container[0]["leaf"] = 1  #@
+        """,
+        """
+        class DiscardingMapping:
+            def __getitem__(self, key):
+                return None
+
+            def __setitem__(self, key, value):
+                pass
+
+        class Namespace(dict):
+            def __setitem__(self, key, value):
+                if key == "container":
+                    value = DiscardingMapping()
+                super().__setitem__(key, value)
+
+        class Meta(type):
+            @classmethod
+            def __prepare__(mcs, name, bases):
+                return Namespace()
+
+        class Container(metaclass=Meta):
+            container = {"outer": None}
+            container["outer"] = {"leaf": None}
+            container["outer"]["leaf"] = 1  #@
+        """,
+    ],
+)
+def test_do_not_infer_unsafe_adjacent_subscript_assignment(source: str) -> None:
+    """Do not assume custom item or property assignment stores its value."""
+    assignment = extract_node(source)
+
+    inferred = next(assignment.targets[0].value.infer())
+
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value is None
+
+
+def test_infer_detached_subscript() -> None:
+    """An otherwise inferable subscript can be detached from its statement."""
+    subscript = extract_node("[1][0]")
+    subscript.parent = subscript.root()
+
+    inferred = next(subscript.infer())
+
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 1

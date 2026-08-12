@@ -3749,6 +3749,74 @@ class Subscript(NodeNG):
         yield self.value
         yield self.slice
 
+    # pylint: disable-next=too-many-return-statements
+    def _infer_adjacent_dict_assignment(self) -> Dict | None:
+        """Return a literal dict stored by the immediately preceding assignment."""
+        if not isinstance(self.value, Name) or not isinstance(self.slice, Const):
+            return None
+        if not isinstance(self.parent, Subscript) or self.parent.value is not self:
+            return None
+        current = self.parent.parent
+        if (
+            not isinstance(current, Assign)
+            or current.targets != [self.parent]
+            or not isinstance(current.value, Const)
+        ):
+            return None
+
+        from astroid.nodes import ClassDef  # pylint: disable=import-outside-toplevel
+
+        if isinstance(current.frame(), ClassDef):
+            # A metaclass can supply an arbitrary mapping for a class namespace.
+            return None
+
+        try:
+            previous = current.previous_sibling()
+        except ParentMissingError:
+            return None
+        if not isinstance(previous, Assign) or len(previous.targets) != 1:
+            return None
+        target = previous.targets[0]
+        replacement = previous.value
+        if not isinstance(target, Subscript) or not (
+            isinstance(replacement, Dict)
+            and all(
+                isinstance(key, Const) and isinstance(value, Const)
+                for key, value in replacement.items
+            )
+        ):
+            return None
+        if (
+            not isinstance(target.value, Name)
+            or target.value.name != self.value.name
+            or not isinstance(target.slice, Const)
+            or type(target.slice.value) is not type(self.slice.value)
+            or target.slice.value != self.slice.value
+        ):
+            return None
+
+        initialization = previous.previous_sibling()
+        if not isinstance(initialization, Assign) or len(initialization.targets) != 1:
+            return None
+        initial_target = initialization.targets[0]
+        if (
+            not isinstance(initial_target, AssignName)
+            or initial_target.name != self.value.name
+            or not isinstance(initialization.value, Dict)
+            or len(initialization.value.items) != 1
+        ):
+            return None
+        initial_key, initial_value = initialization.value.items[0]
+        if (
+            not isinstance(initial_key, Const)
+            or type(initial_key.value) is not type(self.slice.value)
+            or initial_key.value != self.slice.value
+            or not isinstance(initial_value, Const)
+            or initial_value.value is not None
+        ):
+            return None
+        return replacement
+
     def _infer_subscript(
         self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
@@ -3760,6 +3828,13 @@ class Subscript(NodeNG):
         handle each supported index type accordingly.
         """
         from astroid import helpers  # pylint: disable=import-outside-toplevel
+
+        assigned = (
+            self._infer_adjacent_dict_assignment() if self.ctx == Context.Load else None
+        )
+        if assigned is not None:
+            yield from assigned.infer(context)
+            return InferenceErrorInfo(node=self, context=context)
 
         found_one = False
         for value in self.value.infer(context):
