@@ -125,15 +125,15 @@ def infer_typing_typevar_or_newtype(
         raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")
-    if not typename.isidentifier():
-        # The name is spliced verbatim into the ``class {0}`` template below,
-        # so a crafted string such as ``"T(Base): #"`` would inject bases and a
-        # body into the synthesized class. Only accept a plain identifier.
-        raise InferenceError(node=node, context=context_itton)
     try:
-        node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
+        # ``typing`` accepts any string as a name, so don't splice it into the
+        # template: a crafted value such as ``"T(Base): #"`` would break out of
+        # the identifier position and inject bases and a body into the class.
+        # Build the class with a fixed name and assign the real one afterwards.
+        node = extract_node(TYPING_TYPE_TEMPLATE.format("_TypeVar"))
     except AstroidSyntaxError as exc:
         raise InferenceError from exc
+    node.name = typename
     return node.infer(context=context_itton)
 
 
