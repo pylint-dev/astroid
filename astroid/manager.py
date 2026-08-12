@@ -223,12 +223,6 @@ class AstroidManager:
             ) from e
         return self.ast_from_module(named_module, modname)
 
-    # ``datetime`` already reaches its twin through a brain, which leaves the
-    # classes named after ``_pydatetime``. Redirecting the accelerator as well
-    # would only rename them, and consumers match on the name: pylint spells it
-    # ``_pydatetime.time`` to warn about a datetime in a boolean context.
-    _TWIN_EXCLUDED = frozenset({"_datetime"})
-
     def _pure_python_twin(self, modname: str) -> spec.ModuleSpec | None:
         """Find the pure Python implementation of a C accelerator module.
 
@@ -237,7 +231,7 @@ class AstroidManager:
         gives real signatures, bodies and return values, none of which survive
         the introspection of a compiled module.
         """
-        if not modname.startswith("_") or modname in self._TWIN_EXCLUDED:
+        if not modname.startswith("_"):
             return None
         for candidate in (f"_py{modname[1:]}", f"_py{modname}"):
             try:

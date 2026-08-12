@@ -13,10 +13,14 @@ Release date: TBA
   signatures, bodies or return values, so ``open("apple.txt")`` and
   ``Decimal("1").sqrt()`` were uninferable and are not anymore.
 
-  The ``datetime`` and ``decimal`` brains stay. ``datetime`` already reaches
-  its twin through its brain, and redirecting the accelerator too would only
-  rename the classes, which consumers match on. PyPy ships no ``_decimal`` at
+  The ``datetime`` and ``decimal`` brains stay. PyPy ships no ``_decimal`` at
   all, and there a redirection has no C module to start from.
+
+* Name the classes of the ``datetime`` module after ``datetime``. They were
+  named after ``_pydatetime``, the implementation they are read from, so
+  ``datetime.time`` was ``_pydatetime.time`` and anything matching on the name
+  had to know that. The brain now hands the module to the extender instead of a
+  star import of it, and the extender adopts the classes it is given.
 
 * Infer the classes of the C accelerator modules that the standard library
   re-exports with a star import. ``_ast.AST.__module__`` is ``"ast"``, not
