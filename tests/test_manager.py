@@ -2,6 +2,7 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import importlib.util
 import os
 import re
 import sys
@@ -138,6 +139,20 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ast.name, "time")
         self.assertIn("time", self.manager.astroid_cache)
         self.assertEqual(ast.pure_python, False)
+
+    @unittest.skipUnless(
+        importlib.util.find_spec("_decimal"), "PyPy has no C decimal to redirect"
+    )
+    def test_ast_from_module_name_pure_python_twin(self) -> None:
+        # A C accelerator shipping a pure Python twin is read from the twin, so
+        # the members keep their signatures and their return values.
+        ast = self.manager.ast_from_module_name("_decimal")
+        self.assertEqual(ast.name, "_decimal")
+        self.assertEqual(ast.pure_python, True)
+        self.assertTrue(ast.file.endswith("_pydecimal.py"))
+        # Both names have to reach the same module, otherwise a fallback import
+        # of the twin gives a second copy of every class.
+        self.assertIs(self.manager.ast_from_module_name("_pydecimal"), ast)
 
     def test_ast_from_module_name_astro_builder_exception(self) -> None:
         self.assertRaises(
