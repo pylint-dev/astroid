@@ -6555,6 +6555,30 @@ def test_property_without_setter_infers_fset_as_none() -> None:
     assert inferred.value is None
 
 
+def test_property_call_form_does_not_infer_fset_as_none() -> None:
+    """``property(getter, setter)`` must not report ``fset`` as None.
+
+    ``infer_property()`` builds the Property from the first argument only, so the
+    setter is not modelled and ``find_setter()`` cannot see it. Inferring None here
+    would be a confident wrong answer where "cannot infer" is the truthful one.
+    """
+    code = """
+    def getter(self):
+        return 42
+
+    def setter(self, value):
+        pass
+
+    class A:
+        test = property(getter, setter)
+
+    A.test.fset #@
+    """
+    node = extract_node(code)
+    with pytest.raises(InferenceError):
+        next(node.infer())
+
+
 def test_property_as_string() -> None:
     code = """
     class A:
