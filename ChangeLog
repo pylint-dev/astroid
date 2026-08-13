@@ -7,6 +7,12 @@ What's New in astroid 4.4.0?
 ============================
 Release date: TBA
 
+* Preserve the length of inferred list and tuple concatenations when an element
+  has multiple possible values. The element is now represented as unknown
+  instead of being expanded into multiple sequence items.
+
+  Closes pylint-dev/pylint#2621
+
 * Fix inference of the attributes of a ``namedtuple`` created with
   ``rename=True``. The renamed fields were applied to ``_fields`` and to the
   class body, but the instance kept the field names as written, so an instance
