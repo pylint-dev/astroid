@@ -105,6 +105,22 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         ast = abuilder.string_build("raise_string(*args, **kwargs)").body[0]
         self.assertEqual(ast.as_string(), "raise_string(*args, **kwargs)")
 
+    def test_annotated_varargs_kwargs_as_string(self) -> None:
+        """The annotations of ``*args`` and ``**kwargs`` are kept."""
+        func = abuilder.string_build(
+            "def func(a: int, *args: str, b: bool = True, **kwargs: float): pass"
+        ).body[0]
+        self.assertEqual(
+            func.args.format_args(),
+            "a: int, *args: str, b: bool = True, **kwargs: float",
+        )
+
+    @pytest.mark.skipif(not PY311_PLUS, reason="Uses PEP 646 syntax added in 3.11")
+    def test_unpacked_varargs_annotation_as_string(self) -> None:
+        """A PEP 646 unpacked annotation on ``*args`` is kept."""
+        func = abuilder.string_build("def func(*args: *Ts): pass").body[0]
+        self.assertEqual(func.args.format_args(), "*args: *Ts")
+
     @pytest.mark.skipif(PY314_PLUS, reason="return in finally is now a syntax error")
     def test_module_as_string_pre_3_14(self) -> None:
         """Check as_string on a whole module prepared to be returned identically for py < 3.14."""
