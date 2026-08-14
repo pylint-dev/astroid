@@ -231,6 +231,24 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)  # would raise IndexError
 
+    def test_missing_format_placeholder_typename_does_not_crash_inference(self) -> None:
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{missing}", "")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise KeyError
+
+    def test_attribute_format_placeholder_typename_does_not_crash_inference(self) -> None:
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{message.foo}", "")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise AttributeError
+
     def test_keyword_typename_does_not_crash_inference(self) -> None:
         node = builder.extract_node("""
         from collections import namedtuple

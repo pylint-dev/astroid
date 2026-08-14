@@ -63,10 +63,14 @@ class AstroidError(Exception):
             setattr(self, key, value)
 
     def __str__(self) -> str:
+        # message is the template itself and may embed interpolated user text
+        # (e.g. a namedtuple typename), so keep it out of the fields and fall
+        # back to it verbatim rather than raising or reinterpreting it.
+        fields = {k: v for k, v in vars(self).items() if k != "message"}
         try:
-            return self.message.format(**vars(self))
-        except (ValueError, IndexError, KeyError):
-            return self.message  # Return raw message if formatting fails
+            return self.message.format(**fields)
+        except (LookupError, ValueError, AttributeError, TypeError):
+            return self.message
 
 
 class AstroidBuildingError(AstroidError):

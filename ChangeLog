@@ -7,6 +7,14 @@ What's New in astroid 4.2.0?
 ============================
 Release date: TBA
 
+* Fix a crash when a ``namedtuple`` or ``Enum`` type name or field name
+  contains ``str.format`` markup, as in ``namedtuple("{0}", "abc")``. The name
+  is interpolated into an error message that astroid then reformats, so
+  building the message raised ``IndexError``. Inference now falls back to its
+  default.
+
+  Closes #3199
+
 * Fix inference of a method's first argument (``self`` or ``cls``) when the
   method's return value is stored on an unrelated object. This avoids inferring
   ``cls`` as the caller's class when indexing a tuple returned by a
