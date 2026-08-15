@@ -544,9 +544,9 @@ def module_in_path(modname: str, path: str | Iterable[str]) -> bool:
     filename = _normalize_path(filename)
 
     if isinstance(path, str):
-        return filename.startswith(_cache_normalize_path(path))
+        return _is_subpath(filename, _cache_normalize_path(path))
 
-    return any(filename.startswith(_cache_normalize_path(entry)) for entry in path)
+    return any(_is_subpath(filename, _cache_normalize_path(entry)) for entry in path)
 
 
 def is_relative(modname: str, from_file: str) -> bool:
