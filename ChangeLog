@@ -7,6 +7,12 @@ What's New in astroid 4.4.0?
 ============================
 Release date: TBA
 
+
+
+What's New in astroid 4.3.1?
+============================
+Release date: TBA
+
 * Fix inference of the attributes of a ``namedtuple`` created with
   ``rename=True``. The renamed fields were applied to ``_fields`` and to the
   class body, but the instance kept the field names as written, so an instance
@@ -15,13 +21,6 @@ Release date: TBA
   a single attribute instead of being renamed.
 
   Closes #242
-
-
-
-What's New in astroid 4.3.1?
-============================
-Release date: TBA
-
 
 
 What's New in astroid 4.3.0?
