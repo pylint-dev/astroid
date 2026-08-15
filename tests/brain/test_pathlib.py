@@ -73,3 +73,55 @@ def test_inference_parents_subscript_not_path() -> None:
     inferred = name_node.inferred()
     assert len(inferred) == 1
     assert inferred[0] is Uninferable
+
+
+def test_inference_path_truediv() -> None:
+    """Test inference of ``Path / X`` as a pathlib path."""
+    node = astroid.extract_node("""
+    from pathlib import Path
+
+    Path('/tmp') / 'sub'  #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].qname() == "pathlib.Path"
+
+
+def test_inference_path_rtruediv() -> None:
+    """Test inference of ``X / Path`` as a pathlib path."""
+    node = astroid.extract_node("""
+    from pathlib import Path
+
+    'sub' / Path('/tmp')  #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].qname() == "pathlib.Path"
+
+
+def test_inference_path_truediv_attribute_access() -> None:
+    """Test that methods of a slash-joined path resolve to pathlib."""
+    node = astroid.extract_node("""
+    from pathlib import Path
+
+    path = Path('/tmp') / 'file.txt'
+    path.read_text  #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.BoundMethod)
+    assert inferred[0].root().name == "pathlib"
+
+
+def test_inference_binop_not_path() -> None:
+    """Test inference of non-path ``/`` BinOps is unaffected."""
+    node = astroid.extract_node("""
+    a = 10
+    b = 2
+    a / b  #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0].value == 5

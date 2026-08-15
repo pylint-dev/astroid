@@ -47,9 +47,42 @@ def infer_parents_subscript(
     raise UseInferenceDefault
 
 
+def _looks_like_path_binop(node: nodes.BinOp) -> bool:
+    """Return True if a ``/`` BinOp has a pathlib path operand."""
+    if node.op != "/":
+        return False
+    for operand in (node.left, node.right):
+        try:
+            for value in operand.infer():
+                if isinstance(value, bases.UninferableBase):
+                    continue
+                if (
+                    isinstance(value, bases.Instance)
+                    and isinstance(value._proxied, nodes.ClassDef)
+                    and value._proxied.qname().startswith("pathlib.")
+                ):
+                    return True
+        except (InferenceError, StopIteration):
+            continue
+    return False
+
+
+def infer_path_binop(
+    binop_node: nodes.BinOp, ctx: context.InferenceContext | None = None
+) -> Iterator[bases.Instance]:
+    """Infer ``Path / X`` and ``X / Path`` as a new pathlib path."""
+    path_cls = next(_extract_single_node(PATH_TEMPLATE).infer())
+    return iter([path_cls.instantiate_class()])
+
+
 def register(manager: AstroidManager) -> None:
     manager.register_transform(
         nodes.Subscript,
         inference_tip(infer_parents_subscript),
         _looks_like_parents_subscript,
+    )
+    manager.register_transform(
+        nodes.BinOp,
+        inference_tip(infer_path_binop),
+        _looks_like_path_binop,
     )
