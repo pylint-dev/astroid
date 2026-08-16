@@ -7438,18 +7438,89 @@ def test_decimal_inference():
         module.getattr(node.names[0][0])
 
 
-def test_infer_adjacent_literal_dict_assignment() -> None:
-    """Infer a literal dict assigned to a literal dict's existing slot."""
-    assignment = extract_node("""
-    if __name__ == "__main__":
+@pytest.mark.parametrize(
+    "source",
+    [
+        """
         container = {"outer": None}
         container["outer"] = {"inner": None}
         container["outer"]["inner"] = 1  #@
-    """)
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = {"inner": None}
+        print(container)
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        alias = container
+        alias["outer"] = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        alias = container
+        alias["outer"] = {"inner": None}
+        alias["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = [None]
+        container[0] = {"inner": None}
+        container[0]["inner"] = 1  #@
+        """,
+        """
+        container = {"first": None}
+        container["first"] = {"second": None}
+        container["first"]["second"] = {"third": None}
+        container["first"]["second"]["third"] = 1  #@
+        """,
+    ],
+)
+def test_infer_recent_literal_container_assignment(source: str) -> None:
+    """Infer recent constant-key writes to built-in dicts and lists."""
+    assignment = extract_node(source)
 
     inferred = next(assignment.targets[0].value.infer())
 
     assert isinstance(inferred, nodes.Dict)
+
+
+def test_infer_recent_literal_container_assignment_for_read_and_delete() -> None:
+    """Use the latest item assignment for reads and delete receivers."""
+    read = extract_node("""
+    container = {"outer": None}
+    container["outer"] = {"inner": 1}
+    container["outer"]["inner"]  #@
+    """)
+    deleted = extract_node("""
+    container = {"outer": None}
+    container["outer"] = {"inner": 1}
+    del container["outer"]["inner"]  #@
+    """)
+
+    read_receiver = next(read.value.infer())
+    delete_receiver = next(deleted.targets[0].value.infer())
+
+    assert isinstance(read_receiver, nodes.Dict)
+    assert isinstance(delete_receiver, nodes.Dict)
+
+
+def test_infer_ambiguous_recent_literal_container_assignment() -> None:
+    """Preserve every possible value written by an ambiguous assignment."""
+    assignment = extract_node("""
+    def store(flag):
+        container = {"outer": None}
+        container["outer"] = {"inner": None} if flag else None
+        container["outer"]["inner"] = 1  #@
+    """)
+
+    inferred = list(assignment.targets[0].value.infer())
+
+    assert any(isinstance(value, nodes.Dict) for value in inferred)
+    assert any(
+        isinstance(value, nodes.Const) and value.value is None for value in inferred
+    )
 
 
 @pytest.mark.parametrize(
@@ -7479,27 +7550,9 @@ def test_infer_adjacent_literal_dict_assignment() -> None:
         """,
         """
         container = {"outer": None}
-        alias = container
-        alias["outer"] = {"inner": None}
-        container["outer"]["inner"] = 1  #@
-        """,
-        """
-        container = {"outer": None}
         key = "outer"
         container[key] = {"inner": None}
         container[key]["inner"] = 1  #@
-        """,
-        """
-        container = {"outer": None}
-        container["outer"] = {"inner": None}
-        unrelated = 1
-        container["outer"]["inner"] = 1  #@
-        """,
-        """
-        container = {"outer": None}
-        alias = container
-        alias["outer"] = {"inner": None}
-        alias["outer"]["inner"] = 1  #@
         """,
         """
         container = {"outer": None}
@@ -7534,14 +7587,10 @@ def test_infer_adjacent_literal_dict_assignment() -> None:
         container["outer"]["leaf"] = 1  #@
         """,
         """
-        container = {"outer": None, "outer": Reentrant()}
+        container = {"outer": None}
         container["outer"] = {"leaf": None}
+        mutate(container)
         container["outer"]["leaf"] = 1  #@
-        """,
-        """
-        container = [None]
-        container[0] = {"leaf": None}
-        container[0]["leaf"] = 1  #@
         """,
         """
         class DiscardingMapping:
@@ -7569,8 +7618,8 @@ def test_infer_adjacent_literal_dict_assignment() -> None:
         """,
     ],
 )
-def test_do_not_infer_unsafe_adjacent_subscript_assignment(source: str) -> None:
-    """Do not assume custom item or property assignment stores its value."""
+def test_do_not_infer_unsafe_recent_subscript_assignment(source: str) -> None:
+    """Do not track writes through custom containers or side effects."""
     assignment = extract_node(source)
 
     inferred = next(assignment.targets[0].value.infer())
