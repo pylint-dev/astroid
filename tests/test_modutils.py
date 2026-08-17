@@ -450,6 +450,23 @@ class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
         assert not modutils.module_in_path("etree", datadir)
         assert not modutils.module_in_path("astroid", datadir)
 
+    def test_sibling_prefix_not_in_path(self) -> None:
+        # A module living in a directory whose name merely shares a prefix with
+        # the allowed path is not "in" that path.
+        with tempfile.TemporaryDirectory() as root:
+            allowed = os.path.join(root, "proj")
+            sibling = os.path.join(root, "proj_extra")
+            os.mkdir(allowed)
+            os.mkdir(sibling)
+            with open(os.path.join(sibling, "sibling_mod.py"), "w", encoding="utf-8"):
+                pass
+            sys.path.insert(0, sibling)
+            try:
+                assert not modutils.module_in_path("sibling_mod", allowed)
+                assert not modutils.module_in_path("sibling_mod", (allowed,))
+            finally:
+                sys.path.remove(sibling)
+
 
 class IsRelativeTest(unittest.TestCase):
     def test_known_values_is_relative_1(self) -> None:
