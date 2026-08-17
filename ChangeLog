@@ -12,6 +12,24 @@ Release date: TBA
   as a module in ``proj_extra`` matching the path ``proj``. It now uses the same
   separator-aware containment check as ``_get_relative_base_path``.
 
+* Do not infer a functional ``Enum`` whose class name is not a string. Such a
+  definition is invalid at runtime and could expose a non-string class name to
+  consumers.
+
+  Refs pylint-dev/pylint#11229
+
+
+
+What's New in astroid 4.3.2?
+============================
+Release date: TBA
+
+
+
+What's New in astroid 4.3.1?
+============================
+Release date: 2026-08-17
+
 * Fix inference of the attributes of a ``namedtuple`` created with
   ``rename=True``. The renamed fields were applied to ``_fields`` and to the
   class body, but the instance kept the field names as written, so an instance
@@ -21,15 +39,6 @@ Release date: TBA
 
   Closes #242
 
-What's New in astroid 4.3.1?
-============================
-Release date: TBA
-
-* Do not infer a functional ``Enum`` whose class name is not a string. Such a
-  definition is invalid at runtime and could expose a non-string class name to
-  consumers.
-
-  Refs pylint-dev/pylint#11229
 
 What's New in astroid 4.3.0?
 ============================

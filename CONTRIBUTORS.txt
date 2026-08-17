@@ -50,9 +50,9 @@ Contributors
 - Antonio <antonio@zoftko.com>
 - Fridayworks <aifriday700@gmail.com>
 - Akhil Kamat <akhil.kamat@gmail.com>
+- KALI 834X <kali834x@gmail.com>
 - Tim Martin <tim@asymptotic.co.uk>
 - Phil Schaf <flying-sheep@web.de>
-- KALI 834X <kali834x@gmail.com>
 - Alex Hall <alex.mojaki@gmail.com>
 - Vincent Gao <gaobing1230@gmail.com>
 - Samarth D N <dnsam550@gmail.com>
@@ -245,6 +245,7 @@ Contributors
 - Alexander Scheel <alexander.m.scheel@gmail.com>
 - Alexander Presnyakov <flagist0@gmail.com>
 - Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+- Florian Meyer <fflorian.meyer@outlook.com>
 
 Co-Author
 ---------
