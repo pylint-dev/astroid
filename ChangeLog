@@ -7,6 +7,12 @@ What's New in astroid 4.4.0?
 ============================
 Release date: TBA
 
+* Keep the annotations of ``*args`` and ``**kwargs`` in ``as_string`` output.
+  ``Arguments.format_args`` rendered those two parameters from their names
+  alone, so ``def func(*args: str, **kwargs: float)`` came back as
+  ``def func(*args, **kwargs)`` even though the annotations were present on the
+  node. Positional and keyword-only parameters were unaffected.
+
 * ``modutils.module_in_path`` no longer reports a module as living under a
   directory when its path only shares a leading name with that directory, such
   as a module in ``proj_extra`` matching the path ``proj``. It now uses the same
