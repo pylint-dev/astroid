@@ -18,6 +18,15 @@ Release date: TBA
 
   Refs pylint-dev/pylint#11229
 
+* Do not crash when an inference error message embeds analyzed source that
+  looks like a ``str.format`` replacement field. A ``namedtuple`` or ``Enum``
+  name such as ``"{0}"`` or ``"{foo}"`` ended up in the exception message
+  verbatim and was re-interpreted as a format field by ``AstroidError.__str__``,
+  raising ``IndexError``/``KeyError``/``AttributeError`` instead of falling back
+  to the raw message.
+
+  Closes #3199
+
 
 
 What's New in astroid 4.3.2?

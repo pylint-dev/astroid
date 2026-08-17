@@ -253,6 +253,26 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)  # would raise ValueError
 
+    def test_format_field_typename_does_not_crash_inference(self) -> None:
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{0}", "abc")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        # The rejected typename is embedded in the error message; it must not be
+        # re-interpreted as a str.format replacement field (would raise IndexError).
+        self.assertIs(util.Uninferable, inferred)
+
+    def test_format_field_fieldname_does_not_crash_inference(self) -> None:
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "{a}")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)
+
     def test_typeerror_does_not_crash_inference(self) -> None:
         node = builder.extract_node("""
         from collections import namedtuple

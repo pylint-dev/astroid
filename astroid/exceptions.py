@@ -65,8 +65,12 @@ class AstroidError(Exception):
     def __str__(self) -> str:
         try:
             return self.message.format(**vars(self))
-        except ValueError:
-            return self.message  # Return raw message if formatting fails
+        except (ValueError, IndexError, KeyError, AttributeError):
+            # A message that already embeds analyzed source is not a valid
+            # format template. A namedtuple/enum name such as "{0}" or "{foo}"
+            # reaches here verbatim, so str.format treats it as a replacement
+            # field and raises. Fall back to the raw message in that case.
+            return self.message
 
 
 class AstroidBuildingError(AstroidError):
