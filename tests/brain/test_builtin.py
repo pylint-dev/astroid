@@ -396,3 +396,33 @@ class TestShadowedBuiltins:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 3
+
+    @pytest.mark.xfail(
+        reason="_is_from_builtins_import matches the alias, not the imported name"
+    )
+    def test_builtins_import_under_another_builtin_name(self) -> None:
+        """``str`` here is really ``builtins.int``, so it must not infer as ``str``.
+
+        ``lookup()`` already guarantees the binding is called ``str``; what is
+        left to check is *what* was imported under that name.
+        """
+        node: nodes.Call = _extract_single_node("""
+        from builtins import int as str
+        str(42) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
+
+    @pytest.mark.xfail(
+        reason="scope_lookup sends defaults to the enclosing scope, annotations not yet"
+    )
+    def test_annotation_uses_enclosing_builtin(self) -> None:
+        """Annotations are evaluated in the enclosing scope, like defaults."""
+        func: nodes.FunctionDef = extract_node("""
+            def h(x: str("apple") = 1, str=None):
+                return x
+            """)
+        inferred = next(func.args.annotations[0].infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
