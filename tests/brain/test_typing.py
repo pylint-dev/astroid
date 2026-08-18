@@ -5,7 +5,6 @@
 import pytest
 
 from astroid import bases, builder, nodes
-from astroid.exceptions import InferenceError
 
 
 def test_infer_typevar() -> None:
@@ -19,8 +18,22 @@ def test_infer_typevar() -> None:
     from typing import TypeVar
     TypeVar('My.Type')
     """)
-    with pytest.raises(InferenceError):
-        call_node.inferred()
+    inferred = next(call_node.infer())
+    assert isinstance(inferred, nodes.ClassDef)
+    assert inferred.name == "My.Type"
+
+
+def test_infer_typevar_name_injection() -> None:
+    """A crafted TypeVar name must not be spliced into the synthesized class."""
+    call_node = builder.extract_node("""
+    from typing import TypeVar
+    TypeVar('T(EvilBase): #')
+    """)
+    inferred = next(call_node.infer())
+    assert isinstance(inferred, nodes.ClassDef)
+    # The name is kept verbatim instead of parsed, so no base is injected.
+    assert inferred.name == "T(EvilBase): #"
+    assert inferred.bases == []
 
 
 class TestTypingAlias:
