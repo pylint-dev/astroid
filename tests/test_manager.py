@@ -163,6 +163,10 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ast.name, modname)
         self.assertEqual(ast.items(), [])
 
+    def test_can_load_extension_stdlib_name_without_location(self) -> None:
+        """A stdlib name with no resolved location is not trusted."""
+        self.assertFalse(self.manager._can_load_extension("colorsys", None))
+
     def _test_ast_from_old_namespace_package_protocol(self, root: str) -> None:
         origpath = sys.path[:]
         paths = [resources.find(f"data/path_{root}_{index}") for index in range(1, 4)]
