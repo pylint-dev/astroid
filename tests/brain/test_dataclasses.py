@@ -1480,8 +1480,30 @@ def test_replace_uninferable_first_arg() -> None:
     assert inferred[0] is Uninferable
 
 
+def test_replace_ambiguous_first_arg() -> None:
+    """When the first arg has several possible types, replace yields Uninferable."""
+    node = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:
+        x: int = 0
+
+    @dataclass
+    class B:
+        x: int = 0
+
+    def f(cond):
+        obj = A() if cond else B()
+        dataclasses.replace(obj, x=1)  #@
+    """)
+    inferred = list(node.infer())
+    assert inferred == [Uninferable]
+
+
 def test_replace_classdef_first_arg() -> None:
-    """When the first arg is a class itself, replace yields an instance of it."""
+    """Passing the class itself raises TypeError at runtime, so it is Uninferable."""
     node = astroid.extract_node("""
     import dataclasses
     from dataclasses import dataclass
@@ -1493,31 +1515,32 @@ def test_replace_classdef_first_arg() -> None:
     dataclasses.replace(Point)  #@
     """)
     inferred = list(node.infer())
-    assert len(inferred) == 1
-    assert isinstance(inferred[0], bases.Instance)
-    assert inferred[0].name == "Point"
+    assert inferred == [Uninferable]
 
 
 def test_replace_non_instance_non_class_falls_back() -> None:
-    """A first arg that is neither Instance nor ClassDef raises UseInferenceDefault."""
+    """A first arg that is neither Instance nor ClassDef falls back to default inference.
+
+    ``replace(<module>)`` raises TypeError at runtime, and the stdlib body the
+    fallback walks cannot infer a return value either, so this is Uninferable.
+    """
     node = astroid.extract_node("""
     import os
     import dataclasses
     dataclasses.replace(os)  #@
     """)
-    # Should not crash; default inference takes over.
-    list(node.infer())
+    inferred = list(node.infer())
+    assert inferred == [Uninferable]
 
 
-def test_replace_no_args_does_not_crash() -> None:
-    """dataclasses.replace with no args should not raise an uncaught exception."""
+def test_replace_no_args() -> None:
+    """dataclasses.replace with no args is a TypeError at runtime, so Uninferable."""
     node = astroid.extract_node("""
     import dataclasses
     dataclasses.replace()  #@
     """)
-    # Should not raise; result may be Uninferable or an InferenceError caught upstream
     inferred = list(node.infer())
-    assert len(inferred) >= 1
+    assert inferred == [Uninferable]
 
 
 def test_replace_bare_name_form() -> None:

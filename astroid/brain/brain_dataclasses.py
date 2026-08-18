@@ -569,7 +569,9 @@ def infer_dataclasses_replace(
         yield inferred_obj._proxied.instantiate_class()
         return
     if isinstance(inferred_obj, nodes.ClassDef):
-        yield inferred_obj.instantiate_class()
+        # replace() must be called on a dataclass instance; passing the class
+        # itself raises TypeError at runtime, so there is nothing to infer.
+        yield Uninferable
         return
     raise UseInferenceDefault
 
