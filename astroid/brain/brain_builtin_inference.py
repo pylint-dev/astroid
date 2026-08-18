@@ -222,6 +222,37 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
+def _is_from_builtins_import(stmt: nodes.NodeNG, name: str) -> bool:
+    """True if *stmt* is ``from builtins import ...`` binding *name*."""
+    if not isinstance(stmt, nodes.ImportFrom) or stmt.modname != "builtins":
+        return False
+    return any(
+        imported == "*" or (alias or imported) == name for imported, alias in stmt.names
+    )
+
+
+def _is_builtin_call(node: nodes.Call) -> bool:
+    """True if the callable on *node* actually comes from builtins.
+
+    The filter only matches the name text, so a parameter called ``type`` still
+    picks the transform. Check where the name resolves before trusting it.
+    ``lookup`` handles the ordering rules for us: later assignments in the same
+    scope do not count, and a name in a default value resolves in the enclosing
+    scope.
+    """
+    func = node.func
+    if isinstance(func, nodes.Attribute):
+        # dict.fromkeys: what matters is where ``dict`` comes from.
+        func = func.expr
+    if not isinstance(func, nodes.Name):  # pragma: no cover
+        # The predicate only lets through a Name or ``dict.fromkeys``.
+        return False
+    frame, stmts = func.lookup(func.name)
+    if isinstance(frame, nodes.Module) and frame.qname() == "builtins":
+        return True
+    return any(_is_from_builtins_import(stmt, func.name) for stmt in stmts)
+
+
 def register_builtin_transform(
     manager: AstroidManager, transform, builtin_name
 ) -> None:
@@ -234,6 +265,8 @@ def register_builtin_transform(
     def _transform_wrapper(
         node: nodes.Call, context: InferenceContext | None = None
     ) -> Iterator:
+        if not _is_builtin_call(node):
+            raise UseInferenceDefault
         result = transform(node, context=context)
         if result:
             if not result.parent:
