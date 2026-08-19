@@ -530,8 +530,13 @@ def infer_super(
         raise UseInferenceDefault
 
     cls = scoped_nodes.get_wrapping_class(scope)
-    assert cls is not None
     if not node.args:
+        if cls is None:
+            # A ``classmethod`` or ``method`` that is not defined inside a
+            # class, e.g. a module level function decorated with
+            # ``@classmethod``: there is nothing for the zero argument
+            # form to refer to.
+            raise UseInferenceDefault
         mro_pointer = cls
         mro_owner = _mro_owner(cls, context)
         # In we are in a classmethod, the interpreter will fill
