@@ -648,6 +648,32 @@ class SuperTests(unittest.TestCase):
         """)
         self.assertEqual(list(node.infer()), [util.Uninferable])
 
+    def test_super_outside_of_a_class(self) -> None:
+        """A ``classmethod`` defined at module level does not crash inference.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/8755
+        """
+        zero_arg, two_arg = builder.extract_node("""
+        class C:
+            pass
+
+        @classmethod
+        def foo(cls, a):
+            b = super() #@
+            return b.foo(a)
+
+        @classmethod
+        def bar(cls, a):
+            b = super(C, cls) #@
+            return b.bar(a)
+        """)
+        inferred = next(zero_arg.value.infer())
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred.qname(), "builtins.super")
+        inferred = next(two_arg.value.infer())
+        self.assertIsInstance(inferred, Super)
+        self.assertEqual(inferred.mro_pointer.name, "C")
+
     def test_super_invalid_types(self) -> None:
         node = builder.extract_node("""
         import collections
