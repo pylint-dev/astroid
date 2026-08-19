@@ -312,11 +312,28 @@ class AsStringVisitor:
 
         # Try to find surrounding quotes that don't appear at all in the string.
         # Because the formatted values inside {} can't contain backslash (\)
-        # using a triple quote is sometimes necessary
+        # using a triple quote is sometimes necessary.
         for quote in ("'", '"', '"""', "'''"):
             if quote not in string:
-                break
+                return "f" + quote + string + quote
 
+        # Every candidate quote is present in the body. Re-escape the literal
+        # parts against a quote absent from the {expression} parts (which cannot
+        # hold a backslash) so the f-string cannot terminate early.
+        formatted = "".join(
+            value.accept(self)
+            for value in node.values
+            if type(value).__name__ != "Const"
+        )
+        quote = "'" if "'" not in formatted else '"'
+        string = "".join(
+            (
+                _escaped_fstring_literal(value.value, quote)
+                if type(value).__name__ == "Const"
+                else value.accept(self)
+            )
+            for value in node.values
+        )
         return "f" + quote + string + quote
 
     def visit_formattedvalue(self, node: nodes.FormattedValue) -> str:
@@ -728,6 +745,19 @@ class AsStringVisitor:
 
     def visit_unknown(self, node: nodes.Unknown) -> str:
         return str(node)
+
+
+def _escaped_fstring_literal(value: str, quote: str) -> str:
+    """Return the inner text of an f-string literal part delimited by *quote*
+    (a single quote character), escaping *quote* and doubling braces."""
+    literal = repr(value)
+    if literal[0] == quote:
+        body = literal[1:-1]
+    else:
+        # repr escapes only its own quote; unescape it and escape *quote*.
+        body = literal[1:-1].replace("\\" + literal[0], literal[0])
+        body = body.replace(quote, "\\" + quote)
+    return body.replace("{", "{{").replace("}", "}}")
 
 
 def _import_string(names: list[tuple[str, str | None]]) -> str:
