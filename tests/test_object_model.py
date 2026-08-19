@@ -55,6 +55,34 @@ class InstanceModelTest(unittest.TestCase):
         self.assertIsInstance(attr, nodes.Const)
         self.assertEqual(attr.value, 42)
 
+    def test_instance_dunder_new_accepts_explicit_class(self) -> None:
+        """``__new__`` is a static method: the class is passed explicitly.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/8325
+        """
+        ast_nodes = builder.extract_node("""
+        class A:
+            def clone(self):
+                return self.__new__(type(self))
+
+        a = A()
+        a.__new__ #@
+        a.clone() #@
+        """)
+        assert isinstance(ast_nodes, list)
+        dunder_new = next(ast_nodes[0].infer())
+        self.assertIsInstance(dunder_new, astroid.BoundMethod)
+        self.assertEqual(dunder_new.implicit_parameters(), 0)
+        # The first parameter is the class, the others absorb whatever a
+        # ``__new__`` we can't model precisely is called with.
+        self.assertEqual(dunder_new.argnames(), ["cls", "args", "kwargs"])
+        self.assertIsNotNone(dunder_new.args.vararg)
+        self.assertIsNotNone(dunder_new.args.kwarg)
+
+        inferred = next(ast_nodes[1].infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertEqual(inferred.name, "A")
+
     @pytest.mark.xfail(reason="Instance lookup cannot override object model")
     def test_instance_local_attributes_overrides_object_model(self):
         # The instance lookup needs to be changed in order for this to work.
@@ -175,6 +203,42 @@ class ClassModelTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, "first")
+
+    def test_class_dunder_new_with_unknown_ancestor(self) -> None:
+        """``super().__new__(cls)`` falls back to the object model when an
+        ancestor cannot be inferred; the explicit class must fill the first
+        parameter and extra arguments must be accepted.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/8325
+        """
+        ast_nodes = builder.extract_node("""
+        from missing import Base
+
+        class A(Base):
+            def __new__(cls, value):
+                super().__new__ #@
+                return super().__new__(cls)
+
+        class B(Base):
+            @classmethod
+            def make(cls):
+                return cls.__new__(cls)
+
+        B.__new__ #@
+        A(1) #@
+        B.make() #@
+        """)
+        assert isinstance(ast_nodes, list)
+        for node in ast_nodes[:2]:
+            dunder_new = next(node.infer())
+            self.assertIsInstance(dunder_new, astroid.BoundMethod)
+            self.assertEqual(dunder_new.implicit_parameters(), 0)
+            self.assertEqual(dunder_new.argnames(), ["cls", "args", "kwargs"])
+
+        for node, name in zip(ast_nodes[2:], ["A", "B"]):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, astroid.Instance)
+            self.assertEqual(inferred.name, name)
 
     def test_class_model_correct_mro_subclasses_proxied(self) -> None:
         ast_nodes = builder.extract_node("""
