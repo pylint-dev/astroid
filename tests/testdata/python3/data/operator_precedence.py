@@ -25,3 +25,8 @@ assert (lambda x: lambda: x + 1)(2)() == 3
 
 f = lambda x, y, z: y(x, z)
 assert f(1, lambda x, y: x + y[1], (2, 3)) == 4
+
+assert (True is None) == (False is None)
+assert (True is None) != (False is not None)
+assert (1 < 2) == (3 < 4)
+assert ((1 < 2) == (3 < 4)) == ((5 < 6) == (7 < 8))

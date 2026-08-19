@@ -230,6 +230,22 @@ y = (3).imag
             for code in f:
                 self.check_as_string_ast_equality(code)
 
+    def test_nested_compare_as_left_operand(self) -> None:
+        """Comparisons chain rather than associate, so a comparison that is
+        the left operand of another comparison keeps its parentheses.
+
+        Regression test for #3239.
+        """
+        for code in (
+            "(a is None) == (b is None)",
+            "(a is None) != (b is None)",
+            "(a < b) == (c < d)",
+            "((a < b) == (c < d)) == (e < f)",
+        ):
+            self.assertEqual(extract_node(code).as_string(), code)
+        # A genuine chained comparison must stay unparenthesized.
+        self.assertEqual(extract_node("a < b < c").as_string(), "a < b < c")
+
     @staticmethod
     def check_as_string_ast_equality(code: str) -> None:
         """

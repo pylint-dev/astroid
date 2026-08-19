@@ -1,0 +1,7 @@
+``as_string()`` no longer drops the parentheses around a comparison used as
+the left operand of another comparison. ``(a is None) == (b is None)``
+previously round-tripped to ``a is None == (b is None)``, which Python parses
+as the semantically different chained comparison
+``(a is None) and (None == (b is None))``.
+
+Refs #3239

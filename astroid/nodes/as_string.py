@@ -74,13 +74,15 @@ class AsStringVisitor:
             # 3 * (4 + 5)
             return True
 
-        if (
-            node_precedence == child_precedence
-            and is_left != node.op_left_associative()
-        ):
-            # 3 - (4 - 5)
-            # (2**3)**4
-            return True
+        if node_precedence == child_precedence:
+            if isinstance(node, nodes.Compare):
+                # Comparisons chain rather than associate, so a comparison
+                # operand always needs parentheses: (a < b) == (c < d)
+                return True
+            if is_left != node.op_left_associative():
+                # 3 - (4 - 5)
+                # (2**3)**4
+                return True
 
         return False
 
