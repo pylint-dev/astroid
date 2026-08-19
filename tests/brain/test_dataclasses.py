@@ -1580,3 +1580,30 @@ def test_replace_frozen_dataclass() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0].name == "FrozenPoint"
+
+
+def test_property_default_huge_int_does_not_crash() -> None:
+    """A field shadowed by a property returning an integer too large to stringify
+    must not crash the dataclass transform.
+
+    ``_generate_dataclass_init`` renders the inferred property result as the
+    parameter default via ``as_string()``; ``repr()`` of an int past
+    ``sys.get_int_max_str_digits()`` raises ``ValueError``, which used to escape
+    the transform while merely building the module.
+    """
+    node = astroid.extract_node("""
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:
+        x: int
+        @property
+        def x(self):
+            return 10 ** 5000
+
+    A(1)  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "A"
