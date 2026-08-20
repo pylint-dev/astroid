@@ -537,6 +537,24 @@ def is_stdlib_module(modname: str) -> bool:
     return modname.split(".")[0] in stdlib_module_names
 
 
+def is_stdlib_path(filename: str) -> bool:
+    """Return: True if the file is located in the standard library.
+
+    site-packages sits below one of the standard library directories in a
+    virtualenv, so external locations are rejected first.
+    """
+    filename = _normalize_path(filename)
+    if any(
+        filename.startswith(_cache_normalize_path(entry) + os.sep)
+        for entry in EXT_LIB_DIRS
+    ):
+        return False
+    return any(
+        filename.startswith(_cache_normalize_path(entry) + os.sep)
+        for entry in STD_LIB_DIRS
+    )
+
+
 def module_in_path(modname: str, path: str | Iterable[str]) -> bool:
     """Try to determine if a module is imported from one of the specified paths
 
