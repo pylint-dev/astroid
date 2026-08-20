@@ -323,13 +323,13 @@ class AsStringVisitor:
         formatted = "".join(
             value.accept(self)
             for value in node.values
-            if type(value).__name__ != "Const"
+            if not isinstance(value, nodes.Const)
         )
         quote = "'" if "'" not in formatted else '"'
         string = "".join(
             (
                 _escaped_fstring_literal(value.value, quote)
-                if type(value).__name__ == "Const"
+                if isinstance(value, nodes.Const)
                 else value.accept(self)
             )
             for value in node.values
