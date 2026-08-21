@@ -7470,10 +7470,25 @@ def test_decimal_inference():
         container[0]["inner"] = 1  #@
         """,
         """
+        container = {"outer": None}
+        container["outer"] = [None]
+        container["outer"][0] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"]: dict = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
         container = {"first": None}
         container["first"] = {"second": None}
         container["first"]["second"] = {"third": None}
         container["first"]["second"]["third"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = {"inner": {"leaf": None}}
+        container["outer"]["inner"]["leaf"] = 1  #@
         """,
     ],
 )
@@ -7483,7 +7498,7 @@ def test_infer_recent_literal_container_assignment(source: str) -> None:
 
     inferred = next(assignment.targets[0].value.infer())
 
-    assert isinstance(inferred, nodes.Dict)
+    assert isinstance(inferred, (nodes.Dict, nodes.List))
 
 
 def test_infer_recent_literal_container_assignment_for_read_and_delete() -> None:
@@ -7585,6 +7600,38 @@ def test_infer_ambiguous_recent_literal_container_assignment() -> None:
         container = {"outer": None}
         container["outer"] = {"leaf": mutate_container()}
         container["outer"]["leaf"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        if flag:
+            container["outer"] = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] += {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        del container["outer"]
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        key = "outer"
+        container[key] = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["other"] = {"inner": None}
+        container["outer"]["inner"] = 1  #@
+        """,
+        """
+        container = {"outer": None}
+        container["outer"] = {"inner": value.attribute}
+        container["outer"]["inner"] = 1  #@
         """,
         """
         container = {"outer": None}

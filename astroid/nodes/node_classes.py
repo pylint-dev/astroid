@@ -3864,10 +3864,7 @@ class Subscript(NodeNG):
             if not self._side_effect_free_assignment_value(current.value):
                 return None
 
-        try:
-            previous = current.previous_sibling()
-        except ParentMissingError:
-            return None
+        previous = current.previous_sibling()
         while previous is not None:
             if isinstance(previous, _base_nodes.MultiLineBlockNode):
                 return None
