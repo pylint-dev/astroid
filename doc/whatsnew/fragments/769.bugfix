@@ -1,0 +1,3 @@
+Unable to infer through a class constructor even with type hints
+
+Closes #769
