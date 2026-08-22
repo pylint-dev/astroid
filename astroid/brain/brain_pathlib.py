@@ -20,13 +20,31 @@ Path
 
 
 def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
-    if not (
-        isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents"
-    ):
+    attribute_node = None
+    if isinstance(node.value, nodes.Attribute) and node.value.attrname == "parents":
+        attribute_node = node.value
+    elif isinstance(node.value, nodes.Name):
+        try:
+            scope, assign_names = node.value.lookup(node.value.name)
+        except (InferenceError, AttributeError):
+            return False
+        if len(assign_names) != 1:
+            return False
+        assign_name = assign_names[0]
+        if not isinstance(assign_name.parent, nodes.Assign):
+            return False
+        assigned_value = assign_name.parent.value
+        if (
+            isinstance(assigned_value, nodes.Attribute)
+            and assigned_value.attrname == "parents"
+        ):
+            attribute_node = assigned_value
+
+    if attribute_node is None:
         return False
 
     try:
-        value = next(node.value.infer())
+        value = next(attribute_node.infer())
     except (InferenceError, StopIteration):
         return False
     parents = "builtins.tuple" if PY313 else "pathlib._PathParents"

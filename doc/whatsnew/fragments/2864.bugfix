@@ -1,0 +1,3 @@
+pathlib.Path.parents brain doesn't handle when parents is assigned to a variable
+
+Closes #2864
