@@ -4025,6 +4025,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(node.infer_call_result(caller=node))
         self.assertIsInstance(inferred, nodes.Const)
 
+    def test_infer_call_result_dunder_call_consistent_with_attribute_call(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/3077.
+
+        Calling an instance directly (via __call__ sugar) must not silently
+        abort inference if a preliminary attribute lookup on the instance
+        fails -- it should still fall through to resolving __call__, the
+        same way an explicit method call on the instance would resolve.
+        """
+        implicit_call, explicit_call = extract_node("""
+        class Base:
+            def __call__(self):
+                return 1
+            def run(self):
+                return 1
+
+        class Holder:
+            def __init__(self):
+                self.base = Base()
+            def via_call(self):
+                return self.base()  #@
+            def via_run(self):
+                return self.base.run()  #@
+        """)
+        implicit_result = next(implicit_call.value.infer())
+        explicit_result = next(explicit_call.value.infer())
+        # Both call styles do the exact same thing at runtime, so astroid
+        # should not be Uninferable for one and resolved for the other.
+        assert (implicit_result is util.Uninferable) == (
+            explicit_result is util.Uninferable
+        )
+
     def test_context_call_for_context_managers(self) -> None:
         ast_nodes = extract_node("""
         class A:
