@@ -526,6 +526,20 @@ def _arguments_infer_argname(
         yield from self.default_value(name).infer(context)
         yield util.Uninferable
     except NoDefault:
+        annotation = None
+        for arg, ann in zip(self.args, self.annotations):
+            if getattr(arg, "name", None) == name:
+                annotation = ann
+                break
+        if annotation is not None:
+            try:
+                inferred_ann = next(annotation.infer(context=None))
+            except (InferenceError, StopIteration):
+                inferred_ann = None
+            if isinstance(inferred_ann, nodes.ClassDef):
+                yield inferred_ann.instantiate_class()
+                yield util.Uninferable
+                return
         yield util.Uninferable
 
 
