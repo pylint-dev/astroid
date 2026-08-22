@@ -64,15 +64,13 @@ def test_inference_parents_subscript_index_assigned() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by index after
     the ``.parents`` result was first assigned to a variable.
     """
-    path = astroid.extract_node(
-        """
+    path = astroid.extract_node("""
     from pathlib import Path
 
     current_path = Path().resolve()
     parents = current_path.parents
     parents[2]  #@
-    """
-    )
+    """)
 
     inferred = path.inferred()
     assert len(inferred) == 1
@@ -87,16 +85,14 @@ def test_inference_parents_subscript_slice_assigned() -> None:
     """Test inference of ``pathlib.Path.parents``, accessed by slice after
     the ``.parents`` result was first assigned to a variable.
     """
-    name_node = astroid.extract_node(
-        """
+    name_node = astroid.extract_node("""
     from pathlib import Path
 
     current_path = Path().resolve()
     parents = current_path.parents
     parent_path = parents[:2]
     parent_path
-    """
-    )
+    """)
     inferred = name_node.inferred()
     assert len(inferred) == 1
     if PY310_PLUS:
@@ -110,8 +106,7 @@ def test_inference_parents_subscript_assigned_ambiguous() -> None:
     """Test a variable ambiguously assigned from ``.parents`` in one branch
     and a plain tuple in another is not incorrectly inferred as ``Path``.
     """
-    name_node = astroid.extract_node(
-        """
+    name_node = astroid.extract_node("""
     from pathlib import Path
 
     current_path = Path().resolve()
@@ -120,8 +115,7 @@ def test_inference_parents_subscript_assigned_ambiguous() -> None:
     else:
         parents = (1, 2, 3)
     parents[0]  #@
-    """
-    )
+    """)
     inferred = name_node.inferred()
     assert len(inferred) == 2
     qnames = {getattr(value, "qname", lambda: None)() for value in inferred}
