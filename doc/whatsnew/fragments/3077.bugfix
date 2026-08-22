@@ -1,0 +1,3 @@
+Bug: identical `typing.cast` expressions yield different inferences depending on how they are reached
+
+Closes #3077
