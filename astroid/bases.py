@@ -70,7 +70,17 @@ POSSIBLE_PROPERTIES = {
 def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
 ) -> bool:
-    decoratornames = meth.decoratornames(context=context)
+    decoratornames: set[str | UninferableBase] = set()
+    if meth.decorators:
+        for decorator in meth.decorators.nodes or ():
+            inferred = safe_infer(decorator, context=context)
+            if inferred is None or isinstance(inferred, UninferableBase):
+                continue
+            try:
+                decoratornames.add(inferred.qname())
+            except AttributeError:
+                continue
+
     if PROPERTIES.intersection(decoratornames):
         return True
     stripped = {
