@@ -171,6 +171,29 @@ class ProtocolTests(unittest.TestCase):
         self._helper_starred_expected_const("*b, a = (1, 2) #@", [1])
         self._helper_starred_expected_const("[*b] = (1, 2) #@", [1, 2])
 
+    def test_assigned_stmts_starred_ambiguous_assign(self) -> None:
+        """A starred assignment target must unpack *every* value the
+        right-hand side can infer to, not only the first one.
+
+        Regression test for
+        https://github.com/pylint-dev/astroid/issues/136.
+        """
+        code = """
+        if True:
+            value = (1, 2, 3, 4)
+        else:
+            value = (1, 2, 3)
+        a, *b, c = value #@
+        """
+        assign_stmt = extract_node(code)
+        starred = next(assign_stmt.nodes_of_class(nodes.Starred))
+        results = list(starred.assigned_stmts())
+        self.assertEqual(2, len(results))
+        for result in results:
+            self.assertIsInstance(result, nodes.List)
+        self.assertConstNodesEqual([2, 3], results[0].elts)
+        self.assertConstNodesEqual([2], results[1].elts)
+
     def test_assigned_stmts_starred_yes(self) -> None:
         # Not something iterable and known
         self._helper_starred_expected("a, *b = range(3) #@", Uninferable)

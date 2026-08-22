@@ -873,51 +873,57 @@ def starred_assigned_stmts(  # noqa: C901
             )
 
         try:
-            rhs = next(value.infer(context))
-        except (InferenceError, StopIteration):
-            yield util.Uninferable
-            return
-        if isinstance(rhs, util.UninferableBase) or not hasattr(rhs, "itered"):
+            rhs_values = list(value.infer(context))
+        except InferenceError:
             yield util.Uninferable
             return
 
-        try:
-            elts = collections.deque(rhs.itered())  # type: ignore[union-attr]
-        except TypeError:
+        if not rhs_values:
             yield util.Uninferable
             return
 
-        # Unpack iteratively the values from the rhs of the assignment,
-        # until the find the starred node. What will remain will
-        # be the list of values which the Starred node will represent
-        # This is done in two steps, from left to right to remove
-        # anything before the starred node and from right to left
-        # to remove anything after the starred node.
-
-        for index, left_node in enumerate(lhs.elts):
-            if not isinstance(left_node, nodes.Starred):
-                if not elts:
-                    break
-                elts.popleft()
+        for rhs in rhs_values:
+            if isinstance(rhs, util.UninferableBase) or not hasattr(rhs, "itered"):
+                yield util.Uninferable
                 continue
-            lhs_elts = collections.deque(reversed(lhs.elts[index:]))
-            for right_node in lhs_elts:
-                if not isinstance(right_node, nodes.Starred):
+
+            try:
+                elts = collections.deque(rhs.itered())  # type: ignore[union-attr]
+            except TypeError:
+                yield util.Uninferable
+                continue
+
+            # Unpack iteratively the values from the rhs of the assignment,
+            # until the find the starred node. What will remain will
+            # be the list of values which the Starred node will represent
+            # This is done in two steps, from left to right to remove
+            # anything before the starred node and from right to left
+            # to remove anything after the starred node.
+
+            for index, left_node in enumerate(lhs.elts):
+                if not isinstance(left_node, nodes.Starred):
                     if not elts:
                         break
-                    elts.pop()
+                    elts.popleft()
                     continue
+                lhs_elts = collections.deque(reversed(lhs.elts[index:]))
+                for right_node in lhs_elts:
+                    if not isinstance(right_node, nodes.Starred):
+                        if not elts:
+                            break
+                        elts.pop()
+                        continue
 
-                # We're done unpacking.
-                packed = nodes.List(
-                    ctx=Context.Store,
-                    parent=self,
-                    lineno=lhs.lineno,
-                    col_offset=lhs.col_offset,
-                )
-                packed.postinit(elts=list(elts))
-                yield packed
-                break
+                    # We're done unpacking.
+                    packed = nodes.List(
+                        ctx=Context.Store,
+                        parent=self,
+                        lineno=lhs.lineno,
+                        col_offset=lhs.col_offset,
+                    )
+                    packed.postinit(elts=list(elts))
+                    yield packed
+                    break
 
     if isinstance(stmt, nodes.For):
         try:

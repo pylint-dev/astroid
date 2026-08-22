@@ -1,0 +1,3 @@
+Replace next(node.infer()) calls with iteration over the all results of node.infer()
+
+Closes #136
