@@ -1,0 +1,8 @@
+Infer ``None`` for the ``fset`` of a property declared with ``@property`` and no
+``.setter``, as CPython does, instead of raising. The lookup escaped as a bare
+``StopIteration`` and was reported as a crash on code as simple as ``C.p.fset``.
+Properties built by a ``property(...)`` call are left as they were: the setter
+argument is not modelled, so ``fset`` stays uninferable rather than being reported
+as ``None``.
+
+Closes pylint-dev/pylint#8739
