@@ -6535,19 +6535,41 @@ def test_property_inference() -> None:
         assert isinstance(inferred, nodes.FunctionDef)
 
 
-def test_property_without_setter_infers_fset_as_none() -> None:
-    """A property with no setter has ``fset`` set to None.
-
-    Regression test for pylint-dev/pylint#8739: the lookup used to raise, which
-    escaped as a bare StopIteration and was reported as a crash.
-    """
-    code = """
+@pytest.mark.parametrize(
+    "code",
+    [
+        """
     class A:
         @property
         def test(self):
             return 42
 
     A.test.fset #@
+    """,
+        """
+    @property
+    def test():
+        return 42
+
+    test.fset #@
+    """,
+        """
+    def outer():
+        @property
+        def test():
+            return 42
+
+        test.fset #@
+    """,
+    ],
+    ids=["in a class body", "at module level", "inside a function"],
+)
+def test_property_without_setter_infers_fset_as_none(code: str) -> None:
+    """A property with no setter has ``fset`` set to None.
+
+    Regression test for pylint-dev/pylint#8739: the lookup used to raise, which
+    escaped as a bare StopIteration and was reported as a crash. The decorator
+    form is not confined to class bodies, so neither is the fix.
     """
     node = extract_node(code)
     inferred = next(node.infer())

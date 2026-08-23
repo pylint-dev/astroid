@@ -1032,9 +1032,10 @@ class PropertyModel(ObjectModel):
 
         func_setter = find_setter(func)
         if not func_setter:
-            if not isinstance(func.parent, nodes.ClassDef):
-                # Built by a property(...) call: the setter, if any, was passed as an
-                # argument that infer_property() does not model, so we cannot claim None.
+            if func.name == "<property>":
+                # infer_property() builds the Property from the getter alone and marks
+                # it with this name, so a setter passed as property(getter, setter) is
+                # invisible to find_setter() and its absence does not mean there is none.
                 raise InferenceError(
                     f"Unable to find the setter of property {func.function.name}"
                 )
@@ -1042,7 +1043,7 @@ class PropertyModel(ObjectModel):
             # set to None, and looking the attribute up is not an error. Raising here
             # escapes as a bare StopIteration and is reported as a crash instead of
             # inferring the None it should.
-            return node_classes.Const(None)
+            return node_classes.Const(value=None, parent=func)
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(
