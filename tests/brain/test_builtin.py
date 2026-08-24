@@ -397,9 +397,6 @@ class TestShadowedBuiltins:
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 3
 
-    @pytest.mark.xfail(
-        reason="_is_from_builtins_import matches the alias, not the imported name"
-    )
     def test_builtins_import_under_another_builtin_name(self) -> None:
         """``str`` here is really ``builtins.int``, so it must not infer as ``str``.
 
@@ -411,12 +408,9 @@ class TestShadowedBuiltins:
         str(42) #@
         """)
         inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == 42
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == "builtins.int"
 
-    @pytest.mark.xfail(
-        reason="scope_lookup sends defaults to the enclosing scope, annotations not yet"
-    )
     def test_annotation_uses_enclosing_builtin(self) -> None:
         """Annotations are evaluated in the enclosing scope, like defaults."""
         func: nodes.FunctionDef = extract_node("""
@@ -424,5 +418,33 @@ class TestShadowedBuiltins:
                 return x
             """)
         inferred = next(func.args.annotations[0].infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
+
+    @pytest.mark.parametrize(
+        "signature",
+        [
+            pytest.param('*args: str("apple"), str=None', id="vararg"),
+            pytest.param('str=None, **kwargs: str("apple")', id="kwarg"),
+            pytest.param('x: str("apple") = 1, /, *, str=None', id="posonly"),
+            pytest.param('*, x: str("apple") = 1, str=None', id="kwonly"),
+        ],
+    )
+    def test_every_annotation_uses_enclosing_builtin(self, signature: str) -> None:
+        func: nodes.FunctionDef = extract_node(f"""
+            def h({signature}):
+                return 1
+            """)
+        call = next(func.args.nodes_of_class(nodes.Call))
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
+
+    def test_return_annotation_uses_enclosing_builtin(self) -> None:
+        func: nodes.FunctionDef = extract_node("""
+            def h(x, str=None) -> str("apple"):
+                return x
+            """)
+        inferred = next(func.returns.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "apple"

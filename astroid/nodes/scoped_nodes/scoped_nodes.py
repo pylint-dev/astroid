@@ -874,34 +874,56 @@ def _infer_decorator_callchain(node):
     return None
 
 
-def _is_in_default_value(args: Arguments, node: NodeNG) -> bool:
-    """Whether *node* is part of one of the default values in *args*.
+def _signature_part(
+    func: Lambda | FunctionDef, node: NodeNG
+) -> Literal["default", "annotation"] | None:
+    """Which part of *func*'s signature *node* sits in, if any.
 
-    Default values are evaluated in the enclosing scope, so a name inside one
-    must not resolve to the parameters it sits next to. That goes for a name
-    nested in the default too, not just the default itself, which is why this
-    cannot be a plain identity test.
+    Defaults and annotations are evaluated where the function is defined, not
+    inside it, so a name in one must not resolve to the parameters it sits next
+    to. That goes for a name nested in the value too, not just the value
+    itself, which is why this cannot be a plain identity test.
 
-    Walk up from *node* rather than down from each default: the walk stops at
+    The two are told apart because only annotations see the type parameters:
+    ``def f[T](x: T = T)`` is fine on the annotation and a ``NameError`` on the
+    default.
+
+    Walk up from *node* rather than down from each value: the walk stops at
     the arguments (found) or at the function they belong to (not found), so
     this stays cheap for the common case of a name in the body.
     """
+    args = func.args
     child = node
     parent = child.parent
     while parent is not None:
         if parent is args:
-            return any(
+            if any(
                 child is default
                 for default in itertools.chain(
                     args.defaults or (), args.kw_defaults or ()
                 )
-            )
-        if parent is args.parent:
+            ):
+                return "default"
+            if any(
+                child is annotation
+                for annotation in itertools.chain(
+                    args.annotations or (),
+                    args.posonlyargs_annotations or (),
+                    args.kwonlyargs_annotations or (),
+                    (args.varargannotation, args.kwargannotation),
+                )
+            ):
+                return "annotation"
+            return None
+        if parent is func:
             # Reached the function or lambda without going through its
-            # arguments, so the node lives somewhere else in it.
-            return False
+            # arguments, so the only signature value left is the return
+            # annotation; anything else lives in the body.
+            if isinstance(func, FunctionDef) and child is func.returns:
+                return "annotation"
+            return None
         child, parent = parent, parent.parent
-    return False
+    return None
 
 
 class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
@@ -1032,7 +1054,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             given name according to the scope where it has been found (locals,
             globals or builtin).
         """
-        if _is_in_default_value(self.args, node):
+        if _signature_part(self, node) is not None:
             if not self.parent:
                 raise ParentMissingError(target=self)
             frame = self.parent.frame()
@@ -1700,7 +1722,14 @@ class FunctionDef(
             if self.parent and isinstance(frame := self.parent.frame(), ClassDef):
                 return self, [frame]
 
-        if _is_in_default_value(self.args, node):
+        part = _signature_part(self, node)
+        # An annotation is evaluated in the scope holding the type parameters,
+        # which sits between the function and the scope it is defined in.
+        if part == "annotation" and any(
+            type_param.name.name == name for type_param in self.type_params
+        ):
+            part = None
+        if part is not None:
             if not self.parent:
                 raise ParentMissingError(target=self)
             frame = self.parent.frame()
