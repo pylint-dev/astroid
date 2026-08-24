@@ -8,6 +8,7 @@ import functools
 import unittest
 
 from astroid import builder, nodes
+from astroid.const import PY312_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -123,6 +124,37 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
                 _, stmts = name.lookup("v")
                 self.assertEqual(len(stmts), 1)
                 self.assertEqual(stmts[0].lineno, 2)
+
+    def test_name_in_annotation_looks_up_in_enclosing_scope(self) -> None:
+        """An annotation is evaluated in the enclosing scope, like a default."""
+        module = builder.parse("""
+            v = 42
+            def func(x: v = 1, v=None) -> v:
+                return x
+        """)
+        func = module["func"]
+        for name in (func.args.annotations[0], func.returns):
+            with self.subTest(name=name):
+                _, stmts = name.lookup("v")
+                self.assertEqual(len(stmts), 1)
+                self.assertEqual(stmts[0].lineno, 2)
+
+    @unittest.skipUnless(PY312_PLUS, "PEP 695 syntax requires Python 3.12")
+    def test_annotation_sees_type_parameters(self) -> None:
+        """Annotations are evaluated in the type parameter scope, defaults are not."""
+        module = builder.parse("""
+            def func[T](x: T = T) -> T:
+                return x
+        """)
+        func = module["func"]
+        for name in (func.args.annotations[0], func.returns):
+            with self.subTest(name=name):
+                _, stmts = name.lookup("T")
+                self.assertEqual(len(stmts), 1)
+                self.assertIsInstance(stmts[0].parent, nodes.TypeVar)
+
+        _, stmts = func.args.defaults[0].lookup("T")
+        self.assertEqual(stmts, [])
 
     def test_class(self) -> None:
         klass = self.module["YOUPI"]

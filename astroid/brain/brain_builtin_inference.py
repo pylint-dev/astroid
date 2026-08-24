@@ -223,12 +223,18 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
 
 
 def _is_from_builtins_import(stmt: nodes.NodeNG, name: str) -> bool:
-    """True if *stmt* is ``from builtins import ...`` binding *name*."""
+    """True if *stmt* is ``from builtins import ...`` binding *name* to ``builtins.name``.
+
+    The binding has to be the builtin of the same name. An alias makes it a
+    different one: ``from builtins import int as str`` leaves ``str`` calling
+    ``int``.
+    """
     if not isinstance(stmt, nodes.ImportFrom) or stmt.modname != "builtins":
         return False
-    return any(
-        imported == "*" or (alias or imported) == name for imported, alias in stmt.names
-    )
+    try:
+        return stmt.real_name(name) == name
+    except AttributeInferenceError:
+        return False
 
 
 def _is_builtin_call(node: nodes.Call) -> bool:
