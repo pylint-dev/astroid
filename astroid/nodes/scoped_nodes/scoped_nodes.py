@@ -1578,9 +1578,15 @@ class FunctionDef(
         ):
             if isinstance(caller.args, node_classes.Arguments):
                 assert caller.args.args is not None
-                metaclass = next(caller.args.args[0].infer(context), None)
+                metaclass = (
+                    next(caller.args.args[0].infer(context), None)
+                    if caller.args.args
+                    else None
+                )
             elif isinstance(caller.args, list):
-                metaclass = next(caller.args[0].infer(context), None)
+                metaclass = (
+                    next(caller.args[0].infer(context), None) if caller.args else None
+                )
             else:
                 raise TypeError(  # pragma: no cover
                     f"caller.args was neither Arguments nor list; got {type(caller.args)}"

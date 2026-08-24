@@ -138,6 +138,22 @@ class SixBrainTest(unittest.TestCase):
         klass = astroid.extract_node(code)
         assert next(klass.ancestors()).name == "Enum"
 
+    def test_with_metaclass_no_arguments(self) -> None:
+        # ``six.with_metaclass()`` with no positional argument must not crash
+        # the module build; the class is simply left untransformed.
+        module = builder.parse("""
+        import six
+        class A(six.with_metaclass()):
+            pass
+
+        class B(six.with_metaclass(a=1)):
+            pass
+        """)
+        for name in ("A", "B"):
+            klass = module[name]
+            self.assertIsInstance(klass, nodes.ClassDef)
+            self.assertIsNone(getattr(klass, "_metaclass", None))
+
     def test_six_with_metaclass_with_additional_transform(self) -> None:
         def transform_class(cls: Any) -> ClassDef:
             if cls.name == "A":
