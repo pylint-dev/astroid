@@ -1,7 +1,7 @@
 # Tools used when releasing
 contributors-txt>=1.1.0
 tbump~=6.11
-towncrier>=24.8
+towncrier>=25.8.0
 
 # Tools used to run tests
 coverage~=7.15
