@@ -1,0 +1,6 @@
+Infer a ``str``/``bytes`` old-style ``%`` interpolation without crashing when a
+``%c`` conversion receives an out-of-range code point, such as ``"%c" % 0x110000``
+or ``b"%c" % 256``. The evaluation now catches ``OverflowError`` and yields
+``Uninferable``, matching the other invalid interpolations.
+
+Refs #3254
