@@ -1,0 +1,8 @@
+``AsStringVisitor`` no longer lets a docstring break out of the triple-quoted
+literal it is rendered into. A docstring value containing ``"""``, ending in a
+quote, or holding a NUL byte previously closed the literal early or, through the
+``DOC_NEWLINE`` sentinel, injected extra lines into ``as_string()`` output, which
+the dataclass and namedtuple brains reparse. Such values now fall back to
+``repr`` so the output round-trips.
+
+Refs #3249

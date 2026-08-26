@@ -160,6 +160,31 @@ def function(var):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 
+    def test_docstring_as_string_roundtrip(self) -> None:
+        """A docstring must not be able to break out of or inject into as_string()."""
+        docstrings = (
+            'ends with a quote"',
+            'has a """ triple quote',
+            "a\x00b",  # NUL collides with the newline sentinel
+            "carriage\rreturn",
+            "back\\slash",
+        )
+        templates = ("def f():\n    {}\n    x = 1", "class C:\n    {}\n    x = 1")
+        for doc in docstrings:
+            for template in templates:
+                rebuilt = abuilder.string_build(template.format(repr(doc)))
+                # The rendered source must reparse to the same docstring, with no
+                # statement smuggled in past the literal.
+                scope = abuilder.string_build(rebuilt.as_string()).body[0]
+                self.assertEqual(scope.doc_node.value, doc)
+                self.assertEqual(len(scope.body), 1)
+
+        module = abuilder.string_build(repr('a module """ docstring'))
+        self.assertEqual(
+            abuilder.string_build(module.as_string()).doc_node.value,
+            'a module """ docstring',
+        )
+
     def test_3k_annotations_and_metaclass(self) -> None:
         code = '''
         def function(var: int):
