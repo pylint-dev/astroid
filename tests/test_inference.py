@@ -7242,6 +7242,9 @@ class TestOldStyleStringFormatting:
             """,
             """20 % 0""",
             """("%" + str(20)) % 0""",
+            """"%c" % 0x110000""",
+            """"%c" % -1""",
+            """b"%c" % 256""",
         ],
     )
     def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:

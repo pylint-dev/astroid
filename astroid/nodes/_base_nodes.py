@@ -418,7 +418,9 @@ class OperatorNode(NodeNG):
 
         try:
             return (nodes.const_factory(instance.value % values),)
-        except (TypeError, KeyError, ValueError):
+        except (TypeError, KeyError, ValueError, OverflowError):
+            # OverflowError: a "%c" conversion with an out-of-range code point,
+            # e.g. "%c" % 0x110000, which the size guard above does not catch.
             return (util.Uninferable,)
 
     @staticmethod
