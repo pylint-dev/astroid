@@ -1589,13 +1589,14 @@ def test_property_default_huge_int_does_not_crash() -> None:
     ``_generate_dataclass_init`` renders the inferred property result as the
     parameter default via ``as_string()``; ``repr()`` of an int past
     ``sys.get_int_max_str_digits()`` raises ``ValueError``, which used to escape
-    the transform while merely building the module.
+    the transform while merely building the module. The field keeps a default
+    (falling back to ``Uninferable``) rather than being dropped.
     """
-    node = astroid.extract_node("""
+    klass, call = astroid.extract_node("""
     from dataclasses import dataclass
 
     @dataclass
-    class A:
+    class A:  #@
         x: int
         @property
         def x(self):
@@ -1603,7 +1604,11 @@ def test_property_default_huge_int_does_not_crash() -> None:
 
     A(1)  #@
     """)
-    inferred = list(node.infer())
+    init = klass.locals["__init__"][0]
+    assert [a.name for a in init.args.args] == ["self", "x"]
+    assert init.args.defaults[0].as_string() == "Uninferable"
+
+    inferred = list(call.infer())
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0].name == "A"
