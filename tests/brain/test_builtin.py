@@ -448,3 +448,20 @@ class TestShadowedBuiltins:
         inferred = next(func.returns.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "apple"
+
+    @pytest.mark.xfail(
+        reason="a bare annotation is taken for a binding, so the builtin is lost"
+    )
+    def test_bare_annotation_does_not_shadow(self) -> None:
+        """``len: int`` says what ``len`` should hold, it does not put anything there.
+
+        ``lookup()`` still hands back the annotated name, so the tip reads it as a
+        shadow and steps aside, where the builtin is really the one being called.
+        """
+        node: nodes.Call = _extract_single_node("""
+        len: int
+        len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
