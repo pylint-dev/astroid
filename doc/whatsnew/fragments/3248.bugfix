@@ -1,6 +1,7 @@
 Do not crash when inferring a class that uses ``six.with_metaclass()`` with no
 positional metaclass argument. The call is invalid, but astroid raised
-``IndexError`` while building the module, and again when the call was inferred,
-instead of leaving the class untransformed.
+``IndexError`` while building the module, and again when the call was inferred.
+The class is now left untransformed and inferring the call raises an
+``InferenceError`` instead.
 
 Refs #3248

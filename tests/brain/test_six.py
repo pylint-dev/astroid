@@ -153,6 +153,9 @@ class SixBrainTest(unittest.TestCase):
             klass = module[name]
             self.assertIsInstance(klass, nodes.ClassDef)
             self.assertIsNone(getattr(klass, "_metaclass", None))
+            # Inferring the invalid call raises an InferenceError rather than
+            # yielding a bogus ``temporary_class`` ancestor.
+            self.assertEqual([a.name for a in klass.ancestors()], [])
 
     def test_six_with_metaclass_with_additional_transform(self) -> None:
         def transform_class(cls: Any) -> ClassDef:

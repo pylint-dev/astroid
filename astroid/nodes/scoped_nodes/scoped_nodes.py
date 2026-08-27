@@ -1578,19 +1578,22 @@ class FunctionDef(
         ):
             if isinstance(caller.args, node_classes.Arguments):
                 assert caller.args.args is not None
-                metaclass = (
-                    next(caller.args.args[0].infer(context), None)
-                    if caller.args.args
-                    else None
-                )
+                call_args = caller.args.args
             elif isinstance(caller.args, list):
-                metaclass = (
-                    next(caller.args[0].infer(context), None) if caller.args else None
-                )
+                call_args = caller.args
             else:
                 raise TypeError(  # pragma: no cover
                     f"caller.args was neither Arguments nor list; got {type(caller.args)}"
                 )
+            if not call_args:
+                # ``with_metaclass()`` called without a metaclass argument is
+                # invalid; there is nothing to infer.
+                raise InferenceError(
+                    "with_metaclass() call has no metaclass argument",
+                    node=self,
+                    context=context,
+                )
+            metaclass = next(call_args[0].infer(context), None)
             if isinstance(metaclass, ClassDef):
                 class_bases = [_infer_last(x, context) for x in caller.args[1:]]
                 new_class = ClassDef(
