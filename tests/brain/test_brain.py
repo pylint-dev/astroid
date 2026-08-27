@@ -134,6 +134,25 @@ class TypeBrain(unittest.TestCase):
         meth_inf = val_inf.getattr("__class_getitem__")[0]
         self.assertIsInstance(meth_inf, nodes.FunctionDef)
 
+    @pytest.mark.xfail(
+        reason="infer_type_sub looks 'type' up from the scope, so a parameter hides it"
+    )
+    def test_type_subscript_next_to_a_parameter_named_type(self):
+        """A parameter called ``type`` does not reach the annotation next to it.
+
+        The annotation is evaluated where the function is defined, so ``type``
+        there is still the builtin and ``type[int]`` still works.
+        """
+        src = builder.extract_node("""
+            def feed(type: str) -> type[int]:
+                return int
+            """)
+        val_inf = src.returns.value.inferred()[0]
+        self.assertIsInstance(val_inf, nodes.ClassDef)
+        self.assertEqual(val_inf.name, "type")
+        meth_inf = val_inf.getattr("__class_getitem__")[0]
+        self.assertIsInstance(meth_inf, nodes.FunctionDef)
+
     def test_invalid_type_subscript(self):
         """
         Check that a type (str for example) that inherits
