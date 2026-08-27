@@ -317,18 +317,22 @@ class AsStringVisitor:
             if quote not in string:
                 return "f" + quote + string + quote
 
-        # Every candidate quote is present in the body. Re-escape the literal
-        # parts against a quote absent from the {expression} parts (which cannot
-        # hold a backslash) so the f-string cannot terminate early.
+        # Every candidate quote is present in the body. Pick a delimiter absent
+        # from the {expression} parts (which cannot hold a backslash) and
+        # escape it in the literal parts so the f-string cannot terminate early.
         formatted = "".join(
             value.accept(self)
             for value in node.values
             if not isinstance(value, nodes.Const)
         )
-        quote = "'" if "'" not in formatted else '"'
+        quote = next(
+            (q for q in ("'", '"', "'''", '"""') if q not in formatted),
+            # Unrepresentable: every delimiter occurs in an expression part.
+            "'''",
+        )
         string = "".join(
             (
-                _escaped_fstring_literal(value.value, quote)
+                _escaped_fstring_literal(value.value, quote[0])
                 if isinstance(value, nodes.Const)
                 else value.accept(self)
             )

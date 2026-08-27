@@ -1868,6 +1868,14 @@ def test_fstring_as_string_roundtrip_with_mixed_quotes() -> None:
     injected = astroid.extract_node("f\"A'''+BAD+'''B{v}\" f'\"\"\"'")
     assert isinstance(astroid.extract_node(injected.as_string()), nodes.JoinedStr)
 
+    # Both single-character quotes occur inside the expression part, so the
+    # fallback must move on to a triple-quoted delimiter.
+    mixed = astroid.extract_node("f\"'''\" f'\"\"\"' f'''{d[\"it's\"]}'''")
+    assert isinstance(mixed, nodes.JoinedStr)
+    reparsed = astroid.extract_node(mixed.as_string())
+    assert isinstance(reparsed, nodes.JoinedStr)
+    assert reparsed.as_string() == mixed.as_string()
+
 
 def test_parse_type_comments_with_proper_parent() -> None:
     code = """

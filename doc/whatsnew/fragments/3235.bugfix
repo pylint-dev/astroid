@@ -1,5 +1,5 @@
-``as_string()`` no longer renders an f-string wrapped in a quote that also
-appears in its body. Such an f-string terminated early and either failed to
+``as_string()`` no longer renders an f-string whose delimiter reappears
+unescaped in its body. Such an f-string terminated early and either failed to
 parse or reparsed to a different expression, which matters because
 ``brain_dataclasses`` and ``brain_namedtuple_enum`` reparse ``as_string()``
 output.
