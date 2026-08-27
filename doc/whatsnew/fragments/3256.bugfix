@@ -1,0 +1,9 @@
+Infer an ``enum`` subclass without crashing when a member value cannot be
+rendered back into the mocked member class. An integer literal past the
+int-to-str conversion limit, such as ``A = 0xff...`` (a large hex literal the
+tokenizer accepts), previously made ``infer_enum_class`` raise an uncaught
+``ValueError`` while building the module. The member-class reconstruction is now
+guarded like the dataclass ``__init__`` transform, leaving such a member
+untransformed instead.
+
+Refs #3256
