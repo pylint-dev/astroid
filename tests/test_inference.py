@@ -6583,6 +6583,13 @@ def test_property_call_form_does_not_infer_fset_as_none() -> None:
     ``infer_property()`` builds the Property from the first argument only, so the
     setter is not modelled and ``find_setter()`` cannot see it. Inferring None here
     would be a confident wrong answer where "cannot infer" is the truthful one.
+
+    This used to raise InferenceError instead, but that goes through the same
+    raise_if_nothing_inferred path that turns an empty generator into a bare
+    "StopIteration raised without any error information" (pylint-dev/pylint#8739):
+    instrumenting the getter directly shows the specific message raised here never
+    reaches the caller. Uninferable is the truthful "cannot tell" that does not
+    raise.
     """
     code = """
     def getter(self):
@@ -6597,8 +6604,8 @@ def test_property_call_form_does_not_infer_fset_as_none() -> None:
     A.test.fset #@
     """
     node = extract_node(code)
-    with pytest.raises(InferenceError):
-        next(node.infer())
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
 
 
 def test_property_as_string() -> None:
