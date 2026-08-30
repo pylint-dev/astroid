@@ -114,6 +114,8 @@ def _functools_partial_inference(
         name=inferred_wrapped_function.name,
         lineno=inferred_wrapped_function.lineno,
         col_offset=inferred_wrapped_function.col_offset,
+        end_lineno=inferred_wrapped_function.end_lineno,
+        end_col_offset=inferred_wrapped_function.end_col_offset,
         parent=node.parent,
     )
     partial_function.postinit(

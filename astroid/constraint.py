@@ -171,6 +171,12 @@ class TypeConstraint(Constraint):
         if inferred is util.Uninferable:
             return True
 
+        # This method is called once per inferred value, with the same context.
+        # Use a clone: inferring the classinfo pushes it onto the context's
+        # inference path but only its first value is consumed, so nothing is
+        # cached and a reused context would make the classinfo uninferable
+        # from the second call on.
+        context = context.clone()
         try:
             types = helpers.class_or_tuple_to_container(self.classinfo, context)
             matches_checked_types = helpers.object_isinstance(inferred, types, context)
@@ -241,19 +247,75 @@ class EqualityConstraint(Constraint):
         return True
 
 
+class _CompoundConstraint(Constraint):
+    """Represents an "x and y" or "x or y" constraint."""
+
+    def __init__(
+        self,
+        node: nodes.NodeNG,
+        op: str,
+        children: list[Constraint],
+        negate: bool,
+    ) -> None:
+        super().__init__(node=node, negate=negate)
+        self.op = op
+        self.children = children
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches an "x and y" or
+        "x or y" pattern.
+
+        Return None if expr is not a supported boolean expression, or if any
+        operand does not match a constraint pattern.
+        """
+        if not (isinstance(expr, nodes.BoolOp) and expr.op in {"and", "or"}):
+            return None
+
+        children: list[Constraint] = []
+        for value in expr.values:
+            matches = list(_match_constraint(node, value, negate))
+            if not matches:
+                return None
+            children.extend(matches)
+
+        return cls(node=node, op=expr.op, children=children, negate=negate)
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for uninferable results, or depending on op and negate:
+
+        - negate=False: all children must be satisfied for "and", or any for "or".
+        - negate=True: any child must be satisfied for "and", or all for "or".
+        """
+        if inferred is util.Uninferable:
+            return True
+
+        results = (
+            constraint.satisfied_by(inferred, context) for constraint in self.children
+        )
+
+        strict = (self.op == "and") ^ self.negate
+        return all(results) if strict else any(results)
+
+
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
-) -> dict[nodes.If | nodes.IfExp, set[Constraint]]:
+) -> dict[nodes.NodeNG, set[Constraint]]:
     """Returns the constraints for the given expression.
 
     The returned dictionary maps the node where the constraint was generated to the
     corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
-    Currently this only supports constraints generated from if conditions.
+    Currently this only supports constraints generated from if conditions and
+    comprehension conditions.
     """
     current_node: nodes.NodeNG | None = expr
-    constraints_mapping: dict[nodes.If | nodes.IfExp, set[Constraint]] = {}
+    constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
         if isinstance(parent, (nodes.If, nodes.IfExp)):
@@ -266,20 +328,52 @@ def get_constraints(
 
             if constraints:
                 constraints_mapping[parent] = constraints
+        elif isinstance(parent, nodes.Comprehension):
+            try:
+                index = parent.ifs.index(current_node)
+            except ValueError:
+                pass
+            else:
+                # Preceding conditions of the same generator guard this condition.
+                _add_ifs_constraints(expr, parent.ifs[:index], constraints_mapping)
+        elif isinstance(
+            parent, (nodes.ListComp, nodes.SetComp, nodes.DictComp, nodes.GeneratorExp)
+        ):
+            branch, _ = parent.locate_child(current_node)
+            if branch == "generators":
+                # Conditions guard the iterables of all later generators.
+                index = parent.generators.index(current_node)
+                generators = parent.generators[:index]
+            else:  # elt, key or value: guarded by all conditions
+                generators = parent.generators
+            for comprehension in generators:
+                _add_ifs_constraints(expr, comprehension.ifs, constraints_mapping)
         current_node = parent
 
     return constraints_mapping
 
 
-ALL_CONSTRAINT_CLASSES = frozenset(
-    (
-        NoneConstraint,
-        BooleanConstraint,
-        TypeConstraint,
-        EqualityConstraint,
-    )
-)
-"""All supported constraint types."""
+def _add_ifs_constraints(
+    expr: _NameNodes,
+    ifs: list[nodes.NodeNG],
+    constraints_mapping: dict[nodes.NodeNG, set[Constraint]],
+) -> None:
+    """Add the constraints matching each comprehension condition in ifs."""
+    for if_expr in ifs:
+        constraints = set(_match_constraint(expr, if_expr))
+        if constraints:
+            constraints_mapping[if_expr] = constraints
+
+
+_CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]] = {
+    nodes.Attribute: (BooleanConstraint,),
+    nodes.BoolOp: (_CompoundConstraint,),
+    nodes.Call: (TypeConstraint,),
+    nodes.Compare: (NoneConstraint, EqualityConstraint),
+    nodes.Name: (BooleanConstraint,),
+    nodes.UnaryOp: (BooleanConstraint,),
+}
+"""Constraint types that can match each expression node type."""
 
 
 def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
@@ -298,7 +392,7 @@ def _match_constraint(
     node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
 ) -> Iterator[Constraint]:
     """Yields all constraint patterns for node that match."""
-    for constraint_cls in ALL_CONSTRAINT_CLASSES:
+    for constraint_cls in _CONSTRAINTS_BY_NODE_TYPE.get(type(expr), ()):
         constraint = constraint_cls.match(node, expr, invert)
         if constraint:
             yield constraint

@@ -1,0 +1,9 @@
+``dataclasses.replace(obj, ...)`` is now inferred as an instance of ``obj``'s own
+class instead of being inferred through the stdlib body of ``replace()``. That body
+resolves ``obj.__class__`` through the metaclass chain, which fails when a base is a
+subscripted generic such as ``Base[T]``: the call became ``Uninferable`` with the
+old-style ``Generic[T]`` syntax, and resolved to the wrong class with PEP 695
+``class Base[T]`` syntax. The concrete caller type is now propagated correctly,
+including through ``Self``-annotated method chains.
+
+Refs #3061

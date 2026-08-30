@@ -7,11 +7,13 @@
 from __future__ import annotations
 
 import itertools
+import re
 from collections.abc import Callable, Iterable, Iterator
-from functools import partial
-from typing import TYPE_CHECKING, Any, NoReturn, cast
+from functools import lru_cache, partial
+from typing import NoReturn, cast
 
 from astroid import arguments, helpers, nodes, objects, util
+from astroid.bases import Instance
 from astroid.builder import AstroidBuilder
 from astroid.context import InferenceContext
 from astroid.exceptions import (
@@ -30,9 +32,6 @@ from astroid.typing import (
     SuccessfulInferenceResult,
 )
 
-if TYPE_CHECKING:
-    from astroid.bases import Instance
-
 ContainerObjects = (
     objects.FrozenSet | objects.DictItems | objects.DictKeys | objects.DictValues
 )
@@ -42,6 +41,40 @@ BuiltContainers = type[tuple] | type[list] | type[set] | type[frozenset]
 CopyResult = nodes.Dict | nodes.List | nodes.Set | objects.FrozenSet
 
 OBJECT_DUNDER_NEW = "object.__new__"
+
+# Largest field width/precision we are willing to materialize when inferring a
+# str.format() call. A crafted template such as "{:>2000000000}" would otherwise
+# eagerly build a multi-gigabyte string during inference.
+_MAX_FORMAT_FIELD_SIZE = int(1e8)
+
+# Largest str/bytes constant we are willing to expand into one node per
+# character when inferring container calls and dict.fromkeys.
+_MAX_INFERABLE_STR_LEN = int(1e8)
+
+
+@lru_cache(maxsize=1)
+def _get_bounded_formatter():
+    """Build the formatter lazily: importing ``string`` is costly at import time."""
+    import string  # pylint: disable=import-outside-toplevel
+
+    class _BoundedFormatter(string.Formatter):
+        """A ``str.format`` implementation that refuses oversized width/precision.
+
+        The only multi-digit numbers in a format spec are the width and the
+        precision, so bailing when any digit run exceeds the limit covers both.
+        Nested replacement fields ("{:>{}}") are already resolved by ``Formatter``
+        before ``format_field`` runs, so this also catches sizes passed as
+        arguments.
+        """
+
+        def format_field(self, value: object, format_spec: str) -> str:
+            for size in re.findall(r"\d+", format_spec):
+                if int(size) > _MAX_FORMAT_FIELD_SIZE:
+                    raise ValueError("format field size exceeds inference limit")
+            return cast(str, super().format_field(value, format_spec))
+
+    return _BoundedFormatter()
+
 
 STR_CLASS = """
 class whatever(object):
@@ -199,7 +232,7 @@ def register_builtin_transform(
     """
 
     def _transform_wrapper(
-        node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+        node: nodes.Call, context: InferenceContext | None = None
     ) -> Iterator:
         result = transform(node, context=context)
         if result:
@@ -291,6 +324,9 @@ def _container_generic_transform(
             for item in arg.items
         ]
     elif isinstance(arg, nodes.Const) and isinstance(arg.value, (str, bytes)):
+        # Don't expand an oversized string into one Const node per character.
+        if len(arg.value) > _MAX_INFERABLE_STR_LEN:
+            return None
         elts = arg.value
     else:
         return None
@@ -442,6 +478,30 @@ def infer_dict(node: nodes.Call, context: InferenceContext | None = None) -> nod
     return value
 
 
+def _mro_owner(cls: nodes.ClassDef, context: InferenceContext | None) -> nodes.ClassDef:
+    """Return the class whose mro a ``super()`` call with no argument walks.
+
+    ``super()`` with no argument is ``super(__class__, self)``. It starts the
+    lookup after the class the method is written in, but it walks the mro of the
+    object the method was called on, which can be a subclass, or a class that
+    only meets the method's own class in the mro of that subclass (a mixin).
+    ``context.boundnode`` is that object when it is known.
+    """
+    bound = context.boundnode if context is not None else None
+    if isinstance(bound, Instance):
+        bound_cls = bound._proxied
+    elif isinstance(bound, nodes.ClassDef):
+        bound_cls = bound
+    else:
+        return cls
+    try:
+        if cls in bound_cls.mro():
+            return bound_cls
+    except MroError:
+        pass
+    return cls
+
+
 def infer_super(
     node: nodes.Call, context: InferenceContext | None = None
 ) -> objects.Super:
@@ -470,15 +530,21 @@ def infer_super(
         raise UseInferenceDefault
 
     cls = scoped_nodes.get_wrapping_class(scope)
-    assert cls is not None
     if not node.args:
+        if cls is None:
+            # A ``classmethod`` or ``method`` that is not defined inside a
+            # class, e.g. a module level function decorated with
+            # ``@classmethod``: there is nothing for the zero argument
+            # form to refer to.
+            raise UseInferenceDefault
         mro_pointer = cls
+        mro_owner = _mro_owner(cls, context)
         # In we are in a classmethod, the interpreter will fill
         # automatically the class as the second argument, not an instance.
         if scope.type == "classmethod":
-            mro_type = cls
+            mro_type = mro_owner
         else:
-            mro_type = cls.instantiate_class()
+            mro_type = mro_owner.instantiate_class()
     else:
         try:
             mro_pointer = next(node.args[0].infer(context=context))
@@ -710,7 +776,8 @@ def infer_slice(node, context: InferenceContext | None = None):
 
 
 def _infer_object__new__decorator(
-    node: nodes.ClassDef, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.ClassDef,
+    context: InferenceContext | None = None,
 ) -> Iterator[Instance]:
     # Instantiate class immediately
     # since that's what @object.__new__ does
@@ -927,6 +994,16 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
         new_node.postinit(elements)
         return new_node
 
+    def _unique_const_keys(keys: Iterable[nodes.Const]) -> list[nodes.Const]:
+        # dict.fromkeys deduplicates its keys, so keep only the first Const seen
+        # for a given value. Emitting one entry per element is wrong
+        # (dict.fromkeys("aab") has keys "a", "b") and lets a repeated string
+        # balloon the inferred dict.
+        seen: dict[object, nodes.Const] = {}
+        for key in keys:
+            seen.setdefault(key.value, key)
+        return list(seen.values())
+
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
@@ -953,13 +1030,22 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in elements]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(elements)
+        ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Const) and isinstance(
         inferred_values.value, (str, bytes)
     ):
+        # Same cap as the container builders above.
+        if len(inferred_values.value) > _MAX_INFERABLE_STR_LEN:
+            return _build_dict_with_elements([])
+        # Deduplicate the characters/bytes before building Const nodes so that a
+        # compact but large string, e.g. dict.fromkeys("x" * 10**8), doesn't
+        # materialize one node per character for what is a single-key dict.
         elements_with_value = [
-            (nodes.Const(element), default) for element in inferred_values.value
+            (nodes.Const(element), default)
+            for element in dict.fromkeys(inferred_values.value)
         ]
         return _build_dict_with_elements(elements_with_value)
     if isinstance(inferred_values, nodes.Dict):
@@ -969,7 +1055,9 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
                 # Fallback to an empty dict
                 return _build_dict_with_elements([])
 
-        elements_with_value = [(element, default) for element in keys]
+        elements_with_value = [
+            (element, default) for element in _unique_const_keys(keys)
+        ]
         return _build_dict_with_elements(elements_with_value)
 
     # Fallback to an empty dictionary
@@ -977,7 +1065,7 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
 
 
 def _infer_copy_method(
-    node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[CopyResult]:
     assert isinstance(node.func, nodes.Attribute)
     inferred_orig, inferred_copy = itertools.tee(node.func.expr.infer(context=context))
@@ -1006,7 +1094,7 @@ def _is_str_format_call(node: nodes.Call) -> bool:
 
 
 def _infer_str_format_call(
-    node: nodes.Call, context: InferenceContext | None = None, **kwargs: Any
+    node: nodes.Call, context: InferenceContext | None = None
 ) -> Iterator[ConstFactoryResult | util.UninferableBase]:
     """Return a Const node based on the template and passed arguments."""
     call = arguments.CallSite.from_call(node, context=context)
@@ -1047,8 +1135,18 @@ def _infer_str_format_call(
 
     keyword_values: dict[str, str] = {k: v.value for k, v in inferred_keyword.items()}
 
+    formatter = _get_bounded_formatter()
     try:
-        formatted_string = format_template.format(*pos_values, **keyword_values)
+        fields = list(formatter.parse(format_template))
+    except ValueError:
+        return iter([util.Uninferable])
+    if any(spec and util.format_spec_too_large(spec) for _, _, spec, _ in fields):
+        return iter([util.Uninferable])
+
+    try:
+        formatted_string = formatter.format(
+            format_template, *pos_values, **keyword_values
+        )
     except (AttributeError, IndexError, KeyError, TypeError, ValueError):
         # AttributeError: named field in format string was not found in the arguments
         # IndexError: there are too few arguments to interpolate

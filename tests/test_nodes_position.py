@@ -176,6 +176,23 @@ class TestNodePosition:
         assert node.position is None
 
     @staticmethod
+    def test_position_carriage_return_line_endings() -> None:
+        """Lines ending in ``\\r`` must not crash the build (#3091).
+
+        The tokenizer treats a lone ``\\r`` as a line terminator while the
+        source kept by the rebuilder is split on ``\\n`` only, so the slice
+        tokenized for the position can be misaligned and raise
+        ``IndentationError``; ``position`` is simply unavailable then.
+        """
+        module = builder.parse("\rclass C:\n def f():\n  1\n 2")
+        klass = module.body[0]
+        assert isinstance(klass, nodes.ClassDef)
+        func = klass.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert klass.position is None
+        assert func.position is None
+
+    @staticmethod
     def test_position_unnormalized_name() -> None:
         """No position info when the name token never matches ``node.name``.
 

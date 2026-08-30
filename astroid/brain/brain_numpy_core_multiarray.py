@@ -43,6 +43,8 @@ METHODS_TO_BE_INFERRED = {
             return numpy.ndarray([0, 0])""",
     "empty": """def empty(shape, dtype=float, order='C'):
             return numpy.ndarray([0, 0])""",
+    "fromfile": """def fromfile(file, dtype=float, count=-1, sep='', offset=0):
+            return numpy.ndarray([0, 0])""",
     "bincount": """def bincount(x, weights=None, minlength=0):
             return numpy.ndarray([0, 0])""",
     "busday_count": """def busday_count(
