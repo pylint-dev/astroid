@@ -1,0 +1,7 @@
+``Arguments.default_value()`` no longer raises ``IndexError`` when a keyword-only
+argument repeats the name of ``*args`` or ``**kwargs``, as in ``def f(x, *y, y)``.
+Such a definition parses even though it does not compile, and excluding the
+variadic arguments by name also dropped the keyword-only argument, which shifted
+the lookup into ``defaults``.
+
+Closes #3259
