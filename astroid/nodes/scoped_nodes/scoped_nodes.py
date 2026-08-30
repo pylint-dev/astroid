@@ -2723,7 +2723,7 @@ class ClassDef(
                 try:
                     slots.getattr(meth)
                     break
-                except AttributeInferenceError:
+                except (AttributeInferenceError, AttributeError):
                     continue
             else:
                 continue
