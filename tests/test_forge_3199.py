@@ -1,3 +1,6 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 """Regression test for IndexError when inferring namedtuple with a format-string typename.
 
 Bug: ``a = namedtuple('{0}', '')`` triggers
@@ -33,8 +36,6 @@ def test_namedtuple_with_format_string_typename_no_crash():
     except AstroidError as exc:
         # If we get an AstroidError, calling str() on it must not raise
         # IndexError (the original bug).
-        pytest.fail(
-            f"Inference raised AstroidError and str(exc) crashes: {exc!r}"
-        )
+        pytest.fail(f"Inference raised AstroidError and str(exc) crashes: {exc!r}")
     except IndexError:
         pytest.fail("Inference raised IndexError (the original bug)")
