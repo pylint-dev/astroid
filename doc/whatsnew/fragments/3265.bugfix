@@ -1,0 +1,8 @@
+``as_string()`` now renders non-finite floats with an overflowing literal
+(``1e309`` for ``inf`` and ``(1e309-1e309)`` for ``nan``) instead of the bare
+``inf``/``nan`` tokens. The old output did not round-trip: reparsing it produced
+a ``Name`` lookup rather than the number, so a dataclass field default such as
+``1e999`` was synthesized into ``x: float = inf`` and resolved to whatever
+``inf`` referred to in scope.
+
+Refs #3265
