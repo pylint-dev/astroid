@@ -141,8 +141,15 @@ class ObjectModel:
         """Calling cls.__new__(type) on an object returns an instance of 'type'."""
         from astroid import builder  # pylint: disable=import-outside-toplevel
 
+        # ``__new__`` is a static method: the class is passed explicitly and
+        # ``BoundMethod.implicit_parameters()`` is 0 for it, so the first
+        # parameter is the one filled by ``cls`` in ``self.__new__(cls)`` or
+        # ``super().__new__(cls)``. The *args and **kwargs are necessary not
+        # to trigger warnings about extra parameters for ``__new__`` methods
+        # we don't infer correctly (e.g. ``tp_new`` of C types), just like
+        # the ``__init__`` fallback below.
         node: nodes.FunctionDef = builder.extract_node(
-            """def __new__(self, cls): return cls()"""
+            """def __new__(cls, *args, **kwargs): return cls()"""
         )
         # We set the parent as being the ClassDef of 'object' as that
         # triggers correct inference as a call to __new__ in bases.py
