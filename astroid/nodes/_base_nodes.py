@@ -315,7 +315,7 @@ class LookupMixIn(NodeNG):
 
         :returns: The inferred values of the statements returned from
             :meth:`lookup`.
-        :rtype: iterable
+        :rtype: Iterator
         """
         frame, stmts = self.lookup(name)
         context = InferenceContext()
@@ -410,9 +410,17 @@ class OperatorNode(NodeNG):
         else:
             return (util.Uninferable,)
 
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.protocols import _old_style_format_too_large
+
+        if _old_style_format_too_large(instance.value, values):
+            return (util.Uninferable,)
+
         try:
             return (nodes.const_factory(instance.value % values),)
-        except (TypeError, KeyError, ValueError):
+        except (TypeError, KeyError, ValueError, OverflowError):
+            # OverflowError: a "%c" conversion with an out-of-range code point,
+            # e.g. "%c" % 0x110000, which the size guard above does not catch.
             return (util.Uninferable,)
 
     @staticmethod
@@ -432,7 +440,7 @@ class OperatorNode(NodeNG):
 
         if (
             isinstance(instance, nodes.Const)
-            and isinstance(instance.value, str)
+            and isinstance(instance.value, (str, bytes))
             and op == "%"
         ):
             return iter(

@@ -392,18 +392,21 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
     Statements:
      To extract one or more statement nodes, append #@ to the end of the line
 
-     Examples:
-       >>> def x():
-       >>>   def y():
-       >>>     return 1 #@
+     Examples::
 
-       The return statement will be extracted.
+       def x():
+         def y():
+           return 1 #@
 
-       >>> class X(object):
-       >>>   def meth(self): #@
-       >>>     pass
+     The return statement will be extracted.
 
-      The function object 'meth' will be extracted.
+     ::
+
+       class X(object):
+         def meth(self): #@
+           pass
+
+     The function object 'meth' will be extracted.
 
     Expressions:
      To extract arbitrary expressions, surround them with the fake
@@ -412,19 +415,24 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
      node's parent attribute) will look like the function call was
      never there in the first place.
 
-     Examples:
-       >>> a = __(1)
+     Examples::
 
-       The const node will be extracted.
+       a = __(1)
 
-       >>> def x(d=__(foo.bar)): pass
+     The const node will be extracted.
 
-       The node containing the default argument will be extracted.
+     ::
 
-       >>> def foo(a, b):
-       >>>   return 0 < __(len(a)) < b
+       def x(d=__(foo.bar)): pass
 
-       The node containing the function call 'len' will be extracted.
+     The node containing the default argument will be extracted.
+
+     ::
+
+       def foo(a, b):
+         return 0 < __(len(a)) < b
+
+     The node containing the function call 'len' will be extracted.
 
     If no statements or expressions are selected, the last toplevel
     statement will be returned.
@@ -435,7 +443,7 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
     For convenience, singleton lists are unpacked.
 
     :param str code: A piece of Python code that is parsed as
-    a module. Will be passed through textwrap.dedent first.
+        a module. Will be passed through textwrap.dedent first.
     :param str module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
     """

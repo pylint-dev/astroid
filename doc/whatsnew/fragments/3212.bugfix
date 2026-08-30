@@ -1,0 +1,6 @@
+Do not infer a functional ``Enum`` whose class name is not a string. Such a
+definition is invalid at runtime and could expose a non-string class name to
+consumers.
+
+Refs #3212
+Refs pylint-dev/pylint#11229

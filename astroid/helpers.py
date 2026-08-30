@@ -187,6 +187,11 @@ def class_or_tuple_to_container(
 
 def has_known_bases(klass, context: InferenceContext | None = None) -> bool:
     """Return whether all base classes of a class could be inferred."""
+    if not isinstance(klass, scoped_nodes.ClassDef):
+        # Not a class, so it has no bases at all. This happens for the type of a
+        # class whose metaclass is not a class either, as in
+        # ``class C(metaclass=sum)``, whose type is the ``sum`` function.
+        return False
     try:
         return klass._all_bases_known
     except AttributeError:

@@ -6462,6 +6462,28 @@ def test_inference_is_limited_to_the_boundnode(code, instance_name) -> None:
     assert inferred.name == instance_name
 
 
+def test_classmethod_returned_tuple_subscript_ignores_unrelated_boundnode() -> None:
+    node = extract_node("""
+    class A:
+        def b(self):
+            return 0
+
+        @classmethod
+        def c(cls):
+            return cls(), 0
+
+    class D:
+        def e(self):
+            self.f = A.c()[0]
+            self.f #@
+    """)
+
+    inferred = next(node.infer())
+
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "A"
+
+
 def test_property_inference() -> None:
     code = """
     class A:
@@ -7220,6 +7242,9 @@ class TestOldStyleStringFormatting:
             """,
             """20 % 0""",
             """("%" + str(20)) % 0""",
+            """"%c" % 0x110000""",
+            """"%c" % -1""",
+            """b"%c" % 256""",
         ],
     )
     def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:
@@ -7234,6 +7259,40 @@ class TestOldStyleStringFormatting:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
+
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            '"%1000000000d" % 1',
+            '"%-1000000000s" % "x"',
+            '"%.1000000000f" % 1.0',
+            '"%*s" % (1000000000, "x")',
+            '"%*s" % (-1000000000, "x")',
+            '"%.*f" % (1000000000, 1.0)',
+            '"%(x)1000000000s" % {"x": "y"}',
+            '"%((x))1000000000s" % {"(x)": "y"}',
+            'b"%1000000000d" % 1',
+            'x = "%1000000000d"\nx %= 1\nx',
+        ],
+    )
+    def test_old_style_string_formatting_oversized(self, format_string: str) -> None:
+        # A tiny literal must not materialize a multi-gigabyte string.
+        node = _extract_single_node(format_string)
+        assert next(node.infer()) is util.Uninferable
+
+    def test_old_style_string_formatting_length_modifier(self) -> None:
+        # h/l/L length modifiers are skipped and do not affect the size cap.
+        node = _extract_single_node('"%ld" % 5')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "5"
+
+    def test_old_style_string_formatting_star_not_width(self) -> None:
+        # Only arguments consumed by a * width/precision count toward the cap.
+        node = _extract_single_node('"%*d %d" % (5, 7, 200000001)')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "    7 200000001"
 
 
 def test_sys_argv_uninferable() -> None:
@@ -7335,6 +7394,35 @@ def test_joined_str_uninferable() -> None:
     assert formatted_value.value.as_string() == "hey()"
     inferred = next(joined_str.infer())
     assert inferred is util.Uninferable
+
+
+def test_overloaded_dunder_uses_implementation() -> None:
+    """Overload stubs must not shadow the real dunder implementation.
+
+    https://github.com/pylint-dev/astroid/issues/2448
+    """
+    code = """
+    from typing import overload
+
+    class Fraction:
+        @overload
+        def __truediv__(self, other: int) -> list: ...
+        @overload
+        def __truediv__(self, other: str) -> list: ...
+        def __truediv__(self, other):
+            return []
+
+        @overload
+        def __neg__(self) -> list: ...
+        def __neg__(self):
+            return []
+
+    Fraction() / 1  #@
+    -Fraction()  #@
+    """
+    binop, unaryop = extract_node(code)
+    assert isinstance(next(binop.infer()), nodes.List)
+    assert isinstance(next(unaryop.infer()), nodes.List)
 
 
 def test_decimal_inference():

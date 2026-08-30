@@ -14,6 +14,7 @@ import pytest
 import astroid
 from astroid import extract_node, nodes
 from astroid.const import PY312_PLUS
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
@@ -385,6 +386,41 @@ class ProtocolTests(unittest.TestCase):
         """The shifted integer would be prohibitively expensive to build."""
         parsed = extract_node("1 << 123456789")
         assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_string_concatenation() -> None:
+        """The concatenated string would be prohibitively expensive to build."""
+        parsed = extract_node('("a" * 60000000) + ("b" * 60000000)')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_bytes_concatenation() -> None:
+        parsed = extract_node('(b"a" * 60000000) + (b"b" * 60000000)')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_string_concatenation_small_still_infers() -> None:
+        parsed = extract_node('"ab" + "cd"')
+        assert parsed.inferred()[0].value == "abcd"
+
+    @staticmethod
+    def test_uninferable_list_concatenation() -> None:
+        """The concatenated list would be prohibitively expensive to build."""
+        parsed = extract_node("([1] * 50000001) + ([1] * 50000001)")
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_oversized_percent_formatting() -> None:
+        """The % guard in const_infer_binary_op backs up the dedicated handler.
+
+        Normal inference routes str/bytes % through
+        _infer_old_style_string_formatting, so invoke the protocol directly.
+        """
+        parsed = extract_node('"%1000000000d" % 1')
+        result = parsed.left.infer_binary_op(
+            parsed, "%", parsed.right, InferenceContext(), None
+        )
+        assert list(result) == [Uninferable]
 
 
 def test_named_expr_inference() -> None:
