@@ -5,6 +5,7 @@
 """Unit tests for module modutils (module manipulation utilities)."""
 
 import email
+import importlib.machinery
 import logging
 import os
 import shutil
@@ -375,6 +376,43 @@ class GetSourceFileTest(unittest.TestCase):
                 module,
             )
 
+    def test_compiled_prefers_stub(self) -> None:
+        """A compiled module handed in directly should resolve to its stub
+        rather than being returned as-is.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3087:
+        a ``.pyc`` (or binary extension) sitting next to a ``.pyi`` must not be
+        returned as source.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            base = os.path.join(directory, "mod")
+            stub = base + ".pyi"
+            with open(stub, "w", encoding="utf-8"):
+                pass
+            for compiled_ext in ("pyc", "pyo", *modutils.PY_COMPILED_EXTS):
+                compiled = f"{base}.{compiled_ext}"
+                with open(compiled, "wb"):
+                    pass
+                self.assertEqual(
+                    modutils.get_source_file(compiled),
+                    os.path.normpath(stub),
+                )
+                self.assertEqual(
+                    modutils.get_source_file(compiled, prefer_stubs=True),
+                    os.path.normpath(stub),
+                )
+                os.remove(compiled)
+
+    def test_compiled_without_stub_raises(self) -> None:
+        """A compiled module with no source/stub alongside it has no source
+        file and must raise, not return the compiled file itself.
+        """
+        with tempfile.TemporaryDirectory() as directory:
+            compiled = os.path.join(directory, "mod.pyc")
+            with open(compiled, "wb"):
+                pass
+            self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, compiled)
+
 
 class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
@@ -420,6 +458,24 @@ class IsStdLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         assert modutils.is_stdlib_module("termios")
 
 
+class IsStdLibPathTest(unittest.TestCase):
+    """
+    Return true if the file is located in the standard library
+    """
+
+    def test_stdlib(self) -> None:
+        assert modutils.is_stdlib_path(os.__file__)
+
+    def test_ext_lib_dirs(self) -> None:
+        # site-packages can sit below a standard library directory, so an
+        # extension there is not a standard library location.
+        for ext_lib_dir in modutils.EXT_LIB_DIRS:
+            planted = os.path.join(
+                ext_lib_dir, "colorsys" + importlib.machinery.EXTENSION_SUFFIXES[0]
+            )
+            assert not modutils.is_stdlib_path(planted)
+
+
 class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
     """
     Return true if the module is imported from the specified path
@@ -449,6 +505,23 @@ class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
         datadir = resources.find("")
         assert not modutils.module_in_path("etree", datadir)
         assert not modutils.module_in_path("astroid", datadir)
+
+    def test_sibling_prefix_not_in_path(self) -> None:
+        # A module living in a directory whose name merely shares a prefix with
+        # the allowed path is not "in" that path.
+        with tempfile.TemporaryDirectory() as root:
+            allowed = os.path.join(root, "proj")
+            sibling = os.path.join(root, "proj_extra")
+            os.mkdir(allowed)
+            os.mkdir(sibling)
+            with open(os.path.join(sibling, "sibling_mod.py"), "w", encoding="utf-8"):
+                pass
+            sys.path.insert(0, sibling)
+            try:
+                assert not modutils.module_in_path("sibling_mod", allowed)
+                assert not modutils.module_in_path("sibling_mod", (allowed,))
+            finally:
+                sys.path.remove(sibling)
 
 
 class IsRelativeTest(unittest.TestCase):

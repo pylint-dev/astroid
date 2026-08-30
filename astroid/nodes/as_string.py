@@ -32,14 +32,28 @@ class AsStringVisitor:
         """Makes this visitor behave as a simple function"""
         return node.accept(self).replace(DOC_NEWLINE, "\n")
 
+    def _docstring(self, value: str) -> str:
+        """Render a docstring as a literal that reparses to the same text.
+
+        Emit it verbatim in triple quotes, but fall back to ``repr`` when the
+        text could terminate or escape the literal, so it round-trips.
+        """
+        if (
+            '"""' not in value
+            and not value.endswith('"')
+            and "\\" not in value
+            and "\0" not in value
+            and "\r" not in value
+        ):
+            return '"""{}"""'.format(value.replace("\n", DOC_NEWLINE))
+        return repr(value)
+
     def _docs_dedent(self, doc_node: nodes.Const | None) -> str:
         """Stop newlines in docs being indented by self._stmt_list"""
         if not doc_node:
             return ""
 
-        return '\n{}"""{}"""'.format(
-            self.indent, doc_node.value.replace("\n", DOC_NEWLINE)
-        )
+        return "\n" + self.indent + self._docstring(doc_node.value)
 
     def _stmt_list(self, stmts: list, indent: bool = True) -> str:
         """return a list of nodes to string"""
@@ -434,7 +448,7 @@ class AsStringVisitor:
 
     def visit_module(self, node: nodes.Module) -> str:
         """return an nodes.Module node as string"""
-        docs = f'"""{node.doc_node.value}"""\n\n' if node.doc_node else ""
+        docs = f"{self._docstring(node.doc_node.value)}\n\n" if node.doc_node else ""
         return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node: nodes.Name) -> str:

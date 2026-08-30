@@ -195,6 +195,15 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``TypeError``; it falls back to default.
         assert next(node.infer()) is util.Uninferable
 
+    def test_enum_func_form_non_string_class_name_no_crash(self) -> None:
+        """A functional Enum with a non-string class name is invalid."""
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum(1, "")  #@
+        """)
+        # Inference must not create a class with a non-string name.
+        assert next(node.infer()) is util.Uninferable
+
     def test_enum_func_form_bytes_field_names_no_crash(self) -> None:
         """A functional Enum whose field names are bytes is invalid.
 

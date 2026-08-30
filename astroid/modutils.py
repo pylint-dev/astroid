@@ -42,6 +42,9 @@ else:
     PY_SOURCE_EXTS_STUBS_FIRST = ("pyi", "py")
     PY_COMPILED_EXTS = ("so",)
 
+# Bytecode extensions are platform-independent, unlike PY_COMPILED_EXTS above.
+PY_BYTECODE_EXTS = ("pyc", "pyo")
+
 
 # TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
 # revisit whether this is still necessary. See https://github.com/pylint-dev/astroid/pull/1323.
@@ -480,6 +483,14 @@ def get_module_files(
     return files
 
 
+def _is_compiled_ext(ext: str) -> bool:
+    """Return whether ``ext`` (without leading dot) names a compiled module:
+    bytecode (.pyc/.pyo) or a binary extension module (.so/.pyd/.dll). Such
+    files are never source.
+    """
+    return ext in PY_BYTECODE_EXTS or ext in PY_COMPILED_EXTS
+
+
 def get_source_file(
     filename: str, include_no_ext: bool = False, prefer_stubs: bool = False
 ) -> str:
@@ -496,7 +507,14 @@ def get_source_file(
     filename = os.path.abspath(_path_from_filename(filename))
     base, orig_ext = os.path.splitext(filename)
     orig_ext = orig_ext.lstrip(".")
-    if orig_ext not in PY_SOURCE_EXTS and os.path.exists(f"{base}.{orig_ext}"):
+    # A non-standard extension (e.g. a custom suffix) is returned as-is, but a
+    # compiled file falls through to the lookup below so its .py/.pyi stub is
+    # found instead.
+    if (
+        orig_ext not in PY_SOURCE_EXTS
+        and not _is_compiled_ext(orig_ext)
+        and os.path.exists(f"{base}.{orig_ext}")
+    ):
         return f"{base}.{orig_ext}"
     for ext in PY_SOURCE_EXTS_STUBS_FIRST if prefer_stubs else PY_SOURCE_EXTS:
         source_path = f"{base}.{ext}"
@@ -517,6 +535,24 @@ def is_python_source(filename: str | None) -> bool:
 def is_stdlib_module(modname: str) -> bool:
     """Return: True if the modname is in the standard library"""
     return modname.split(".")[0] in stdlib_module_names
+
+
+def is_stdlib_path(filename: str) -> bool:
+    """Return: True if the file is located in the standard library.
+
+    site-packages sits below one of the standard library directories in a
+    virtualenv, so external locations are rejected first.
+    """
+    filename = _normalize_path(filename)
+    if any(
+        filename.startswith(_cache_normalize_path(entry) + os.sep)
+        for entry in EXT_LIB_DIRS
+    ):
+        return False
+    return any(
+        filename.startswith(_cache_normalize_path(entry) + os.sep)
+        for entry in STD_LIB_DIRS
+    )
 
 
 def module_in_path(modname: str, path: str | Iterable[str]) -> bool:
@@ -544,9 +580,9 @@ def module_in_path(modname: str, path: str | Iterable[str]) -> bool:
     filename = _normalize_path(filename)
 
     if isinstance(path, str):
-        return filename.startswith(_cache_normalize_path(path))
+        return _is_subpath(filename, _cache_normalize_path(path))
 
-    return any(filename.startswith(_cache_normalize_path(entry)) for entry in path)
+    return any(_is_subpath(filename, _cache_normalize_path(entry)) for entry in path)
 
 
 def is_relative(modname: str, from_file: str) -> bool:
@@ -636,7 +672,7 @@ def _has_init(directory: str) -> str | None:
     else return None.
     """
     mod_or_pack = os.path.join(directory, "__init__")
-    for ext in (*PY_SOURCE_EXTS, "pyc", "pyo"):
+    for ext in (*PY_SOURCE_EXTS, *PY_BYTECODE_EXTS):
         if os.path.exists(mod_or_pack + "." + ext):
             return mod_or_pack + "." + ext
     return None
