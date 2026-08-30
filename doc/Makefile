@@ -6,8 +6,9 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
 
-# Internal variables.
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -n .
+# Internal variables. Nitpicky mode lives in conf.py so that every build gets
+# it; -W turns the warnings it produces into a build failure, like CI does.
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -W .
 
 .PHONY: help clean html linkcheck
 

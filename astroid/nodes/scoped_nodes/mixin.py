@@ -53,7 +53,7 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
-        :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
+        :rtype: Module or FunctionDef or ClassDef or Lambda or GeneratorExp
         """
         return self
 
@@ -154,7 +154,7 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         """Iterate over the names of locals defined in this scoped node.
 
         :returns: The names of the defined locals.
-        :rtype: iterable(str)
+        :rtype: Iterator[str]
         """
         return iter(self.keys())
 

@@ -1,0 +1,6 @@
+The result of ``ClassDef._find_metaclass()`` is now cached per node. The
+recursive metaclass lookup walked the MRO on every call; the cache
+short-circuits re-entry while preserving cycle protection via a sentinel.
+
+Refs #3166
+Refs #1115

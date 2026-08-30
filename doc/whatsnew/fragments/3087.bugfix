@@ -1,0 +1,7 @@
+``modutils.get_source_file`` no longer returns a compiled module as if it were
+source. Bytecode (``.pyc``/``.pyo``) and binary extension modules
+(``.so``/``.pyd``/``.dll``) now fall through to the regular stub/source lookup,
+so a ``.pyi`` stub sitting next to a compiled module is found again instead of
+the compiled file being handed back and then parsed as source.
+
+Closes #3087

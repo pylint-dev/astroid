@@ -31,6 +31,7 @@ from astroid.modutils import (
     is_module_name_part_of_extension_package_whitelist,
     is_python_source,
     is_stdlib_module,
+    is_stdlib_path,
     load_module_from_name,
     modpath_from_file,
 )
@@ -183,10 +184,15 @@ class AstroidManager:
     ) -> nodes.Module:
         return build_namespace_package_module(modname, path)
 
-    def _can_load_extension(self, modname: str) -> bool:
+    def _can_load_extension(self, modname: str, location: str | None) -> bool:
         if self.always_load_extensions:
             return True
-        if is_stdlib_module(modname):
+        # Only trust a stdlib name that resolves to the stdlib itself.
+        if (
+            is_stdlib_module(modname)
+            and location is not None
+            and is_stdlib_path(location)
+        ):
             return True
         return is_module_name_part_of_extension_package_whitelist(
             modname, self.extension_package_whitelist
@@ -227,7 +233,7 @@ class AstroidManager:
             ):
                 if (
                     found_spec.type == spec.ModuleType.C_EXTENSION
-                    and not self._can_load_extension(modname)
+                    and not self._can_load_extension(modname, found_spec.location)
                 ):
                     return self._build_stub_module(modname)
                 try:

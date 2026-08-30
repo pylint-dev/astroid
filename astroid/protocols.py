@@ -99,6 +99,68 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[_KEY + "="] = _IMPL
 
 
+def _old_style_format_too_large(template: str | bytes, values: object) -> bool:
+    """Whether ``template % values`` would exceed the 1e8 size cap.
+
+    Walks the conversion specifiers the way CPython parses them, resolving
+    ``*`` width/precision fields from the positional arguments.
+    """
+    if isinstance(template, bytes):
+        template = template.decode("latin-1")
+    if isinstance(values, dict):
+        args: tuple[object, ...] = ()
+    elif isinstance(values, tuple):
+        args = values
+    else:
+        args = (values,)
+    index = 0  # next positional argument
+    i, end = 0, len(template)
+    while i < end:
+        if template[i] != "%":
+            i += 1
+            continue
+        i += 1
+        if i < end and template[i] == "(":
+            # Skip the mapping key, counting nested parentheses like CPython.
+            depth, i = 1, i + 1
+            while i < end and depth:
+                if template[i] == "(":
+                    depth += 1
+                elif template[i] == ")":
+                    depth -= 1
+                i += 1
+        while i < end and template[i] in "#0- +":
+            i += 1
+        for dot in ("", "."):  # width, then precision
+            if dot:
+                if i >= end or template[i] != ".":
+                    break
+                i += 1
+            if i < end and template[i] == "*":
+                i += 1
+                if index < len(args):
+                    star = args[index]
+                    index += 1
+                    # A negative width means left-justify with that magnitude.
+                    if isinstance(star, int) and abs(star) > 1e8:
+                        return True
+            else:
+                start = i
+                while i < end and "0" <= template[i] <= "9":
+                    i += 1
+                digits = template[start:i]
+                # len > 9 already exceeds the cap and avoids int() choking.
+                if digits and (len(digits) > 9 or int(digits) > 1e8):
+                    return True
+        while i < end and template[i] in "hlL":
+            i += 1
+        if i < end:
+            if template[i] != "%":
+                index += 1  # the conversion itself consumes an argument
+            i += 1
+    return False
+
+
 @decorators.yes_if_nothing_inferred
 def const_infer_binary_op(
     self: nodes.Const,
@@ -139,6 +201,24 @@ def const_infer_binary_op(
             and isinstance(self.value, int)
             and isinstance(other.value, int)
             and other.value > 1e8
+        ):
+            yield util.Uninferable
+            return
+        # Don't materialize an overly large str/bytes concatenation.
+        if (
+            operator == "+"
+            and isinstance(self.value, (str, bytes))
+            and isinstance(other.value, type(self.value))
+            and len(self.value) + len(other.value) > 1e8
+        ):
+            yield util.Uninferable
+            return
+        # An oversized width or precision ("%1000000000d" % 1) would
+        # materialize the whole interpolation, like the repetition above.
+        if (
+            operator in {"%", "%="}
+            and isinstance(self.value, (str, bytes))
+            and _old_style_format_too_large(self.value, other.value)
         ):
             yield util.Uninferable
             return
@@ -217,6 +297,10 @@ def tl_infer_binary_op(
     context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
+        # Don't build (and infer every element of) an overly large sequence.
+        if len(self.elts) + len(other.elts) > 1e8:
+            yield util.Uninferable
+            return
         node = self.__class__(parent=opnode)
         node.elts = list(
             itertools.chain(
@@ -401,7 +485,11 @@ def _arguments_infer_argname(
             and context.boundnode
             and isinstance(context.boundnode, bases.Instance)
         ):
-            cls = context.boundnode._proxied
+            bound_cls = context.boundnode._proxied
+            if not isinstance(cls, nodes.ClassDef) or bound_cls.is_subtype_of(
+                cls.qname()
+            ):
+                cls = bound_cls
         if is_metaclass or functype == "classmethod":
             yield cls
             return
