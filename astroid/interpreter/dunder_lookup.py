@@ -26,6 +26,24 @@ if TYPE_CHECKING:
     from astroid.context import InferenceContext
 
 
+def _drop_overloads(values: list) -> list:
+    """Drop ``typing.overload`` stubs when a real implementation is present.
+
+    A ``@overload``-decorated definition only declares a signature; the last,
+    undecorated definition is the one actually bound at runtime. Callers take
+    the first returned value, so the stubs must not shadow it.
+    """
+    implementations = [
+        value
+        for value in values
+        if not (
+            isinstance(value, nodes.FunctionDef)
+            and "typing.overload" in value.decoratornames()
+        )
+    ]
+    return implementations or values
+
+
 def _lookup_in_mro(node, name) -> list:
     attrs = node.locals.get(name, [])
 
@@ -36,7 +54,7 @@ def _lookup_in_mro(node, name) -> list:
     if not values:
         raise AttributeInferenceError(attribute=name, target=node)
 
-    return values
+    return _drop_overloads(values)
 
 
 def lookup(

@@ -238,6 +238,34 @@ class TestHelpers(unittest.TestCase):
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
 
+    def test_is_subtype_supertype_function_metaclass(self) -> None:
+        """A metaclass that is a function makes the type of the class a function.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3191
+        """
+        cls_a = builder.extract_node("""
+        class A(metaclass=sum): #@
+            pass
+        """)
+        cls_a_type = helpers.object_type(cls_a)
+        self.assertIsInstance(cls_a_type, nodes.FunctionDef)
+        builtin_type = self._extract("type")
+        # A function has no bases, so the hierarchy cannot be deduced.
+        with self.assertRaises(_NonDeducibleTypeHierarchy):
+            helpers.is_subtype(cls_a_type, builtin_type)
+        with self.assertRaises(_NonDeducibleTypeHierarchy):
+            helpers.is_supertype(cls_a_type, builtin_type)
+
+    def test_binop_with_function_metaclass_no_crash(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/3191"""
+        node = builder.extract_node("""
+        class A(metaclass=sum):
+            pass
+        A | None  #@
+        """)
+        # Inference must not raise ``AttributeError``.
+        self.assertIs(next(node.infer()), util.Uninferable)
+
 
 def test_uninferable_for_safe_infer() -> None:
     uninfer = util.Uninferable

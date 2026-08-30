@@ -335,9 +335,15 @@ def object_build_function(
 
 def object_build_datadescriptor(
     node: nodes.Module | nodes.ClassDef, member: type
-) -> nodes.ClassDef:
-    """create astroid for a living data descriptor object"""
-    return _base_class_object_build(node, member, [])
+) -> nodes.EmptyNode:
+    """create astroid for a living data descriptor object
+
+    What the descriptor returns is not statically known, so it is modelled as an
+    unknown value. Modelling it as a class named after the attribute made
+    attribute access on the descriptor's value infer that class instead, which
+    reported the value's own attributes as missing.
+    """
+    return build_dummy(_EMPTY_OBJECT_MARKER)
 
 
 def object_build_methoddescriptor(
@@ -363,7 +369,6 @@ def _base_class_object_build(
     name = getattr(member, "__name__", "<no-name>")
     doc = member.__doc__ if isinstance(member.__doc__, str) else None
     klass = build_class(name, node, basenames, doc)
-    klass._newstyle = isinstance(member, type)
     try:
         # limit the instantiation trick since it's too dangerous
         # (such as infinite test execution...)
@@ -398,8 +403,7 @@ def _build_from_function(
     try:
         code = member.__code__  # type: ignore[union-attr]
     except AttributeError:
-        # Some implementations don't provide the code object,
-        # such as Jython.
+        # Some implementations don't provide the code object
         code = None
     filename = getattr(code, "co_filename", None)
     if filename is None:
@@ -513,7 +517,7 @@ class InspectBuilder:
             elif inspect.ismethoddescriptor(member):
                 child: nodes.NodeNG = object_build_methoddescriptor(node, member)
             elif inspect.isdatadescriptor(member):
-                child = object_build_datadescriptor(node, member)
+                child: nodes.NodeNG = object_build_datadescriptor(node, member)
             elif isinstance(member, tuple(node_classes.CONST_CLS)):
                 # Special case: __hash__ = None overrides ObjectModel for unhashable types.
                 # See https://docs.python.org/3/reference/datamodel.html#object.__hash__
@@ -523,8 +527,8 @@ class InspectBuilder:
                     continue
                 child = nodes.const_factory(member)
             elif inspect.isroutine(member):
-                # This should be called for Jython, where some builtin
-                # methods aren't caught by isbuiltin branch.
+                # Callables not caught by the isfunction/isbuiltin branches
+                # above, e.g. some method descriptors.
                 child = _build_from_function(node, member, self._module)
             elif _safe_has_attribute(member, "__all__"):
                 child: nodes.NodeNG = build_module(alias)
@@ -548,9 +552,7 @@ class InspectBuilder:
             modname = None
         if modname is None:
             if name in {"__new__", "__subclasshook__"}:
-                # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
-                # >>> print object.__new__.__module__
-                # None
+                # Some builtins have no __module__, e.g. object.__new__
                 modname = builtins.__name__
             else:
                 attach_dummy_node(node, name, member)

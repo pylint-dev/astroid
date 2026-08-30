@@ -14,6 +14,7 @@ import pytest
 import astroid
 from astroid import extract_node, nodes
 from astroid.const import PY312_PLUS
+from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
@@ -68,6 +69,19 @@ class ProtocolTests(unittest.TestCase):
         for2_assnode = next(assign_stmts[1].nodes_of_class(nodes.AssignName))
         self.assertRaises(InferenceError, list, for2_assnode.assigned_stmts())
 
+    def test_assigned_stmts_arguments_without_context(self) -> None:
+        # Regression: the Arguments assigned_stmts protocol may be called
+        # without an inference context (the public ``assigned_stmts`` API
+        # defaults it to None). Resolving a function's first parameter that way
+        # used to crash with ``AttributeError: 'NoneType' object has no
+        # attribute 'boundnode'``; it should degrade to Uninferable instead.
+        args = extract_node("""
+        def f(x, y):  #@
+            return x
+        """).args
+        assigned = list(args.assigned_stmts(node=args.args[0]))
+        self.assertEqual(assigned, [Uninferable])
+
     def test_assigned_stmts_nested_for_tuple(self) -> None:
         assign_stmts = extract_node("""
         for a, (b, c) in [(1, (2, 3))]:  #@
@@ -116,6 +130,18 @@ class ProtocolTests(unittest.TestCase):
         assigned = next(for1_starred.assigned_stmts())
         assert isinstance(assigned, nodes.List)
         assert assigned.as_string() == "[1, 2]"
+
+    def test_assigned_stmts_starred_for_not_last(self) -> None:
+        """A starred target that isn't last must not truncate to its own arity."""
+        assign_stmts = extract_node("""
+        for a, *b, c in ((1, 2, 3, 4),): #@
+            pass
+        """)
+
+        starred = next(assign_stmts.nodes_of_class(nodes.Starred))
+        assigned = next(starred.assigned_stmts())
+        assert isinstance(assigned, nodes.List)
+        assert assigned.as_string() == "[2, 3]"
 
     def _get_starred_stmts(self, code: str) -> list | UninferableBase:
         assign_stmt = extract_node(f"{code} #@")
@@ -333,6 +359,68 @@ class ProtocolTests(unittest.TestCase):
     def test_list_multiplication_with_negative_overflowing_multiplier() -> None:
         parsed = extract_node("[0] * -9223372036854775809")
         assert parsed.inferred()[0].elts == []
+
+    @staticmethod
+    def test_uninferable_string_multiplication() -> None:
+        """Building the repeated string would be prohibitively expensive."""
+        parsed = extract_node('"abc" * 123456789')
+        assert parsed.inferred() == [Uninferable]
+
+        # The reflected form (int * str) must be bounded too.
+        parsed = extract_node('123456789 * "abc"')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_bytes_multiplication() -> None:
+        """Building the repeated bytes would be prohibitively expensive."""
+        parsed = extract_node('b"abc" * 123456789')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_string_multiplication_with_zero_multiplier() -> None:
+        parsed = extract_node('"abc" * 0')
+        assert parsed.inferred()[0].value == ""
+
+    @staticmethod
+    def test_uninferable_left_shift() -> None:
+        """The shifted integer would be prohibitively expensive to build."""
+        parsed = extract_node("1 << 123456789")
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_string_concatenation() -> None:
+        """The concatenated string would be prohibitively expensive to build."""
+        parsed = extract_node('("a" * 60000000) + ("b" * 60000000)')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_bytes_concatenation() -> None:
+        parsed = extract_node('(b"a" * 60000000) + (b"b" * 60000000)')
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_string_concatenation_small_still_infers() -> None:
+        parsed = extract_node('"ab" + "cd"')
+        assert parsed.inferred()[0].value == "abcd"
+
+    @staticmethod
+    def test_uninferable_list_concatenation() -> None:
+        """The concatenated list would be prohibitively expensive to build."""
+        parsed = extract_node("([1] * 50000001) + ([1] * 50000001)")
+        assert parsed.inferred() == [Uninferable]
+
+    @staticmethod
+    def test_uninferable_oversized_percent_formatting() -> None:
+        """The % guard in const_infer_binary_op backs up the dedicated handler.
+
+        Normal inference routes str/bytes % through
+        _infer_old_style_string_formatting, so invoke the protocol directly.
+        """
+        parsed = extract_node('"%1000000000d" % 1')
+        result = parsed.left.infer_binary_op(
+            parsed, "%", parsed.right, InferenceContext(), None
+        )
+        assert list(result) == [Uninferable]
 
 
 def test_named_expr_inference() -> None:

@@ -10,7 +10,6 @@ from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
-    Any,
     ClassVar,
     TypeVar,
     cast,
@@ -59,14 +58,11 @@ class NodeNG:
 
     is_statement: ClassVar[bool] = False
     """Whether this node indicates a statement."""
-    optional_assign: ClassVar[bool] = (
-        False  # True for For (and for Comprehension if py <3.0)
-    )
+    optional_assign: ClassVar[bool] = False  # True for For
     """Whether this node optionally assigns a variable.
 
     This is for loop assignments because loop won't necessarily perform an
     assignment if the loop has no iterations.
-    This is also the case from comprehensions in Python 2.
     """
     is_function: ClassVar[bool] = False  # True for FunctionDef nodes
     """Whether this node indicates a function."""
@@ -120,7 +116,7 @@ class NodeNG:
         """
 
     def infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult]:
         """Get a generator of the inferred values.
 
@@ -132,7 +128,7 @@ class NodeNG:
         called instead of the default interface.
 
         :returns: The inferred values.
-        :rtype: iterable
+        :rtype: Iterator
         """
         if context is None:
             context = InferenceContext()
@@ -144,7 +140,6 @@ class NodeNG:
                 for result in self._explicit_inference(
                     self,  # type: ignore[arg-type]
                     context,
-                    **kwargs,
                 ):
                     context.nodes_inferred += 1
                     yield result
@@ -162,7 +157,7 @@ class NodeNG:
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
         limit = AstroidManager().max_inferable_values
-        for i, result in enumerate(self._infer(context=context, **kwargs)):
+        for i, result in enumerate(self._infer(context=context)):
             if i >= limit or (context.nodes_inferred > context.max_inferred):
                 results.append(util.Uninferable)
                 yield util.Uninferable
@@ -179,7 +174,7 @@ class NodeNG:
     def repr_name(self) -> str:
         """Get a name for nice representation.
 
-        This is either :attr:`name`, :attr:`attrname`, or the empty string.
+        This is either ``name``, ``attrname``, or the empty string.
         """
         if all(name not in self._astroid_fields for name in ("name", "attrname")):
             return getattr(self, "name", "") or getattr(self, "attrname", "")
@@ -335,7 +330,7 @@ class NodeNG:
         :type child: NodeNG
 
         :returns: The sequence containing the given child node.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
 
         :raises AstroidError: If no sequence could be found that contains
             the given child.
@@ -362,7 +357,7 @@ class NodeNG:
 
         :returns: A tuple of the name of the field that contains the child,
             and the sequence or node that contains the child node.
-        :rtype: tuple(str, iterable(NodeNG) or NodeNG)
+        :rtype: tuple[str, Iterator[NodeNG] or NodeNG]
 
         :raises AstroidError: If no field could be found that contains
             the given child.
@@ -515,7 +510,7 @@ class NodeNG:
         :param klass: The types of node to search for.
 
         :param skip_klass: The types of node to ignore. This is useful to ignore
-            subclasses of :attr:`klass`.
+            subclasses of ``klass``.
 
         :returns: The node of the given types.
         """
@@ -555,7 +550,7 @@ class NodeNG:
         pass
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
         """We don't know how to resolve a statement by default."""
         # this method is overridden by most concrete classes

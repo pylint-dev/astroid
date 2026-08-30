@@ -39,7 +39,6 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
     def inner(
         node: _NodesT,
         context: InferenceContext | None = None,
-        **kwargs: Any,
     ) -> Generator[InferenceResult]:
         partial_cache_key = (func, node)
         if partial_cache_key in _CURRENTLY_INFERRING:
@@ -62,9 +61,7 @@ def _inference_tip_cached(func: InferFn[_NodesT]) -> InferFn[_NodesT]:
             _CURRENTLY_INFERRING.add(partial_cache_key)
             try:
                 # May raise UseInferenceDefault
-                result = _cache[func, node, context] = list(
-                    func(node, context, **kwargs)
-                )
+                result = _cache[func, node, context] = list(func(node, context))
             except Exception as e:
                 # Suppress the KeyError from the cache miss.
                 raise e from None

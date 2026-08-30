@@ -1,0 +1,8 @@
+Brain plugins are now loaded lazily. Previously all optional brain modules
+(~49 of them) were imported and registered during ``import astroid``; now only
+the two brains targeting builtins are registered up front, and the rest are
+loaded the first time astroid encounters their target module being imported or
+resolved. This noticeably shortens ``import astroid``.
+
+Refs #3069
+Refs #1115

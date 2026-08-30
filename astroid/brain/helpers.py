@@ -54,6 +54,7 @@ _LAZY_BRAINS: dict[str, tuple[str, ...]] = {
     "dataclasses": ("brain_dataclasses",),
     "datetime": ("brain_datetime",),
     "dateutil": ("brain_dateutil",),
+    "decimal": ("brain_decimal",),
     "enum": ("brain_namedtuple_enum",),
     "functools": ("brain_functools",),
     "gi": ("brain_gi",),
