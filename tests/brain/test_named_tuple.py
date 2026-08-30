@@ -115,6 +115,32 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIn("_1", inferred.locals)
         self.assertIn("_2", inferred.locals)
 
+    def test_namedtuple_rename_keywords_instance_attrs(self) -> None:
+        """The instance carries the renamed field, not the name as written.
+
+        https://github.com/pylint-dev/astroid/issues/242
+        """
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "abc def", rename=True)
+        Tuple(1, 2) #@
+        """)
+        inferred = next(node.infer())
+        self.assertEqual(sorted(inferred.instance_attrs), ["_1", "abc"])
+
+    def test_namedtuple_rename_duplicates_instance_attrs(self) -> None:
+        """Duplicate fields are renamed rather than collapsed on the instance.
+
+        https://github.com/pylint-dev/astroid/issues/242
+        """
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "abc abc abc", rename=True)
+        Tuple(1, 2, 3) #@
+        """)
+        inferred = next(node.infer())
+        self.assertEqual(sorted(inferred.instance_attrs), ["_1", "_2", "abc"])
+
     def test_namedtuple_rename_uninferable(self) -> None:
         node = builder.extract_node("""
         from collections import namedtuple

@@ -58,7 +58,6 @@ def _deque_mock():
         def __setitem__(self, index, value): pass
         def __delitem__(self, index): pass
         def __bool__(self): return bool(self.iterable)
-        def __nonzero__(self): return bool(self.iterable)
         def __contains__(self, o): return o in self.iterable
         def __len__(self): return len(self.iterable)
         def __copy__(self): return deque(self.iterable)

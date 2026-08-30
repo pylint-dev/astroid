@@ -16,7 +16,7 @@ import os
 import sys
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn
+from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn
 
 from astroid import bases, protocols, util
 from astroid.context import (
@@ -189,9 +189,9 @@ class Module(LocalsDictNodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('import astroid')
     >>> node
-    <Import l.1 at 0x7f23b2e4e5c0>
+    <Import l.1 at 0x...>
     >>> node.parent
-    <Module l.0 at 0x7f23b2e4eda0>
+    <Module l.0 at 0x...>
     """
 
     _astroid_fields = ("doc_node", "body")
@@ -205,11 +205,7 @@ class Module(LocalsDictNodeNG):
     """The string/bytes that this ast was built from."""
 
     file_encoding: str | None = None
-    """The encoding of the source file.
-
-    This is used to get unicode out of a source file.
-    Python 2 only.
-    """
+    """The encoding of the source file."""
 
     special_attributes = ModuleModel()
     """The names of special attributes that this module has."""
@@ -296,7 +292,7 @@ class Module(LocalsDictNodeNG):
     def stream(self):
         """Get a stream to the underlying file or bytes.
 
-        :type: file or io.BytesIO or None
+        :type: io.IOBase or io.BytesIO or None
         """
         return self._get_stream()
 
@@ -601,9 +597,7 @@ class Module(LocalsDictNodeNG):
         """
         return self
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Module]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[Module]:
         yield self
 
 
@@ -621,7 +615,7 @@ class GeneratorExp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('(thing for thing in things if thing)')
     >>> node
-    <GeneratorExp l.1 at 0x7f23b2e4e400>
+    <GeneratorExp l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
@@ -676,7 +670,7 @@ class DictComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('{k:v for k, v in things if k > v}')
     >>> node
-    <DictComp l.1 at 0x7f23b2e41d68>
+    <DictComp l.1 at 0x...>
     """
 
     _astroid_fields = ("key", "value", "generators")
@@ -718,7 +712,7 @@ class DictComp(ComprehensionScope):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-            For a :class:`DictComp` this is always :class:`Uninferable`.
+            For a :class:`DictComp` this is always :obj:`~astroid.Uninferable`.
         :rtype: Uninferable
         """
         return util.Uninferable
@@ -736,7 +730,7 @@ class SetComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('{thing for thing in things if thing}')
     >>> node
-    <SetComp l.1 at 0x7f23b2e41898>
+    <SetComp l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
@@ -775,7 +769,7 @@ class SetComp(ComprehensionScope):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-            For a :class:`SetComp` this is always :class:`Uninferable`.
+            For a :class:`SetComp` this is always :obj:`~astroid.Uninferable`.
         :rtype: Uninferable
         """
         return util.Uninferable
@@ -792,7 +786,7 @@ class ListComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('[thing for thing in things if thing]')
     >>> node
-    <ListComp l.1 at 0x7f23b2e418d0>
+    <ListComp l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
@@ -832,7 +826,7 @@ class ListComp(ComprehensionScope):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-            For a :class:`ListComp` this is always :class:`Uninferable`.
+            For a :class:`ListComp` this is always :obj:`~astroid.Uninferable`.
         :rtype: Uninferable
         """
         return util.Uninferable
@@ -886,7 +880,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     >>> import astroid
     >>> node = astroid.extract_node('lambda arg: arg + 1')
     >>> node
-    <Lambda.<lambda> l.1 at 0x7f23b2e41518>
+    <Lambda.<lambda> l.1 at 0x...>
     """
 
     _astroid_fields: ClassVar[tuple[str, ...]] = ("args", "body")
@@ -1059,9 +1053,7 @@ class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
             return found_attrs
         raise AttributeInferenceError(target=self, attribute=name)
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Lambda]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[Lambda]:
         yield self
 
     def _get_yield_nodes_skip_functions(self):
@@ -1083,7 +1075,7 @@ class FunctionDef(
     ...     return arg + 1
     ... ''')
     >>> node
-    <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
+    <FunctionDef.my_func l.2 at 0x...>
     """
 
     _astroid_fields = (
@@ -1162,7 +1154,10 @@ class FunctionDef(
         self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
             []
         )
-        """PEP 695 (Python 3.12+) type params, e.g. first 'T' in def func[T]() -> T: ..."""
+        """The type parameters introduced by :pep:`695`, new in Python 3.12.
+
+        For example, the ``T`` in ``def func[T]() -> T: ...``.
+        """
 
         self.instance_attrs: dict[str, list[NodeNG]] = {}
 
@@ -1519,7 +1514,7 @@ class FunctionDef(
         return bool(yields_without_lambdas & yields_without_functions)
 
     def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> Generator[objects.Property | FunctionDef, None, InferenceErrorInfo]:
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
@@ -1544,7 +1539,7 @@ class FunctionDef(
         """Infer what the function yields when called
 
         :returns: What the function yields
-        :rtype: iterable(NodeNG or Uninferable) or None
+        :rtype: Iterator[NodeNG or Uninferable] or None
         """
         for yield_ in self.nodes_of_class(node_classes.Yield):
             if yield_.value is None:
@@ -1710,14 +1705,14 @@ class AsyncFunctionDef(FunctionDef):
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    async def func(things):
-        async for thing in things:
-            print(thing)
-    ''')
+    ... async def func(things):
+    ...     async for thing in things:
+    ...         print(thing)
+    ... ''')
     >>> node
-    <AsyncFunctionDef.func l.2 at 0x7f23b2e416d8>
+    <AsyncFunctionDef.func l.2 at 0x...>
     >>> node.body[0]
-    <AsyncFor l.3 at 0x7f23b2e417b8>
+    <AsyncFor l.3 at 0x...>
     """
 
 
@@ -1821,12 +1816,12 @@ class ClassDef(
 
     >>> import astroid
     >>> node = astroid.extract_node('''
-    class Thing:
-        def my_meth(self, arg):
-            return arg + self.offset
-    ''')
+    ... class Thing:
+    ...     def my_meth(self, arg):
+    ...         return arg + self.offset
+    ... ''')
     >>> node
-    <ClassDef.Thing l.2 at 0x7f23b2e9e748>
+    <ClassDef.Thing l.2 at 0x...>
     """
 
     # some of the attributes below are set by the builder module or
@@ -1909,7 +1904,10 @@ class ClassDef(
         self.type_params: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple] = (
             []
         )
-        """PEP 695 (Python 3.12+) type params, e.g. class MyClass[T]: ..."""
+        """The type parameters introduced by :pep:`695`, new in Python 3.12.
+
+        For example, the ``T`` in ``class MyClass[T]: ...``.
+        """
 
         super().__init__(
             lineno=lineno,
@@ -2106,7 +2104,11 @@ class ClassDef(
             # Call type.__call__ if not set metaclass
             # (since type is the default metaclass)
             context = bind_context_to_node(context, self)
-            context.callcontext.callee = dunder_call
+            # ``infer_call_result`` may be called through the public API without
+            # a call context (it defaults to None); only annotate the callee
+            # when there is a call context to annotate.
+            if context.callcontext:
+                context.callcontext.callee = dunder_call
             yield from dunder_call.infer_call_result(caller, context)
         else:
             yield self.instantiate_class()
@@ -2227,7 +2229,7 @@ class ClassDef(
         :type name: str
 
         :returns: The parents that define the given name.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         # Look up in the mro if we can. This will result in the
         # attribute being looked up just as Python does it.
@@ -2249,7 +2251,7 @@ class ClassDef(
 
         :returns: The parents that define the given name as
             an instance attribute.
-        :rtype: iterable(NodeNG)
+        :rtype: Iterator[NodeNG]
         """
         for astroid in self.ancestors(context=context):
             if name in astroid.instance_attrs:
@@ -2311,9 +2313,9 @@ class ClassDef(
         raise AttributeInferenceError(target=self, attribute=name, context=context)
 
     def instantiate_class(self) -> bases.Instance:
-        """Get an :class:`Instance` of the :class:`ClassDef` node.
+        """Get an :class:`~astroid.Instance` of the :class:`ClassDef` node.
 
-        :returns: An :class:`Instance` of the :class:`ClassDef` node
+        :returns: An :class:`~astroid.Instance` of the :class:`ClassDef` node
         """
         from astroid import objects  # pylint: disable=import-outside-toplevel
 
@@ -2333,9 +2335,9 @@ class ClassDef(
     ) -> list[InferenceResult]:
         """Get an attribute from this class, using Python's attribute semantic.
 
-        This method doesn't look in the :attr:`instance_attrs` dictionary
-        since it is done by an :class:`Instance` proxy at inference time.
-        It may return an :class:`Uninferable` object if
+        This method doesn't look in the ``instance_attrs`` dictionary
+        since it is done by an :class:`~astroid.Instance` proxy at inference time.
+        It may return an :obj:`~astroid.Uninferable` object if
         the attribute has not been
         found, but a ``__getattr__`` or ``__getattribute__`` method is defined.
         If ``class_context`` is given, then it is considered that the
@@ -2610,7 +2612,7 @@ class ClassDef(
         """Iterate over all of the method defined in this class and its parents.
 
         :returns: The methods defined on the class.
-        :rtype: iterable(FunctionDef)
+        :rtype: Iterator[FunctionDef]
         """
         done = {}
         for astroid in itertools.chain(iter((self,)), self.ancestors()):
@@ -2624,7 +2626,7 @@ class ClassDef(
         """Iterate over all of the method defined in this class only.
 
         :returns: The methods defined on the class.
-        :rtype: iterable(FunctionDef)
+        :rtype: Iterator[FunctionDef]
         """
         for member in self.values():
             if isinstance(member, FunctionDef):
@@ -2636,7 +2638,7 @@ class ClassDef(
         This will return an instance of builtins.type.
 
         :returns: The metaclass.
-        :rtype: builtins.type
+        :rtype: type
         """
         return builtin_lookup("type")[1][0]
 
@@ -2645,11 +2647,8 @@ class ClassDef(
     ) -> SuccessfulInferenceResult | None:
         """Return the explicit declared metaclass for the current class.
 
-        An explicit declared metaclass is defined
-        either by passing the ``metaclass`` keyword argument
-        in the class definition line (Python 3) or (Python 2) by
-        having a ``__metaclass__`` class attribute, or if there are
-        no explicit bases but there is a global ``__metaclass__`` variable.
+        An explicit declared metaclass is defined by passing the
+        ``metaclass`` keyword argument in the class definition line.
 
         :returns: The metaclass of this class,
             or None if one could not be found.
@@ -2665,7 +2664,6 @@ class ClassDef(
                 pass
 
         if self._metaclass:
-            # Expects this from Py3k TreeRebuilder
             try:
                 return next(
                     node
@@ -2964,7 +2962,5 @@ class ClassDef(
         """
         return self
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[ClassDef]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[ClassDef]:
         yield self

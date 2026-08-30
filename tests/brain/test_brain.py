@@ -8,6 +8,7 @@ import io
 import re
 import sys
 import unittest
+from unittest.mock import patch
 
 import pytest
 
@@ -494,6 +495,36 @@ class TypingBrain(unittest.TestCase):
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
 
+    def test_namedtuple_class_form_assignment_targets(self):
+        """An assignment in the body may not bind a single plain name.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3190
+        """
+        attribute, subscript, unpacking = builder.extract_node("""
+        from typing import NamedTuple
+
+        class Attribute(NamedTuple):
+            cat.color = "black"
+
+        class Subscript(NamedTuple):
+            basket[0] = "apple"
+
+        class Unpacking(NamedTuple):
+            apple, banana = "red", "yellow"
+
+        Attribute()  #@
+        Subscript()  #@
+        Unpacking()  #@
+        """)
+        # Inference must not raise ``AttributeError`` or ``KeyError``.
+        for node in (attribute, subscript, unpacking):
+            self.assertIsInstance(next(node.infer()), astroid.Instance)
+
+        # The names bound by unpacking are still class attributes.
+        inferred = next(unpacking.infer())
+        for name, value in (("apple", "red"), ("banana", "yellow")):
+            self.assertEqual(next(inferred.getattr(name)[0].infer()).value, value)
+
     def test_tuple_type(self):
         node = builder.extract_node("""
         from typing import Tuple
@@ -654,6 +685,22 @@ class TypingBrain(unittest.TestCase):
 
         # Test TypedDict instance is callable
         assert next(code[1].infer()).callable() is True
+
+    def test_typed_dict_required_and_optional_keys(self):
+        """TypedDict subclasses expose ``__required_keys__`` and ``__optional_keys__``."""
+        code = builder.extract_node("""
+        from typing import TypedDict
+        from typing_extensions import TypedDict as ETD
+
+        class CustomTD(TypedDict):  #@
+            var: int
+
+        class CustomTD2(ETD):  #@
+            var: int
+        """)
+        for cls in code:
+            for attr in ("__required_keys__", "__optional_keys__"):
+                assert cls.getattr(attr), f"{cls.name}.{attr} not found"
 
     def test_typing_alias_type(self):
         """
@@ -1585,6 +1632,54 @@ def test_infer_dict_from_keys() -> None:
         assert all(isinstance(elem, nodes.Const) for elem in itered)
         actual_values = [elem.value for elem in itered]
         assert sorted(actual_values) == ["a", "b", "c"]
+
+
+def test_container_transform_oversized_str_declines() -> None:
+    """list/set/tuple/frozenset must not build one Const per character for a
+    str/bytes constant longer than the cap."""
+    with patch("astroid.brain.brain_builtin_inference._MAX_INFERABLE_STR_LEN", 4):
+        for builtin in ("list", "set", "tuple", "frozenset"):
+            node = astroid.extract_node(f'{builtin}("abcdef")')
+            inferred = next(node.infer())
+            assert isinstance(inferred, Instance)
+
+    # Small strings still infer their exact contents.
+    node = astroid.extract_node('list("abc")')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [elem.value for elem in inferred.elts] == ["a", "b", "c"]
+
+
+def test_infer_dict_fromkeys_oversized_str_declines() -> None:
+    """dict.fromkeys must not build one key per character for a str/bytes
+    constant longer than the cap."""
+    with patch("astroid.brain.brain_builtin_inference._MAX_INFERABLE_STR_LEN", 4):
+        node = astroid.extract_node('dict.fromkeys("abcdef")')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        assert inferred.items == []
+
+
+def test_infer_dict_from_keys_deduplicates() -> None:
+    # dict.fromkeys drops duplicate keys, so the inferred dict must too. As a
+    # side effect a repeated string no longer materializes one key per
+    # character (dict.fromkeys("x" * 10**8) is a single-key dict).
+    nodes_with_dupes = astroid.extract_node("""
+    dict.fromkeys("aab") #@
+    dict.fromkeys(b"aab") #@
+    dict.fromkeys([1, 1, 2]) #@
+    dict.fromkeys((1, 2, 1)) #@
+    """)
+    expected = [["a", "b"], [97, 98], [1, 2], [1, 2]]
+    for node, keys in zip(nodes_with_dupes, expected):
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        assert [elem.value for elem in inferred.itered()] == keys
+
+    repeated = astroid.extract_node('dict.fromkeys("x" * 1000)')
+    inferred = next(repeated.infer())
+    assert isinstance(inferred, nodes.Dict)
+    assert [elem.value for elem in inferred.itered()] == ["x"]
 
 
 class TestFunctoolsPartial:

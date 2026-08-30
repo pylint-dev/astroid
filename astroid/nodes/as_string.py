@@ -32,14 +32,28 @@ class AsStringVisitor:
         """Makes this visitor behave as a simple function"""
         return node.accept(self).replace(DOC_NEWLINE, "\n")
 
+    def _docstring(self, value: str) -> str:
+        """Render a docstring as a literal that reparses to the same text.
+
+        Emit it verbatim in triple quotes, but fall back to ``repr`` when the
+        text could terminate or escape the literal, so it round-trips.
+        """
+        if (
+            '"""' not in value
+            and not value.endswith('"')
+            and "\\" not in value
+            and "\0" not in value
+            and "\r" not in value
+        ):
+            return '"""{}"""'.format(value.replace("\n", DOC_NEWLINE))
+        return repr(value)
+
     def _docs_dedent(self, doc_node: nodes.Const | None) -> str:
         """Stop newlines in docs being indented by self._stmt_list"""
         if not doc_node:
             return ""
 
-        return '\n{}"""{}"""'.format(
-            self.indent, doc_node.value.replace("\n", DOC_NEWLINE)
-        )
+        return "\n" + self.indent + self._docstring(doc_node.value)
 
     def _stmt_list(self, stmts: list, indent: bool = True) -> str:
         """return a list of nodes to string"""
@@ -245,11 +259,13 @@ class AsStringVisitor:
 
     def visit_dictcomp(self, node: nodes.DictComp) -> str:
         """return an nodes.DictComp node as string"""
-        return "{{{}: {} {}}}".format(
-            node.key.accept(self),
-            node.value.accept(self),
-            " ".join(n.accept(self) for n in node.generators),
-        )
+        key = node.key.accept(self)
+        value = node.value.accept(self)
+        generators = " ".join(n.accept(self) for n in node.generators)
+        if key == "**":
+            # PEP 798 dict-comprehension unpacking, e.g. ``{**d for d in dicts}``.
+            return f"{{{key}{value} {generators}}}"
+        return f"{{{key}: {value} {generators}}}"
 
     def visit_expr(self, node: nodes.Expr) -> str:
         """return an nodes.Expr node as string"""
@@ -285,8 +301,9 @@ class AsStringVisitor:
 
     def visit_importfrom(self, node: nodes.ImportFrom) -> str:
         """return an nodes.ImportFrom node as string"""
-        return "from {} import {}".format(
-            "." * (node.level or 0) + node.modname, _import_string(node.names)
+        lazy = "lazy " if node.is_lazy else ""
+        return "{}from {} import {}".format(
+            lazy, "." * (node.level or 0) + node.modname, _import_string(node.names)
         )
 
     def visit_joinedstr(self, node: nodes.JoinedStr) -> str:
@@ -401,7 +418,8 @@ class AsStringVisitor:
 
     def visit_import(self, node: nodes.Import) -> str:
         """return an nodes.Import node as string"""
-        return f"import {_import_string(node.names)}"
+        lazy = "lazy " if node.is_lazy else ""
+        return f"{lazy}import {_import_string(node.names)}"
 
     def visit_keyword(self, node: nodes.Keyword) -> str:
         """return an nodes.Keyword node as string"""
@@ -430,7 +448,7 @@ class AsStringVisitor:
 
     def visit_module(self, node: nodes.Module) -> str:
         """return an nodes.Module node as string"""
-        docs = f'"""{node.doc_node.value}"""\n\n' if node.doc_node else ""
+        docs = f"{self._docstring(node.doc_node.value)}\n\n" if node.doc_node else ""
         return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node: nodes.Name) -> str:

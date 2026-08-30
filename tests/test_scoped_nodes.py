@@ -2627,6 +2627,27 @@ def test_metaclass_cannot_infer_call_yields_an_instance() -> None:
     assert isinstance(inferred, Instance)
 
 
+def test_metaclass_call_result_without_context() -> None:
+    # Regression: ClassDef.infer_call_result may be called through the public
+    # API without a context (it defaults to None). For a class whose metaclass
+    # defines __call__, that path set context.callcontext.callee without
+    # guarding, crashing with "AttributeError: 'NoneType' object has no
+    # attribute 'callee'". It should infer the __call__ result instead.
+    call = builder.extract_node("""
+    class Meta(type):
+        def __call__(cls, *args, **kwargs):
+            return 42
+    class C(metaclass=Meta):
+        pass
+    C() #@
+    """)
+    cls = next(call.func.infer())
+    assert isinstance(cls, nodes.ClassDef)
+    for caller in (call, None):
+        inferred = list(cls.infer_call_result(caller=caller))
+        assert [getattr(n, "value", None) for n in inferred] == [42]
+
+
 @pytest.mark.parametrize(
     "func",
     [

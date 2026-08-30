@@ -83,6 +83,7 @@ ini_options.addopts = '-m "not acceptance"'
 ini_options.python_files = [ "*test_*.py" ]
 ini_options.testpaths = [ "tests" ]
 ini_options.filterwarnings = "error"
+ini_options.xfail_strict = true
 
 [tool.mypy]
 python_version = "3.10"

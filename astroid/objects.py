@@ -16,7 +16,7 @@ from __future__ import annotations
 import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
-from typing import Any, Literal, NoReturn
+from typing import Literal, NoReturn
 
 from astroid import bases, util
 from astroid.context import InferenceContext
@@ -43,11 +43,11 @@ class FrozenSet(node_classes.BaseContainer):
     def pytype(self) -> Literal["builtins.frozenset"]:
         return "builtins.frozenset"
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
+    def _infer(self, context: InferenceContext | None = None):
         yield self
 
     @cached_property
-    def _proxied(self):  # pylint: disable=method-hidden
+    def _proxied(self):
         ast_builtins = AstroidManager().builtins_module
         return ast_builtins.getattr("frozenset")[0]
 
@@ -88,7 +88,7 @@ class Super(node_classes.NodeNG):
             end_col_offset=scope.end_col_offset,
         )
 
-    def _infer(self, context: InferenceContext | None = None, **kwargs: Any):
+    def _infer(self, context: InferenceContext | None = None):
         yield self
 
     def super_mro(self):
@@ -351,9 +351,8 @@ class InterpolationInstance(bases.Instance):
         return inferred if inferred is not None else util.Uninferable
 
 
-# Custom objects tailored for dictionaries, which are used to
-# disambiguate between the types of Python 2 dict's method returns
-# and Python 3 (where they return set like objects).
+# Custom objects tailored for dictionary views
+# returned by dict.items(), dict.keys() and dict.values().
 class DictItems(bases.Proxy):
     __str__ = node_classes.NodeNG.__str__
     __repr__ = node_classes.NodeNG.__repr__
@@ -470,7 +469,5 @@ class Property(scoped_nodes.FunctionDef):
     ) -> NoReturn:
         raise InferenceError("Properties are not callable")
 
-    def _infer(
-        self, context: InferenceContext | None = None, **kwargs: Any
-    ) -> Generator[Self]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[Self]:
         yield self
