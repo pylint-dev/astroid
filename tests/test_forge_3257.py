@@ -1,7 +1,11 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 """Regression test for AttributeError in namedtuple brain with dotted annotation target.
 
 See https://github.com/pylint-dev/astroid/issues/3257
 """
+
 import astroid
 from astroid import extract_node
 
