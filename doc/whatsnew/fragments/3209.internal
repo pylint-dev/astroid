@@ -1,0 +1,5 @@
+The changelog is now assembled by ``towncrier`` from news fragments in
+``doc/whatsnew/fragments/``, like in pylint. Add a ``<issue>.<type>`` fragment
+there instead of editing a changelog file.
+
+Closes #3209

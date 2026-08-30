@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from astroid import extract_node, nodes
+from astroid import extract_node, nodes, util
 
 pytestmark = pytest.mark.skipif(
     hasattr(sys, "pypy_version_info"),
@@ -95,9 +95,9 @@ def test_cdata_member_access() -> None:
     """
     node = extract_node(src)
     assert isinstance(node, nodes.NodeNG)
-    node_inf = node.inferred()[0]
-    assert node_inf.display_type() == "Class"
-    assert node_inf.qname() == "_ctypes._SimpleCData._objects"
+    # ``_objects`` is a data descriptor, so the attribute resolves but the value
+    # it returns is not statically known.
+    assert node.inferred() == [util.Uninferable]
 
 
 def test_other_ctypes_member_untouched() -> None:

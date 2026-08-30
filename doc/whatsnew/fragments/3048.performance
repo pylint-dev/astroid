@@ -1,0 +1,7 @@
+The result of ``ClassDef.ancestors()`` is now cached per node when called with
+``recurs=True``. The recursive walk previously recomputed the ancestors of
+shared base classes on every call; the cache removes that amplification on deep
+MRO chains.
+
+Refs #3048
+Refs #1115

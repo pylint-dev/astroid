@@ -235,7 +235,7 @@ some import, you can use ``MANAGER.register_failed_import_hook`` to register
 a transform that's called whenever an import failed.
 
 The transform receives the module name that failed and it is expected to
-return an instance of :class:`astroid.Module`, otherwise it must raise
+return an instance of :class:`~astroid.nodes.Module`, otherwise it must raise
 ``AstroidBuildingError``, as seen in the following example::
 
     def failed_custom_import(modname):

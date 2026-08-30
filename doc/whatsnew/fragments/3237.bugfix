@@ -1,0 +1,10 @@
+The fallback ``__new__`` of the object model, used when the real one cannot be found
+(``instance.__new__``, ``super().__new__(cls)`` under an uninferable ancestor, or the
+``__new__`` of a C type outside ``builtins``), now has the signature
+``(cls, *args, **kwargs)`` instead of ``(self, cls)``. Since ``__new__`` takes the
+class explicitly, the old signature reported the class argument as missing and any
+other argument as unexpected.
+
+Closes #3237
+Closes pylint-dev/pylint#8325
+Refs pylint-dev/pylint#10670

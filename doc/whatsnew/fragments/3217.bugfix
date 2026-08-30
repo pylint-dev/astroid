@@ -1,0 +1,6 @@
+Infer a functional ``TypeVar`` or ``NewType`` whose name is not an identifier
+without splicing that name into the synthesized class source. A crafted value
+such as ``TypeVar("T(Base): #")`` no longer breaks out of the identifier
+position to inject bases or a body; the name is assigned to the class verbatim.
+
+Refs #3217
