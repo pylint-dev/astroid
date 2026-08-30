@@ -1,3 +1,6 @@
+# Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+# For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
+# Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 """Regression test for AttributeError: 'TypeVar' object has no attribute 'getattr'.
 
 When a class uses a type parameter named ``__slots__`` (PEP 695), astroid
