@@ -24,6 +24,7 @@ import pytest
 import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
 import tests.testdata.python3.data.fake_module_with_collection_getattribute as fm_collection
 import tests.testdata.python3.data.fake_module_with_warnings as fm
+from astroid import nodes, util
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY, PY312_PLUS
 from astroid.manager import AstroidManager
@@ -34,6 +35,7 @@ from astroid.raw_building import (
     build_function,
     build_module,
     object_build_class,
+    object_build_datadescriptor,
 )
 
 try:
@@ -90,6 +92,15 @@ class RawBuildingTC(unittest.TestCase):
         assert len(node.args.kwonlyargs) == 2
         assert node.args.kwonlyargs[0].name == "a"
         assert node.args.kwonlyargs[1].name == "b"
+
+    def test_object_build_datadescriptor(self) -> None:
+        # Tests https://github.com/pylint-dev/pylint/issues/11218
+        # A data descriptor used to be modelled as a class named after the
+        # attribute, so the value it returns was inferred as that class and the
+        # attributes of the real value were reported as missing.
+        node = object_build_datadescriptor(DUMMY_MOD, types.TracebackType.tb_frame)
+        self.assertIsInstance(node, nodes.EmptyNode)
+        self.assertEqual(node.inferred(), [util.Uninferable])
 
     def test_build_from_import(self) -> None:
         names = ["exceptions, inference, inspector"]

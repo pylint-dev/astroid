@@ -8,6 +8,7 @@ import io
 import re
 import sys
 import unittest
+from unittest.mock import patch
 
 import pytest
 
@@ -493,6 +494,36 @@ class TypingBrain(unittest.TestCase):
         attr_def = class_def_attr.getattr("bar")[0]
         attr = next(attr_def.infer())
         self.assertEqual(attr.value, "bar")
+
+    def test_namedtuple_class_form_assignment_targets(self):
+        """An assignment in the body may not bind a single plain name.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3190
+        """
+        attribute, subscript, unpacking = builder.extract_node("""
+        from typing import NamedTuple
+
+        class Attribute(NamedTuple):
+            cat.color = "black"
+
+        class Subscript(NamedTuple):
+            basket[0] = "apple"
+
+        class Unpacking(NamedTuple):
+            apple, banana = "red", "yellow"
+
+        Attribute()  #@
+        Subscript()  #@
+        Unpacking()  #@
+        """)
+        # Inference must not raise ``AttributeError`` or ``KeyError``.
+        for node in (attribute, subscript, unpacking):
+            self.assertIsInstance(next(node.infer()), astroid.Instance)
+
+        # The names bound by unpacking are still class attributes.
+        inferred = next(unpacking.infer())
+        for name, value in (("apple", "red"), ("banana", "yellow")):
+            self.assertEqual(next(inferred.getattr(name)[0].infer()).value, value)
 
     def test_tuple_type(self):
         node = builder.extract_node("""
@@ -1601,6 +1632,32 @@ def test_infer_dict_from_keys() -> None:
         assert all(isinstance(elem, nodes.Const) for elem in itered)
         actual_values = [elem.value for elem in itered]
         assert sorted(actual_values) == ["a", "b", "c"]
+
+
+def test_container_transform_oversized_str_declines() -> None:
+    """list/set/tuple/frozenset must not build one Const per character for a
+    str/bytes constant longer than the cap."""
+    with patch("astroid.brain.brain_builtin_inference._MAX_INFERABLE_STR_LEN", 4):
+        for builtin in ("list", "set", "tuple", "frozenset"):
+            node = astroid.extract_node(f'{builtin}("abcdef")')
+            inferred = next(node.infer())
+            assert isinstance(inferred, Instance)
+
+    # Small strings still infer their exact contents.
+    node = astroid.extract_node('list("abc")')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert [elem.value for elem in inferred.elts] == ["a", "b", "c"]
+
+
+def test_infer_dict_fromkeys_oversized_str_declines() -> None:
+    """dict.fromkeys must not build one key per character for a str/bytes
+    constant longer than the cap."""
+    with patch("astroid.brain.brain_builtin_inference._MAX_INFERABLE_STR_LEN", 4):
+        node = astroid.extract_node('dict.fromkeys("abcdef")')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        assert inferred.items == []
 
 
 def test_infer_dict_from_keys_deduplicates() -> None:
