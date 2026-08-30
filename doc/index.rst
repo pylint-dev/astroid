@@ -29,10 +29,10 @@ Python constructs, as seen in the following example::
    func(arg_1, arg_2)
    ''')
    >>> module.body[-1]
-   <Expr l.3 at 0x10ab46f28>
+   <Expr l.3 at 0x...>
    >>> inferred = next(module.body[-1].value.infer())
    >>> inferred
-   <Const.int l.None at 0x10ab00588>
+   <Const.int l.None at 0x...>
    >>> inferred.value
    5
 
@@ -70,7 +70,7 @@ tools.
 
    api/index
 
-   whatsnew
+   whatsnew/index
 
 .. toctree::
    :hidden:

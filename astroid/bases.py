@@ -146,7 +146,7 @@ class Proxy:
         return getattr(self._proxied, name)
 
     def infer(  # type: ignore[return]
-        self, context: InferenceContext | None = None, **kwargs: Any
+        self, context: InferenceContext | None = None
     ) -> collections.abc.Generator[InferenceResult, None, InferenceErrorInfo | None]:
         yield self
 
@@ -396,9 +396,9 @@ class Instance(BaseInstance):
 
         The truth value of an instance is determined by these conditions:
 
-           * if it implements __bool__ on Python 3 or __nonzero__
-             on Python 2, then its bool value will be determined by
-             calling this special method and checking its result.
+           * if it implements __bool__, then its bool value will be
+             determined by calling this special method and checking
+             its result.
            * when this method is not defined, __len__() is called, if it
              is defined, and the object is considered true if its result is
              nonzero. If a class defines neither __len__() nor __bool__(),
@@ -670,7 +670,6 @@ class BoundMethod(UnboundMethod):
             bases=bases.elts,
             body=[empty],
             decorators=None,
-            newstyle=True,
             metaclass=mcs,
             keywords=[],
         )

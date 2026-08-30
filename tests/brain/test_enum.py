@@ -4,16 +4,33 @@
 
 from __future__ import annotations
 
+import datetime
+import types
 import unittest
 
 import pytest
 
 import astroid
-from astroid import bases, builder, nodes, objects
+from astroid import bases, builder, nodes, objects, util
 from astroid.exceptions import InferenceError
+from astroid.manager import AstroidManager
 
 
 class EnumBrainTest(unittest.TestCase):
+    def test_enum_predicate_does_not_raise_for_extension_class(self) -> None:
+        """Classes introspected from extensions can have an unresolvable base.
+
+        Regression test for pylint-dev/pylint#11179.
+        """
+        module_name = "extension_module"
+        module = types.ModuleType(module_name)
+        module.datetime = datetime
+        extension_class = type("ExtensionClass", (datetime.datetime,), {})
+        extension_class.__module__ = module_name
+        module.ExtensionClass = extension_class
+
+        builder.AstroidBuilder(AstroidManager()).module_build(module, module_name)
+
     def test_simple_enum(self) -> None:
         module = builder.parse("""
         import enum
@@ -165,6 +182,39 @@ class EnumBrainTest(unittest.TestCase):
         instance = next(instance.infer())
         self.assertIsInstance(instance, nodes.Const)
         self.assertIsInstance(instance.value, str)
+
+    def test_enum_func_form_non_string_attribute_no_crash(self) -> None:
+        """A functional Enum with a non-string member name is invalid.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3068
+        """
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum("e", (1,))  #@
+        """)
+        # Inference must not raise ``TypeError``; it falls back to default.
+        assert next(node.infer()) is util.Uninferable
+
+    def test_enum_func_form_non_string_class_name_no_crash(self) -> None:
+        """A functional Enum with a non-string class name is invalid."""
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum(1, "")  #@
+        """)
+        # Inference must not create a class with a non-string name.
+        assert next(node.infer()) is util.Uninferable
+
+    def test_enum_func_form_bytes_field_names_no_crash(self) -> None:
+        """A functional Enum whose field names are bytes is invalid.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3189
+        """
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum("", b"")  #@
+        """)
+        # Inference must not raise ``TypeError``; it falls back to default.
+        assert next(node.infer()) is util.Uninferable
 
     def test_infer_enum_value_as_the_right_type(self) -> None:
         string_value, int_value = builder.extract_node("""

@@ -24,6 +24,7 @@ import pytest
 import tests.testdata.python3.data.fake_module_with_broken_getattr as fm_getattr
 import tests.testdata.python3.data.fake_module_with_collection_getattribute as fm_collection
 import tests.testdata.python3.data.fake_module_with_warnings as fm
+from astroid import nodes, util
 from astroid.builder import AstroidBuilder
 from astroid.const import IS_PYPY, PY312_PLUS
 from astroid.manager import AstroidManager
@@ -34,6 +35,7 @@ from astroid.raw_building import (
     build_function,
     build_module,
     object_build_class,
+    object_build_datadescriptor,
 )
 
 try:
@@ -91,6 +93,15 @@ class RawBuildingTC(unittest.TestCase):
         assert node.args.kwonlyargs[0].name == "a"
         assert node.args.kwonlyargs[1].name == "b"
 
+    def test_object_build_datadescriptor(self) -> None:
+        # Tests https://github.com/pylint-dev/pylint/issues/11218
+        # A data descriptor used to be modelled as a class named after the
+        # attribute, so the value it returns was inferred as that class and the
+        # attributes of the real value were reported as missing.
+        node = object_build_datadescriptor(DUMMY_MOD, types.TracebackType.tb_frame)
+        self.assertIsInstance(node, nodes.EmptyNode)
+        self.assertEqual(node.inferred(), [util.Uninferable])
+
     def test_build_from_import(self) -> None:
         names = ["exceptions, inference, inspector"]
         node = build_from_import("astroid", names)
@@ -137,6 +148,30 @@ class RawBuildingTC(unittest.TestCase):
 
         # This should not raise an exception
         AstroidBuilder(AstroidManager()).inspect_build(fm_collection, "test")
+
+    def test_module_object_with_getattr_typeerror(self) -> None:
+        # Regression test for the PyPy 7.3.22 bootstrap crash: PyPy 7.3.22
+        # raises ``TypeError("expected str, got getset_descriptor object")``
+        # instead of ``AttributeError`` for unset getset descriptors like
+        # ``types.FunctionType.__text_signature__`` when accessed on the
+        # type. ``InspectBuilder.object_build`` must treat that the same as a
+        # missing attribute, otherwise ``_astroid_bootstrapping()`` blows up
+        # on import. Refs pylint-dev/pylint#10999.
+        class _TypeErrorOnGetattr(types.ModuleType):
+            def __getattr__(self, name: str) -> Any:
+                if name == "pypy_text_signature_like":
+                    raise TypeError("expected str, got getset_descriptor object")
+                raise AttributeError(name)
+
+            def __dir__(self) -> list[str]:
+                return [*super().__dir__(), "pypy_text_signature_like"]
+
+        m = _TypeErrorOnGetattr("test_typeerror_on_getattr")
+
+        # This should not raise: the alias is skipped via attach_dummy_node,
+        # the same path used for AttributeError.
+        node = AstroidBuilder(AstroidManager()).inspect_build(m, "test")
+        self.assertIn("pypy_text_signature_like", node.locals)
 
 
 @pytest.mark.skipif(

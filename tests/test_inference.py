@@ -29,9 +29,16 @@ from astroid import (
 )
 from astroid import decorators as decoratorsmod
 from astroid.arguments import CallSite
-from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod, UnionType
+from astroid.bases import (
+    BoundMethod,
+    Generator,
+    Instance,
+    UnboundMethod,
+    UnionType,
+    _infer_stmts,
+)
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
-from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS
+from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS, PY315_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
     AstroidTypeError,
@@ -1022,6 +1029,43 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             manager.AstroidManager, "file_from_module_name", side_effect=AssertionError
         ):
             import_node.do_import_module()
+
+    def test_import_alias_shadowing_module(self) -> None:
+        """An ``import x.y as x`` alias shadowing the head of its own dotted
+        name must not poison the inference cache.
+
+        Regression test for pylint-dev/pylint#10193: inferring the alias
+        name through ``_infer_stmts`` (which yields the real module ``x.y``)
+        used to share a cache key with a direct ``Import._infer`` call
+        (which is meant to resolve to the raw alias ``x``). The two
+        distinct semantics were collapsed because the cache key omitted
+        the differentiating kwarg, so the second call returned the cached
+        module from the first regardless of which one ran first.
+
+        After hoisting the ``real_name`` translation into
+        ``ImportNode._infer_name``, the two flows use distinct lookup
+        names and therefore distinct cache keys.
+        """
+        import_node = extract_node("import os.path as os")
+
+        # _infer_stmts is the path used when resolving a Name reference. It
+        # invokes ``_infer_name`` which now translates the alias before
+        # ``_infer`` runs, so the result is the aliased module ``os.path``.
+        translated_ctx = InferenceContext()
+        translated_ctx.lookupname = "os"
+        translated = list(_infer_stmts([import_node], translated_ctx))
+        self.assertEqual(len(translated), 1)
+        self.assertEqual(translated[0].name, "os.path")
+
+        # Direct ``Import._infer`` (the path pylint's
+        # ``_infer_name_module`` uses) resolves the lookup name as-is,
+        # yielding the raw stdlib ``os`` module. Pre-fix, this returned the
+        # cached ``os.path`` from the previous call.
+        raw_ctx = InferenceContext()
+        raw_ctx.lookupname = "os"
+        raw = list(import_node.infer(raw_ctx))
+        self.assertEqual(len(raw), 1)
+        self.assertEqual(raw[0].name, "os")
 
     def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
@@ -2065,6 +2109,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "builtins.frozenset")
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="frozendict builtin added in 3.15 (PEP 814)"
+    )
+    def test_frozendict_builtin_inference(self) -> None:
+        node = extract_node("frozendict(x=1, y=2)")
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.qname(), "builtins.frozendict")
+
+    @pytest.mark.skipif(
+        not PY315_PLUS, reason="sentinel builtin added in 3.15 (PEP 661)"
+    )
+    def test_sentinel_builtin_inference(self) -> None:
+        node = extract_node("sentinel('MISSING')")
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.qname(), "builtins.sentinel")
 
     def test_set_builtin_inference(self) -> None:
         code = """
@@ -5316,6 +5378,20 @@ def test_fstring_large_width_no_memory_error() -> None:
     assert inferred[0] is util.Uninferable
 
 
+@pytest.mark.parametrize(
+    "code",
+    [
+        "f'{1:>2000000000}'",
+        "f'{0:030000000000}'",
+        "f'{1.5:.2000000000f}'",
+    ],
+)
+def test_fstring_oversized_width_uninferable(code: str) -> None:
+    """A huge width/precision must not materialize a multi-gigabyte string."""
+    node = extract_node(code)
+    assert list(node.infer()) == [util.Uninferable]
+
+
 def test_augassign_recursion() -> None:
     """Make sure inference doesn't throw a RecursionError.
 
@@ -6386,6 +6462,28 @@ def test_inference_is_limited_to_the_boundnode(code, instance_name) -> None:
     assert inferred.name == instance_name
 
 
+def test_classmethod_returned_tuple_subscript_ignores_unrelated_boundnode() -> None:
+    node = extract_node("""
+    class A:
+        def b(self):
+            return 0
+
+        @classmethod
+        def c(cls):
+            return cls(), 0
+
+    class D:
+        def e(self):
+            self.f = A.c()[0]
+            self.f #@
+    """)
+
+    inferred = next(node.infer())
+
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "A"
+
+
 def test_property_inference() -> None:
     code = """
     class A:
@@ -7144,6 +7242,9 @@ class TestOldStyleStringFormatting:
             """,
             """20 % 0""",
             """("%" + str(20)) % 0""",
+            """"%c" % 0x110000""",
+            """"%c" % -1""",
+            """b"%c" % 256""",
         ],
     )
     def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:
@@ -7158,6 +7259,40 @@ class TestOldStyleStringFormatting:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "My name is Daniel, I'm 12.00"
+
+    @pytest.mark.parametrize(
+        "format_string",
+        [
+            '"%1000000000d" % 1',
+            '"%-1000000000s" % "x"',
+            '"%.1000000000f" % 1.0',
+            '"%*s" % (1000000000, "x")',
+            '"%*s" % (-1000000000, "x")',
+            '"%.*f" % (1000000000, 1.0)',
+            '"%(x)1000000000s" % {"x": "y"}',
+            '"%((x))1000000000s" % {"(x)": "y"}',
+            'b"%1000000000d" % 1',
+            'x = "%1000000000d"\nx %= 1\nx',
+        ],
+    )
+    def test_old_style_string_formatting_oversized(self, format_string: str) -> None:
+        # A tiny literal must not materialize a multi-gigabyte string.
+        node = _extract_single_node(format_string)
+        assert next(node.infer()) is util.Uninferable
+
+    def test_old_style_string_formatting_length_modifier(self) -> None:
+        # h/l/L length modifiers are skipped and do not affect the size cap.
+        node = _extract_single_node('"%ld" % 5')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "5"
+
+    def test_old_style_string_formatting_star_not_width(self) -> None:
+        # Only arguments consumed by a * width/precision count toward the cap.
+        node = _extract_single_node('"%*d %d" % (5, 7, 200000001)')
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "    7 200000001"
 
 
 def test_sys_argv_uninferable() -> None:
@@ -7177,6 +7312,32 @@ def test_empty_format_spec() -> None:
     assert isinstance(node, nodes.JoinedStr)
 
     assert list(node.infer()) == [util.Uninferable]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        '"{:>2000000000}".format("x")',
+        '"{:.2000000000f}".format(1.5)',
+    ],
+)
+def test_str_format_oversized_width_uninferable(code: str) -> None:
+    """str.format() with a huge width/precision must stay Uninferable."""
+    node = _extract_single_node(code)
+    assert next(node.infer()) is util.Uninferable
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        '"{".format()',
+        '"}{".format()',
+    ],
+)
+def test_str_format_malformed_template_uninferable(code: str) -> None:
+    """A template Formatter().parse() rejects must stay Uninferable."""
+    node = _extract_single_node(code)
+    assert next(node.infer()) is util.Uninferable
 
 
 @pytest.mark.parametrize(
@@ -7233,3 +7394,48 @@ def test_joined_str_uninferable() -> None:
     assert formatted_value.value.as_string() == "hey()"
     inferred = next(joined_str.infer())
     assert inferred is util.Uninferable
+
+
+def test_overloaded_dunder_uses_implementation() -> None:
+    """Overload stubs must not shadow the real dunder implementation.
+
+    https://github.com/pylint-dev/astroid/issues/2448
+    """
+    code = """
+    from typing import overload
+
+    class Fraction:
+        @overload
+        def __truediv__(self, other: int) -> list: ...
+        @overload
+        def __truediv__(self, other: str) -> list: ...
+        def __truediv__(self, other):
+            return []
+
+        @overload
+        def __neg__(self) -> list: ...
+        def __neg__(self):
+            return []
+
+    Fraction() / 1  #@
+    -Fraction()  #@
+    """
+    binop, unaryop = extract_node(code)
+    assert isinstance(next(binop.infer()), nodes.List)
+    assert isinstance(next(unaryop.infer()), nodes.List)
+
+
+def test_decimal_inference():
+    """
+    Test we can infer the Decimal class from both the decimal and _pydecimal modules.
+
+    decimal uses _decimal by default, but that can be unavailable. The fallback can't be inferred
+    by default so we have a brain.
+    """
+    code = """
+    from decimal import Decimal #@
+    from _pydecimal import Decimal #@
+    """
+    for node in extract_node(code):
+        module = node.do_import_module(node.modname)
+        module.getattr(node.names[0][0])

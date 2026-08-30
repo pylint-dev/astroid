@@ -141,8 +141,15 @@ class ObjectModel:
         """Calling cls.__new__(type) on an object returns an instance of 'type'."""
         from astroid import builder  # pylint: disable=import-outside-toplevel
 
+        # ``__new__`` is a static method: the class is passed explicitly and
+        # ``BoundMethod.implicit_parameters()`` is 0 for it, so the first
+        # parameter is the one filled by ``cls`` in ``self.__new__(cls)`` or
+        # ``super().__new__(cls)``. The *args and **kwargs are necessary not
+        # to trigger warnings about extra parameters for ``__new__`` methods
+        # we don't infer correctly (e.g. ``tp_new`` of C types), just like
+        # the ``__init__`` fallback below.
         node: nodes.FunctionDef = builder.extract_node(
-            """def __new__(self, cls): return cls()"""
+            """def __new__(cls, *args, **kwargs): return cls()"""
         )
         # We set the parent as being the ClassDef of 'object' as that
         # triggers correct inference as a call to __new__ in bases.py
@@ -460,14 +467,19 @@ class FunctionModel(ObjectModel):
 
                 # Rebuild the original value, but with the parent set as the
                 # class where it will be bound.
-                new_func = func.__class__(
-                    name=func.name,
-                    lineno=func.lineno,
-                    col_offset=func.col_offset,
-                    parent=func.parent,
-                    end_lineno=func.end_lineno,
-                    end_col_offset=func.end_col_offset,
-                )
+                new_func_kwargs = {
+                    "name": func.name,
+                    "lineno": func.lineno,
+                    "col_offset": func.col_offset,
+                    "parent": func.parent,
+                    "end_lineno": func.end_lineno,
+                    "end_col_offset": func.end_col_offset,
+                }
+                if isinstance(func, astroid.objects.PartialFunction):
+                    new_func_kwargs["filled_args"] = func.filled_args
+                    new_func_kwargs["filled_keywords"] = func.filled_keywords
+
+                new_func = func.__class__(**new_func_kwargs)
                 # pylint: disable=no-member
                 new_func.postinit(
                     func.args,
@@ -739,7 +751,13 @@ class ContextManagerModel(ObjectModel):
 class BoundMethodModel(FunctionModel):
     @property
     def attr___func__(self):
-        return self._instance._proxied._proxied
+        # Proxy depth varies: an instance method accessed through an instance
+        # proxies another method proxy, a classmethod on its class or a lambda
+        # class attribute proxies the function directly.
+        proxied = self._instance._proxied
+        while isinstance(proxied, bases.UnboundMethod):
+            proxied = proxied._proxied
+        return proxied
 
     @property
     def attr___self__(self):

@@ -1,0 +1,5 @@
+A ``RecursionError`` raised while parsing a file is now enriched with a note
+naming the file that could not be parsed, and advising to raise the recursion
+limit (from pylint: ``--init-hook='import sys; sys.setrecursionlimit(2000)'``).
+
+Closes #2974

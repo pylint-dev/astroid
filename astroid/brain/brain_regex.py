@@ -56,9 +56,11 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
     Pattern = type(...)
     Match = type(...)
     ```
+    Older versions of regex define these in ``regex.regex``, newer versions
+    define them in ``regex._main``.
     """
     return (
-        node.root().name == "regex.regex"
+        node.root().name in {"regex.regex", "regex._main"}
         and isinstance(node.func, nodes.Name)
         and node.func.name == "type"
         and isinstance(node.parent, nodes.Assign)

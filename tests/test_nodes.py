@@ -35,6 +35,7 @@ from astroid.const import (
     PY312_PLUS,
     PY313_PLUS,
     PY314_PLUS,
+    PY315_PLUS,
     Context,
 )
 from astroid.context import InferenceContext
@@ -158,6 +159,31 @@ def function(var):
 \n"""
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
+
+    def test_docstring_as_string_roundtrip(self) -> None:
+        """A docstring must not be able to break out of or inject into as_string()."""
+        docstrings = (
+            'ends with a quote"',
+            'has a """ triple quote',
+            "a\x00b",  # NUL collides with the newline sentinel
+            "carriage\rreturn",
+            "back\\slash",
+        )
+        templates = ("def f():\n    {}\n    x = 1", "class C:\n    {}\n    x = 1")
+        for doc in docstrings:
+            for template in templates:
+                rebuilt = abuilder.string_build(template.format(repr(doc)))
+                # The rendered source must reparse to the same docstring, with no
+                # statement smuggled in past the literal.
+                scope = abuilder.string_build(rebuilt.as_string()).body[0]
+                self.assertEqual(scope.doc_node.value, doc)
+                self.assertEqual(len(scope.body), 1)
+
+        module = abuilder.string_build(repr('a module """ docstring'))
+        self.assertEqual(
+            abuilder.string_build(module.as_string()).doc_node.value,
+            'a module """ docstring',
+        )
 
     def test_3k_annotations_and_metaclass(self) -> None:
         code = '''
@@ -531,6 +557,25 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         super().setUp()
         self.module = resources.build_file("data/module.py", "data.module")
         self.module2 = resources.build_file("data/module2.py", "data.module2")
+
+    @pytest.mark.skipif(not PY315_PLUS, reason="PEP 810 lazy imports, new in 3.15")
+    def test_lazy_import(self) -> None:
+        node = extract_node("lazy import json")
+        assert isinstance(node, nodes.Import)
+        assert node.is_lazy == 1
+        self.assertEqual(node.as_string(), "lazy import json")
+
+    @pytest.mark.skipif(not PY315_PLUS, reason="PEP 810 lazy imports, new in 3.15")
+    def test_lazy_import_from(self) -> None:
+        node = extract_node("lazy from pathlib import Path")
+        assert isinstance(node, nodes.ImportFrom)
+        assert node.is_lazy == 1
+        self.assertEqual(node.as_string(), "lazy from pathlib import Path")
+
+    def test_eager_import_is_not_lazy(self) -> None:
+        # The ``is_lazy`` flag defaults to 0 on every supported version.
+        assert extract_node("import json").is_lazy == 0
+        assert extract_node("from pathlib import Path").is_lazy == 0
 
     def test_import_self_resolve(self) -> None:
         myos = next(self.module2.igetattr("myos"))
@@ -2316,3 +2361,78 @@ def test_str_large_int_getitem_no_crash() -> None:
     # Trigger the error path that formats the value
     with pytest.raises(AstroidTypeError, match=r"too large to display|int"):
         inferred.getitem(nodes.Const(0))
+
+
+def test_slice_qname() -> None:
+    """Test that Slice node has a qname method returning 'builtins.slice'."""
+    node = extract_node("f[1:2]")
+    assert isinstance(node, nodes.Subscript)
+    assert isinstance(node.slice, nodes.Slice)
+    assert node.slice.qname() == "builtins.slice"
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
+@pytest.mark.parametrize(
+    "source,node_type,qname",
+    [
+        ("class Basket[T]: pass", nodes.TypeVar, "typing.TypeVar"),
+        ("def peel[**P](): pass", nodes.ParamSpec, "typing.ParamSpec"),
+        ("def peel[*Ts](): pass", nodes.TypeVarTuple, "typing.TypeVarTuple"),
+    ],
+)
+def test_type_param_qname(
+    source: str, node_type: type[nodes.NodeNG], qname: str
+) -> None:
+    """Type parameters are inferred as themselves, so they need a qname."""
+    node = extract_node(source)
+    type_param = node.type_params[0]
+    assert isinstance(type_param, node_type)
+    assert next(type_param.infer()) is type_param
+    assert type_param.qname() == qname
+    assert type_param.pytype() == qname
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type alias nodes")
+def test_type_alias_qname() -> None:
+    """A type alias is inferred as itself, so it needs a qname."""
+    node = extract_node("type Basket = int")
+    assert isinstance(node, nodes.TypeAlias)
+    assert next(node.infer()) is node
+    assert node.qname() == "typing.TypeAliasType"
+    assert node.pytype() == "typing.TypeAliasType"
+
+
+def test_self_inferring_nodes_have_a_type() -> None:
+    """A node inferred as itself is a value, so callers ask it for its type.
+
+    Without ``qname()`` and ``pytype()`` they crash with an ``AttributeError``
+    instead, as ``FunctionDef.decoratornames()`` used to for ``@T``. Nodes are
+    found by their ``_infer`` return annotation, so this only covers the usual
+    spelling, ``Iterator[TheNodeClass]``.
+    """
+    node_classes = set()
+    to_visit = [nodes.NodeNG]
+    while to_visit:
+        for subclass in to_visit.pop().__subclasses__():
+            if subclass not in node_classes:
+                node_classes.add(subclass)
+                to_visit.append(subclass)
+
+    missing = []
+    for node_class in node_classes:
+        infer = node_class.__dict__.get("_infer")
+        if infer is None:
+            continue
+        returns = str(infer.__annotations__.get("return", ""))
+        if returns not in (f"Iterator[{node_class.__name__}]", "Iterator[Self]"):
+            continue
+        if issubclass(node_class, bases.Proxy):
+            # Proxies answer both from the class they proxy, e.g. Const.
+            continue
+        missing += [
+            f"{node_class.__name__}.{name}"
+            for name in ("qname", "pytype")
+            if not hasattr(node_class, name)
+        ]
+
+    assert not missing

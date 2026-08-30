@@ -22,7 +22,6 @@ from tokenize import detect_encoding
 from typing import TYPE_CHECKING, cast
 
 from astroid import bases, modutils, nodes, raw_building, rebuilder, util
-from astroid._ast import ParserModule, get_parser_module
 from astroid.const import PY312_PLUS, PY314_PLUS
 from astroid.exceptions import AstroidBuildingError, AstroidSyntaxError, InferenceError
 
@@ -182,9 +181,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations."""
         try:
-            node, parser_module = _parse_string(
-                data, type_comments=True, modname=modname
-            )
+            node = _parse_string(data, type_comments=True, modname=modname)
         except (TypeError, ValueError, SyntaxError, MemoryError) as exc:
             raise AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
@@ -206,7 +203,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager, parser_module, data)
+        builder = rebuilder.TreeRebuilder(self._manager, data)
         module = builder.visit_module(node, modname, node_file, package)
         return module, builder
 
@@ -395,18 +392,21 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
     Statements:
      To extract one or more statement nodes, append #@ to the end of the line
 
-     Examples:
-       >>> def x():
-       >>>   def y():
-       >>>     return 1 #@
+     Examples::
 
-       The return statement will be extracted.
+       def x():
+         def y():
+           return 1 #@
 
-       >>> class X(object):
-       >>>   def meth(self): #@
-       >>>     pass
+     The return statement will be extracted.
 
-      The function object 'meth' will be extracted.
+     ::
+
+       class X(object):
+         def meth(self): #@
+           pass
+
+     The function object 'meth' will be extracted.
 
     Expressions:
      To extract arbitrary expressions, surround them with the fake
@@ -415,19 +415,24 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
      node's parent attribute) will look like the function call was
      never there in the first place.
 
-     Examples:
-       >>> a = __(1)
+     Examples::
 
-       The const node will be extracted.
+       a = __(1)
 
-       >>> def x(d=__(foo.bar)): pass
+     The const node will be extracted.
 
-       The node containing the default argument will be extracted.
+     ::
 
-       >>> def foo(a, b):
-       >>>   return 0 < __(len(a)) < b
+       def x(d=__(foo.bar)): pass
 
-       The node containing the function call 'len' will be extracted.
+     The node containing the default argument will be extracted.
+
+     ::
+
+       def foo(a, b):
+         return 0 < __(len(a)) < b
+
+     The node containing the function call 'len' will be extracted.
 
     If no statements or expressions are selected, the last toplevel
     statement will be returned.
@@ -438,7 +443,7 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
     For convenience, singleton lists are unpacked.
 
     :param str code: A piece of Python code that is parsed as
-    a module. Will be passed through textwrap.dedent first.
+        a module. Will be passed through textwrap.dedent first.
     :param str module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
     """
@@ -485,11 +490,10 @@ def _extract_single_node(code: str, module_name: str = "") -> nodes.NodeNG:
 
 def _parse_string(
     data: str, type_comments: bool = True, modname: str | None = None
-) -> tuple[ast.Module, ParserModule]:
-    parser_module = get_parser_module(type_comments=type_comments)
+) -> ast.Module:
     try:
-        parsed = parser_module.parse(
-            data + "\n", type_comments=type_comments, filename=modname
+        parsed = ast.parse(
+            data + "\n", filename=modname or "<unknown>", type_comments=type_comments
         )
     except SyntaxError as exc:
         # If the type annotations are misplaced for some reason, we do not want
@@ -500,6 +504,5 @@ def _parse_string(
         if not (type_annot_related and type_comments):
             raise
 
-        parser_module = get_parser_module(type_comments=False)
-        parsed = parser_module.parse(data + "\n", type_comments=False)
-    return parsed, parser_module
+        parsed = ast.parse(data + "\n", type_comments=False)
+    return parsed

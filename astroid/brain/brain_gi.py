@@ -2,13 +2,14 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Astroid hooks for the Python 2 GObject introspection bindings.
+"""Astroid hooks for the GObject introspection bindings.
 
 Helps with understanding everything imported from 'gi.repository'
 """
 
 # pylint:disable=import-error,import-outside-toplevel
 
+import enum
 import inspect
 import itertools
 import re
@@ -38,7 +39,6 @@ _special_methods = frozenset(
         "__delitem__",
         "__len__",
         "__bool__",
-        "__nonzero__",
         "__next__",
         "__str__",
         "__contains__",
@@ -130,6 +130,14 @@ def _gi_build_stub(parent):  # noqa: C901
         else:
             # Assume everything else is some manner of constant
             constants[name] = 0
+    # iterating enum.IntFlag doesn't include the zero value
+    if inspect.isclass(parent) and issubclass(parent, enum.IntFlag):
+        try:
+            zero_name = parent(0).name
+            if zero_name:
+                constants[zero_name] = 0
+        except TypeError:
+            pass
 
     ret = ""
 
@@ -163,7 +171,17 @@ def _gi_build_stub(parent):  # noqa: C901
     if methods:
         ret += f"# {parent.__name__} methods\n\n"
     for name in sorted(methods):
-        ret += f"def {name}(self, *args, **kwargs):\n"
+        static = False
+        try:
+            if not methods[name].is_method():
+                static = True
+        except AttributeError:
+            pass
+        if static:
+            ret += "@staticmethod\n"
+            ret += f"def {name}(*args, **kwargs):\n"
+        else:
+            ret += f"def {name}(self, *args, **kwargs):\n"
         ret += "    pass\n"
 
     if ret:
