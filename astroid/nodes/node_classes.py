@@ -948,7 +948,7 @@ class Arguments(
         index = _find_arg(argname, args)[0]
         if index is not None:
             idx = index - (len(args) - len(self.defaults) - len(self.kw_defaults))
-            if idx >= 0:
+            if 0 <= idx < len(self.defaults):
                 return self.defaults[idx]
 
         raise NoDefault(func=self.parent, name=argname)
