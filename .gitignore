@@ -25,3 +25,6 @@ doc/api/objectmodel/
 doc/api/objects/
 doc/api/typing/
 doc/api/util/
+.cie/
+.venv/
+.forge/
