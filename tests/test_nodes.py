@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import copy
 import inspect
+import math
 import os
 import random
 import sys
@@ -184,6 +185,31 @@ def function(var):
             abuilder.string_build(module.as_string()).doc_node.value,
             'a module """ docstring',
         )
+
+    def test_non_finite_float_as_string_roundtrip(self) -> None:
+        """Non-finite floats must not render as bare ``inf``/``nan`` names."""
+        # repr() renders these as bare names; reparsing ``inf`` yields a Name
+        # lookup instead of the float, which the dataclass brain then reparses.
+        for literal, expected in (
+            ("1e999", math.inf),
+            ("1e999j", complex(0, math.inf)),
+        ):
+            node = extract_node(literal)
+            reparsed = extract_node(node.as_string())
+            self.assertEqual(next(reparsed.infer()).value, expected)
+
+        # A field default routed through the synthesized ``__init__`` must keep
+        # its value even when a name shadows the ``inf`` token in scope.
+        module = parse("""
+        inf = 42
+        from dataclasses import dataclass
+
+        @dataclass
+        class C:
+            x: float = 1e999
+        """)
+        default = module.body[-1].locals["__init__"][0].args.defaults[0]
+        self.assertEqual(next(default.infer()).value, math.inf)
 
     def test_3k_annotations_and_metaclass(self) -> None:
         code = '''

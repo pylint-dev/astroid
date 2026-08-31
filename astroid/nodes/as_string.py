@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import sys
 import warnings
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
@@ -18,6 +19,9 @@ if TYPE_CHECKING:
 # pylint: disable=unused-argument
 
 DOC_NEWLINE = "\0"
+
+# Overflowing literal used to render non-finite floats, matching ast.unparse.
+_INF_LITERAL = f"1e{sys.float_info.max_10_exp + 1}"
 
 
 # Visitor pattern require argument all the time and is not better with staticmethod
@@ -217,6 +221,13 @@ class AsStringVisitor:
         """return an nodes.Const node as string"""
         if node.value is Ellipsis:
             return "..."
+        if isinstance(node.value, (float, complex)):
+            # repr renders inf/nan as bare names that reparse as Name lookups.
+            return (
+                repr(node.value)
+                .replace("inf", _INF_LITERAL)
+                .replace("nan", f"({_INF_LITERAL}-{_INF_LITERAL})")
+            )
         return repr(node.value)
 
     def visit_continue(self, node: nodes.Continue) -> str:
