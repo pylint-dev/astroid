@@ -207,6 +207,12 @@ class AstroidManager:
         """Given a module name, return the astroid object."""
         if modname is None:
             raise AstroidBuildingError("No module name given.")
+        # Make sure any brains keyed on this module are registered before
+        # we build its AST and run transforms.
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.brain.helpers import load_brains_for_modname
+
+        load_brains_for_modname(self, modname)
         # Sometimes we don't want to use the cache. For example, when we're
         # importing a module with the same name as the file that is importing
         # we want to fallback on the import system to make sure we get the correct
@@ -443,7 +449,7 @@ class AstroidManager:
         """
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
-        from astroid.brain.helpers import register_all_brains
+        from astroid.brain.helpers import register_brains
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter._import.spec import (
             _find_spec,
@@ -480,5 +486,6 @@ class AstroidManager:
 
         self.bootstrap()
 
-        # Reload brain plugins. During initialisation this is done in astroid.manager.py
-        register_all_brains(self)
+        # Re-register brain plugins (eager + reset lazy tracking). During
+        # initialisation this is done in astroid.astroid_manager.
+        register_brains(self)

@@ -12,9 +12,10 @@ AstroidManager() directly.
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-from astroid.brain.helpers import register_all_brains
+from astroid.brain.helpers import register_brains
 from astroid.manager import AstroidManager
 
 MANAGER = AstroidManager()
-# Register all brains after instantiating the singleton Manager
-register_all_brains(MANAGER)
+# Register eager brains; the rest are loaded on first encounter of their
+# target modules (see :func:`astroid.brain.helpers.load_brains_for_modname`).
+register_brains(MANAGER)
