@@ -6535,6 +6535,79 @@ def test_property_inference() -> None:
         assert isinstance(inferred, nodes.FunctionDef)
 
 
+@pytest.mark.parametrize(
+    "code",
+    [
+        """
+    class A:
+        @property
+        def test(self):
+            return 42
+
+    A.test.fset #@
+    """,
+        """
+    @property
+    def test():
+        return 42
+
+    test.fset #@
+    """,
+        """
+    def outer():
+        @property
+        def test():
+            return 42
+
+        test.fset #@
+    """,
+    ],
+    ids=["in a class body", "at module level", "inside a function"],
+)
+def test_property_without_setter_infers_fset_as_none(code: str) -> None:
+    """A property with no setter has ``fset`` set to None.
+
+    Regression test for pylint-dev/pylint#8739: the lookup used to raise, which
+    escaped as a bare StopIteration and was reported as a crash. The decorator
+    form is not confined to class bodies, so neither is the fix.
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value is None
+
+
+def test_property_call_form_does_not_infer_fset_as_none() -> None:
+    """``property(getter, setter)`` must not report ``fset`` as None.
+
+    ``infer_property()`` builds the Property from the first argument only, so the
+    setter is not modelled and ``find_setter()`` cannot see it. Inferring None here
+    would be a confident wrong answer where "cannot infer" is the truthful one.
+
+    This used to raise InferenceError instead, but that goes through the same
+    raise_if_nothing_inferred path that turns an empty generator into a bare
+    "StopIteration raised without any error information" (pylint-dev/pylint#8739):
+    instrumenting the getter directly shows the specific message raised here never
+    reaches the caller. Uninferable is the truthful "cannot tell" that does not
+    raise.
+    """
+    code = """
+    def getter(self):
+        return 42
+
+    def setter(self, value):
+        pass
+
+    class A:
+        test = property(getter, setter)
+
+    A.test.fset #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
+
+
 def test_property_as_string() -> None:
     code = """
     class A:

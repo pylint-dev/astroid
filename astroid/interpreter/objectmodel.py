@@ -1039,9 +1039,23 @@ class PropertyModel(ObjectModel):
 
         func_setter = find_setter(func)
         if not func_setter:
-            raise InferenceError(
-                f"Unable to find the setter of property {func.function.name}"
-            )
+            if func.name == "<property>":
+                # infer_property() builds the Property from the getter alone and marks
+                # it with this name, so a setter passed as property(getter, setter) is
+                # invisible to find_setter() and its absence does not mean there is none.
+                # Raising InferenceError here still goes through the same
+                # raise_if_nothing_inferred path that turned the decorator-form gap into
+                # a bare "StopIteration raised without any error information" (see the
+                # ChangeLog entry for pylint-dev/pylint#8739): confirmed by instrumenting
+                # this getter directly -- a raised InferenceError with a specific message
+                # never reaches the caller, it is replaced by that generic one instead.
+                # Uninferable reports "cannot tell" truthfully without raising.
+                return util.Uninferable
+            # Decorator syntax with no .setter: a property without a setter has fset
+            # set to None, and looking the attribute up is not an error. Raising here
+            # escapes as a bare StopIteration and is reported as a crash instead of
+            # inferring the None it should.
+            return node_classes.Const(value=None, parent=func)
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(
