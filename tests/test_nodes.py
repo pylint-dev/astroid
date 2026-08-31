@@ -1878,6 +1878,30 @@ def test_parse_fstring_debug_mode() -> None:
     assert node.as_string() == "f'3={3!r}'"
 
 
+def test_fstring_as_string_roundtrip_with_mixed_quotes() -> None:
+    # Adjacent f-strings merge into one JoinedStr whose parts together contain
+    # every candidate quote style, so as_string() must not pick a delimiter that
+    # reappears in the body: that would terminate the f-string early and let the
+    # tail reparse as a different expression.
+    node = astroid.extract_node("f'\"\"\"{v}' f\"'''\"")
+    assert isinstance(node, nodes.JoinedStr)
+    reparsed = astroid.extract_node(node.as_string())
+    assert isinstance(reparsed, nodes.JoinedStr)
+    assert reparsed.as_string() == node.as_string()
+
+    # A body crafted to inject an operator must still round-trip to an f-string.
+    injected = astroid.extract_node("f\"A'''+BAD+'''B{v}\" f'\"\"\"'")
+    assert isinstance(astroid.extract_node(injected.as_string()), nodes.JoinedStr)
+
+    # Both single-character quotes occur inside the expression part, so the
+    # fallback must move on to a triple-quoted delimiter.
+    mixed = astroid.extract_node("f\"'''\" f'\"\"\"' f'''{d[\"it's\"]}'''")
+    assert isinstance(mixed, nodes.JoinedStr)
+    reparsed = astroid.extract_node(mixed.as_string())
+    assert isinstance(reparsed, nodes.JoinedStr)
+    assert reparsed.as_string() == mixed.as_string()
+
+
 def test_parse_type_comments_with_proper_parent() -> None:
     code = """
     class D: #@

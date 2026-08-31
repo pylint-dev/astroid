@@ -326,11 +326,32 @@ class AsStringVisitor:
 
         # Try to find surrounding quotes that don't appear at all in the string.
         # Because the formatted values inside {} can't contain backslash (\)
-        # using a triple quote is sometimes necessary
+        # using a triple quote is sometimes necessary.
         for quote in ("'", '"', '"""', "'''"):
             if quote not in string:
-                break
+                return "f" + quote + string + quote
 
+        # Every candidate quote is present in the body. Pick a delimiter absent
+        # from the {expression} parts (which cannot hold a backslash) and
+        # escape it in the literal parts so the f-string cannot terminate early.
+        formatted = "".join(
+            value.accept(self)
+            for value in node.values
+            if not isinstance(value, nodes.Const)
+        )
+        quote = next(
+            (q for q in ("'", '"', "'''", '"""') if q not in formatted),
+            # Unrepresentable: every delimiter occurs in an expression part.
+            "'''",
+        )
+        string = "".join(
+            (
+                _escaped_fstring_literal(value.value, quote[0])
+                if isinstance(value, nodes.Const)
+                else value.accept(self)
+            )
+            for value in node.values
+        )
         return "f" + quote + string + quote
 
     def visit_formattedvalue(self, node: nodes.FormattedValue) -> str:
@@ -742,6 +763,19 @@ class AsStringVisitor:
 
     def visit_unknown(self, node: nodes.Unknown) -> str:
         return str(node)
+
+
+def _escaped_fstring_literal(value: str, quote: str) -> str:
+    """Return the inner text of an f-string literal part delimited by *quote*
+    (a single quote character), escaping *quote* and doubling braces."""
+    literal = repr(value)
+    if literal[0] == quote:
+        body = literal[1:-1]
+    else:
+        # repr escapes only its own quote; unescape it and escape *quote*.
+        body = literal[1:-1].replace("\\" + literal[0], literal[0])
+        body = body.replace(quote, "\\" + quote)
+    return body.replace("{", "{{").replace("}", "}}")
 
 
 def _import_string(names: list[tuple[str, str | None]]) -> str:
