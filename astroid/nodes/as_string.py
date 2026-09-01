@@ -565,6 +565,10 @@ class AsStringVisitor:
         type_params = self._handle_type_params(node.type_params)
         return f"type {node.name.accept(self)}{type_params} = {node.value.accept(self)}"
 
+    def visit_typeparamscope(self, node: nodes.TypeParamScope) -> str:
+        """return an nodes.TypeParamScope node as string"""
+        return self._handle_type_params(node.type_params)
+
     def visit_typevar(self, node: nodes.TypeVar) -> str:
         """return an nodes.TypeVar node as string"""
         bound_str = f": {node.bound.accept(self)}" if node.bound else ""
