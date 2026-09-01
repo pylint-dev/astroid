@@ -18,6 +18,7 @@ from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.context import InferenceContext
 from astroid.exceptions import (
     AstroidError,
+    AstroidSyntaxError,
     AstroidTypeError,
     AstroidValueError,
     InferenceError,
@@ -465,37 +466,45 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                     continue
                 target_names.add(target.name)
                 # Replace all the assignments with our mocked class.
-                classdef = dedent(
-                    """
-                class {name}({types}):
-                    @property
-                    def value(self):
-                        return {return_value}
-                    @property
-                    def _value_(self):
-                        return {return_value}
-                    @property
-                    def name(self):
-                        return "{name}"
-                    @property
-                    def _name_(self):
-                        return "{name}"
-                """.format(
-                        name=target.name,
-                        types=", ".join(node.basenames),
-                        return_value=inferred_return_value,
+                try:
+                    classdef = dedent(
+                        """
+                    class {name}({types}):
+                        @property
+                        def value(self):
+                            return {return_value}
+                        @property
+                        def _value_(self):
+                            return {return_value}
+                        @property
+                        def name(self):
+                            return "{name}"
+                        @property
+                        def _name_(self):
+                            return "{name}"
+                    """.format(
+                            name=target.name,
+                            types=", ".join(node.basenames),
+                            return_value=inferred_return_value,
+                        )
                     )
-                )
-                if "IntFlag" in basename:
-                    # Alright, we need to add some additional methods.
-                    # Unfortunately we still can't infer the resulting objects as
-                    # Enum members, but once we'll be able to do that, the following
-                    # should result in some nice symbolic execution
-                    classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
+                    if "IntFlag" in basename:
+                        # Alright, we need to add some additional methods.
+                        # Unfortunately we still can't infer the resulting objects as
+                        # Enum members, but once we'll be able to do that, the following
+                        # should result in some nice symbolic execution
+                        classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
 
-                fake = AstroidBuilder(
-                    AstroidManager(), apply_transforms=False
-                ).string_build(classdef)[target.name]
+                    fake = AstroidBuilder(
+                        AstroidManager(), apply_transforms=False
+                    ).string_build(classdef)[target.name]
+                except (ValueError, AstroidSyntaxError):
+                    # The member value could not be rendered back into the mocked
+                    # class body, e.g. an integer literal past the int-to-str
+                    # conversion limit (``A = 0xff...``). Unlike the dataclass init
+                    # transform, this reconstruction has no exception boundary, so
+                    # leave such a member untransformed instead of crashing.
+                    break
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
@@ -503,7 +512,8 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 if stmt.value is None:
                     continue
                 dunder_members[local] = fake
-            node.locals[local] = new_targets
+            else:
+                node.locals[local] = new_targets
 
         # The undocumented `_value2member_map_` member:
         node.locals["_value2member_map_"] = [
