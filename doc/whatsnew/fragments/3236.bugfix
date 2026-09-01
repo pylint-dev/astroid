@@ -1,0 +1,8 @@
+Building a module with a dataclass whose field is shadowed by a property no
+longer crashes when that property returns an integer too large to stringify
+(past ``sys.get_int_max_str_digits()``). ``_generate_dataclass_init`` rendered
+the inferred value as the parameter default via ``as_string()``, and ``repr()``
+of such an int raised an uncaught ``ValueError``; the parameter now falls back
+to an ``Uninferable`` default instead.
+
+Refs #3236

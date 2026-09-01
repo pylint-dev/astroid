@@ -345,6 +345,13 @@ def _generate_dataclass_init(
                 )
             except (InferenceError, StopIteration):
                 pass
+            except ValueError:
+                # as_string() on the inferred value can raise, e.g. repr() of an
+                # integer past sys.get_int_max_str_digits() (a property returning
+                # ``10 ** 5000``). Fall back to Uninferable rather than dropping
+                # the default, so the parameter keeps a default value and the
+                # ValueError doesn't escape the dataclass transform.
+                default_str = str(Uninferable)
         else:
             # Even with `init=False` the default value still can be propogated to
             # later assignments. Creating weird signatures like:
