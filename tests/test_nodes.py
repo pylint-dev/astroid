@@ -44,6 +44,7 @@ from astroid.exceptions import (
     AstroidSyntaxError,
     AstroidTypeError,
     AttributeInferenceError,
+    NoDefault,
     StatementMissing,
 )
 from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
@@ -2291,6 +2292,33 @@ def test_arguments_default_value():
 
     node = extract_node("def fruit(seeds, flavor='good', *, peel='maybe'): ...")
     assert node.args.default_value("flavor").value == "good"
+
+
+@pytest.mark.parametrize("func", ["def f(x, *y, y): ...", "def f(x, *, y, **y): ..."])
+def test_arguments_default_value_name_shared_with_vararg(func: str) -> None:
+    """An argument may repeat the name of ``*args`` or ``**kwargs``.
+
+    Such a definition parses even though it does not compile, so the name of a
+    variadic argument does not identify it on its own.
+    """
+    node = extract_node(func)
+    with pytest.raises(NoDefault):
+        node.args.default_value("x")
+    with pytest.raises(NoDefault):
+        node.args.default_value("y")
+
+
+def test_arguments_default_value_positional_shares_vararg_name() -> None:
+    """The default of a positional argument shadowed by ``*args`` is still found."""
+    node = extract_node("def f(y=1, *y): ...")
+    assert node.args.default_value("y").value == 1
+
+
+def test_infer_argument_sharing_vararg_name() -> None:
+    """Inferring such an argument yields ``Uninferable`` rather than crashing."""
+    node = extract_node("def f(x, *y, y: tuple[x]): ...")
+    subscript = node.args.kwonlyargs_annotations[0]
+    assert next(subscript.slice.infer()) is Uninferable
 
 
 def test_arguments_annotations():
