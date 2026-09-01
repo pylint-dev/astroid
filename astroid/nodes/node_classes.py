@@ -3749,6 +3749,177 @@ class Subscript(NodeNG):
         yield self.value
         yield self.slice
 
+    @staticmethod
+    def _name_rooted_literal_path(
+        node: Subscript,
+    ) -> tuple[Name, tuple[Const, ...]] | None:
+        """Return the name and constant keys in a subscript chain."""
+        keys: list[Const] = []
+        current: NodeNG = node
+        while isinstance(current, Subscript):
+            if not isinstance(current.slice, Const):
+                return None
+            keys.append(current.slice)
+            current = current.value
+        if not isinstance(current, Name):
+            return None
+        return current, tuple(reversed(keys))
+
+    @staticmethod
+    def _side_effect_free_assignment_value(node: NodeNG) -> bool:
+        """Return whether evaluating an assignment value cannot call user code."""
+        if isinstance(node, (Const, Name)):
+            return True
+        if isinstance(node, Dict):
+            return all(
+                key is not None
+                and Subscript._side_effect_free_assignment_value(key)
+                and Subscript._side_effect_free_assignment_value(value)
+                for key, value in node.items
+            )
+        if isinstance(node, (List, Set, Tuple)):
+            return all(
+                Subscript._side_effect_free_assignment_value(element)
+                for element in node.elts
+            )
+        if isinstance(node, IfExp):
+            return (
+                isinstance(node.test, (Const, Name))
+                and Subscript._side_effect_free_assignment_value(node.body)
+                and Subscript._side_effect_free_assignment_value(node.orelse)
+            )
+        return False
+
+    @staticmethod
+    def _path_for_builtin_container(
+        node: Subscript, context: InferenceContext | None
+    ) -> tuple[Dict | List, tuple[Const, ...]] | None:
+        path = Subscript._name_rooted_literal_path(node)
+        if path is None:
+            return None
+        root, keys = path
+        inferred_root = util.safe_infer(root, copy_context(context))
+        if not isinstance(inferred_root, (Dict, List)):
+            return None
+        return inferred_root, keys
+
+    @staticmethod
+    def _same_literal_keys(left: tuple[Const, ...], right: tuple[Const, ...]) -> bool:
+        return len(left) == len(right) and all(
+            type(left_key.value) is type(right_key.value)
+            and left_key.value == right_key.value
+            for left_key, right_key in zip(left, right)
+        )
+
+    @staticmethod
+    def _contains_unsafe_call(
+        statement: NodeNG, context: InferenceContext | None
+    ) -> bool:
+        """Return whether a statement can mutate state while scanning backwards."""
+        from astroid.nodes import FunctionDef  # pylint: disable=import-outside-toplevel
+
+        for call in statement.nodes_of_class(Call):
+            inferred = util.safe_infer(call.func, copy_context(context))
+            if not (
+                isinstance(inferred, FunctionDef)
+                and inferred.qname() == "builtins.print"
+            ):
+                return True
+        return False
+
+    @staticmethod
+    def _is_assignment_target(node: Subscript, assignment: Assign) -> bool:
+        return any(
+            descendant is node
+            for target in assignment.targets
+            for descendant in target.nodes_of_class(Subscript)
+        )
+
+    # pylint: disable-next=too-many-return-statements
+    def _infer_recent_builtin_assignment(
+        self, context: InferenceContext | None
+    ) -> NodeNG | None:
+        """Find the latest safe assignment to this built-in container path."""
+        if self.ctx != Context.Load:
+            return None
+        try:
+            current = self.statement()
+        except AstroidError:
+            return None
+
+        from astroid.nodes import ClassDef  # pylint: disable=import-outside-toplevel
+
+        if isinstance(current.frame(), ClassDef):
+            # A metaclass can supply an arbitrary mapping for a class namespace.
+            return None
+
+        current_path = self._path_for_builtin_container(self, context)
+        if current_path is None:
+            return None
+        current_root, current_keys = current_path
+
+        if isinstance(current, Assign) and self._is_assignment_target(self, current):
+            # Assignment values are evaluated before their targets. Avoid using stale
+            # state if the value can call user code or rebind a name expression.
+            if not self._side_effect_free_assignment_value(current.value):
+                return None
+
+        previous = current.previous_sibling()
+        while previous is not None:
+            if isinstance(previous, _base_nodes.MultiLineBlockNode):
+                return None
+            if self._contains_unsafe_call(previous, context):
+                return None
+
+            targets: tuple[NodeNG, ...] = ()
+            assigned_value: NodeNG | None = None
+            if isinstance(previous, Assign):
+                targets = tuple(previous.targets)
+                assigned_value = previous.value
+            elif isinstance(previous, AnnAssign):
+                targets = (previous.target,)
+                assigned_value = previous.value
+            elif isinstance(previous, (AugAssign, Delete)):
+                targets = (
+                    (previous.target,)
+                    if isinstance(previous, AugAssign)
+                    else tuple(previous.targets)
+                )
+
+            for target in targets:
+                if not isinstance(target, Subscript):
+                    continue
+                target_path = self._path_for_builtin_container(target, context)
+                if target_path is None:
+                    continue
+                target_root, target_keys = target_path
+                if target_root is not current_root:
+                    continue
+
+                common_length = min(len(target_keys), len(current_keys))
+                if not self._same_literal_keys(
+                    target_keys[:common_length], current_keys[:common_length]
+                ):
+                    continue
+                if len(target_keys) < len(current_keys):
+                    # Let normal recursive subscript inference use this ancestor.
+                    return None
+                if len(target_keys) > len(current_keys):
+                    continue
+
+                if (
+                    assigned_value is None
+                    or not self._side_effect_free_assignment_value(assigned_value)
+                ):
+                    return None
+                receiver = util.safe_infer(target.value, copy_context(context))
+                if not isinstance(receiver, (Dict, List)):
+                    return None
+                return assigned_value
+
+            previous = previous.previous_sibling()
+        return None
+
     def _infer_subscript(
         self, context: InferenceContext | None = None
     ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:
@@ -3760,6 +3931,11 @@ class Subscript(NodeNG):
         handle each supported index type accordingly.
         """
         from astroid import helpers  # pylint: disable=import-outside-toplevel
+
+        assigned = self._infer_recent_builtin_assignment(context)
+        if assigned is not None:
+            yield from assigned.infer(context)
+            return InferenceErrorInfo(node=self, context=context)
 
         found_one = False
         for value in self.value.infer(context):
