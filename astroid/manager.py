@@ -198,6 +198,56 @@ class AstroidManager:
             modname, self.extension_package_whitelist
         )
 
+    def _ast_from_c_module(
+        self, modname: str, found_spec: spec.ModuleSpec
+    ) -> nodes.Module:
+        """Build a compiled module, from its source when there is one to read."""
+        if (
+            found_spec.type == spec.ModuleType.C_EXTENSION
+            and not self._can_load_extension(modname, found_spec.location)
+        ):
+            return self._build_stub_module(modname)
+
+        twin = self._pure_python_twin(modname)
+        if twin is not None and twin.location:
+            # Build the twin under the name of the C module so qualified names
+            # still read ``_io.StringIO``, and point the twin at that very
+            # module: a module like ``datetime`` imports from the accelerator
+            # and falls back to the twin, and both arms have to reach the same
+            # class rather than two copies of it.
+            module = self.ast_from_file(twin.location, modname, fallback=False)
+            self.astroid_cache[twin.name] = module
+            return module
+
+        try:
+            named_module = load_module_from_name(modname)
+        except Exception as e:
+            raise AstroidImportError(
+                "Loading {modname} failed with:\n{error}",
+                modname=modname,
+                path=found_spec.location,
+            ) from e
+        return self.ast_from_module(named_module, modname)
+
+    def _pure_python_twin(self, modname: str) -> spec.ModuleSpec | None:
+        """Find the pure Python implementation of a C accelerator module.
+
+        The standard library ships one for a handful of its accelerators:
+        ``_decimal`` has ``_pydecimal``, ``_abc`` has ``_py_abc``. Reading it
+        gives real signatures, bodies and return values, none of which survive
+        the introspection of a compiled module.
+        """
+        if not modname.startswith("_"):
+            return None
+        for candidate in (f"_py{modname[1:]}", f"_py{modname}"):
+            try:
+                found = self.file_from_module_name(candidate, None)
+            except AstroidImportError:
+                continue
+            if found.type == spec.ModuleType.PY_SOURCE and found.location:
+                return found
+        return None
+
     def ast_from_module_name(  # noqa: C901
         self,
         modname: str | None,
@@ -231,20 +281,7 @@ class AstroidManager:
                 spec.ModuleType.C_BUILTIN,
                 spec.ModuleType.C_EXTENSION,
             ):
-                if (
-                    found_spec.type == spec.ModuleType.C_EXTENSION
-                    and not self._can_load_extension(modname, found_spec.location)
-                ):
-                    return self._build_stub_module(modname)
-                try:
-                    named_module = load_module_from_name(modname)
-                except Exception as e:
-                    raise AstroidImportError(
-                        "Loading {modname} failed with:\n{error}",
-                        modname=modname,
-                        path=found_spec.location,
-                    ) from e
-                return self.ast_from_module(named_module, modname)
+                return self._ast_from_c_module(modname, found_spec)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
                 raise AstroidImportError(
