@@ -567,6 +567,14 @@ def assign_assigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
+    if (
+        not assign_path
+        and isinstance(self, nodes.Assign)
+        and self.type_annotation is not None
+        and _is_stub_ellipsis_assign(self)
+    ):
+        yield from infer_instance_from_annotation(self.type_annotation, ctx=context)
+        return None
     if not assign_path:
         yield self.value
         return None
@@ -588,11 +596,113 @@ def assign_annassigned_stmts(
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
 ) -> Any:
+    if (
+        not assign_path
+        and self.annotation is not None
+        and (
+            _is_stub_ellipsis_assign(self)
+            or (self.value is None and _is_stub_node(self))
+        )
+    ):
+        yield from infer_instance_from_annotation(self.annotation, ctx=context)
+        return
     for inferred in assign_assigned_stmts(self, node, context, assign_path):
         if inferred is None:
             yield util.Uninferable
         else:
             yield inferred
+
+
+_TYPING_WRAPPERS = frozenset(
+    (
+        "typing.ClassVar",
+        "typing.Final",
+        "typing.Annotated",
+        "typing_extensions.ClassVar",
+        "typing_extensions.Final",
+        "typing_extensions.Annotated",
+    )
+)
+_ANNOTATED_WRAPPERS = frozenset(("typing.Annotated", "typing_extensions.Annotated"))
+
+_INFERABLE_TYPING_TYPES = frozenset(("Dict", "FrozenSet", "List", "Set", "Tuple"))
+
+
+def _is_stub_ellipsis_assign(node: nodes.Assign | nodes.AnnAssign) -> bool:
+    """Check if an assignment uses an ellipsis placeholder in a stub."""
+    return (
+        _is_stub_node(node)
+        and isinstance(node.value, node_classes.Const)
+        and node.value.value is ...
+    )
+
+
+def _is_stub_node(node: nodes.NodeNG) -> bool:
+    """Check if a node belongs to a stub module."""
+    root = node.root()
+    return isinstance(root, nodes.Module) and root.is_stub
+
+
+def _unwrap_typing_wrapper(node: nodes.NodeNG) -> nodes.NodeNG:
+    """Strip ClassVar/Final/Annotated wrappers from an annotation node."""
+    while isinstance(node, nodes.Subscript):
+        try:
+            wrapper = next(node.value.infer())
+        except (InferenceError, StopIteration):
+            break
+        wrapper_qname = wrapper.qname()
+        if wrapper_qname not in _TYPING_WRAPPERS:
+            break
+        if wrapper_qname in _ANNOTATED_WRAPPERS and isinstance(node.slice, nodes.Tuple):
+            node = node.slice.elts[0]
+        else:
+            node = node.slice
+    return node
+
+
+def _resolve_forward_ref(node: nodes.Const) -> nodes.ClassDef | None:
+    """Resolve a string annotation (forward reference) to its ClassDef."""
+    _, stmts = node.frame().lookup(node.value)
+    if stmts and isinstance(stmts[0], nodes.ClassDef):
+        return stmts[0]
+    return None
+
+
+def infer_instance_from_annotation(
+    node: nodes.NodeNG, ctx: InferenceContext | None = None
+) -> Iterator[InferenceResult]:
+    """Infer an instance corresponding to the type annotation represented by node."""
+    node = _unwrap_typing_wrapper(node)
+    klass = None
+    if isinstance(node, nodes.Const) and isinstance(node.value, str):
+        klass = _resolve_forward_ref(node)
+        if klass is None:
+            yield util.Uninferable
+            return
+    else:
+        try:
+            klass = next(node.infer(context=ctx))
+        except (InferenceError, StopIteration):
+            yield util.Uninferable
+            return
+    if isinstance(klass, nodes.Const) and klass.value is None:
+        yield klass
+        return
+    if not isinstance(klass, nodes.ClassDef):
+        yield util.Uninferable
+        return
+    klass_root = klass.root()
+    if klass_root.name in {"typing", "_collections_abc"} or (
+        # Distinguish synthetic typing modules from unnamed user modules
+        not klass_root.name
+        and klass_root is not node.root()
+    ):
+        if klass.name in _INFERABLE_TYPING_TYPES:
+            yield klass.instantiate_class()
+        else:
+            yield util.Uninferable
+    else:
+        yield klass.instantiate_class()
 
 
 def _resolve_assignment_parts(parts, assign_path, context):

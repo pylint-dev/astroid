@@ -25,7 +25,7 @@ from astroid.exceptions import (
     AstroidImportError,
     AttributeInferenceError,
 )
-from astroid.interpreter._import import util
+from astroid.interpreter._import import spec, util
 from astroid.modutils import EXT_LIB_DIRS, module_in_path
 from astroid.nodes import Const
 from astroid.nodes.scoped_nodes import ClassDef, Module
@@ -162,6 +162,128 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
                 sys.path.remove(tmpdir)
         self.assertEqual(ast.name, modname)
         self.assertEqual(ast.items(), [])
+
+    def test_extension_without_source_remains_empty_when_stubs_preferred(self) -> None:
+        modname = "compiled_mod_without_source"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            extension = modname + importlib.machinery.EXTENSION_SUFFIXES[0]
+            with open(os.path.join(tmpdir, extension), "wb"):
+                pass
+            with (
+                resources.augmented_sys_path([tmpdir]),
+                mock.patch.dict(manager.AstroidManager.brain, prefer_stubs=True),
+            ):
+                module = self.manager.ast_from_module_name(modname)
+        self.assertEqual(module.name, modname)
+        self.assertEqual(module.items(), [])
+
+    def test_extension_uses_python_source_when_stubs_preferred(self) -> None:
+        modname = "compiled_mod_with_source"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            extension = modname + importlib.machinery.EXTENSION_SUFFIXES[0]
+            with open(os.path.join(tmpdir, extension), "wb"):
+                pass
+            with open(
+                os.path.join(tmpdir, f"{modname}.py"), "w", encoding="utf-8"
+            ) as source:
+                source.write("value = 1\n")
+            with (
+                resources.augmented_sys_path([tmpdir]),
+                mock.patch.dict(manager.AstroidManager.brain, prefer_stubs=True),
+            ):
+                module = self.manager.ast_from_module_name(modname)
+        self.assertFalse(module.is_stub)
+        self.assertIn("value", module.locals)
+
+    def test_standalone_pyi_is_discovered(self) -> None:
+        modname = "stub_only_mod"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(
+                os.path.join(tmpdir, f"{modname}.pyi"), "w", encoding="utf-8"
+            ) as stub:
+                stub.write("value: int\n")
+            with resources.augmented_sys_path([tmpdir]):
+                module = self.manager.ast_from_module_name(modname)
+        self.assertTrue(module.is_stub)
+        self.assertIn("value", module.locals)
+
+    def test_python_source_is_preferred_over_pyi_by_default(self) -> None:
+        modname = "module_with_source_and_stub"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(
+                os.path.join(tmpdir, f"{modname}.py"), "w", encoding="utf-8"
+            ) as source:
+                source.write("source = True\n")
+            with open(
+                os.path.join(tmpdir, f"{modname}.pyi"), "w", encoding="utf-8"
+            ) as stub:
+                stub.write("stub: bool\n")
+            with resources.augmented_sys_path([tmpdir]):
+                module = self.manager.ast_from_module_name(modname)
+        self.assertFalse(module.is_stub)
+        self.assertIn("source", module.locals)
+        self.assertNotIn("stub", module.locals)
+
+    def test_pyi_is_preferred_over_python_source_when_stubs_preferred(self) -> None:
+        modname = "preferred_stub"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(
+                os.path.join(tmpdir, f"{modname}.py"), "w", encoding="utf-8"
+            ) as source:
+                source.write("source = True\n")
+            with open(
+                os.path.join(tmpdir, f"{modname}.pyi"), "w", encoding="utf-8"
+            ) as stub:
+                stub.write("stub: bool\n")
+            with (
+                resources.augmented_sys_path([tmpdir]),
+                mock.patch.dict(manager.AstroidManager.brain, prefer_stubs=True),
+            ):
+                module = self.manager.ast_from_module_name(modname)
+        self.assertTrue(module.is_stub)
+        self.assertIn("stub", module.locals)
+        self.assertNotIn("source", module.locals)
+
+    def test_extension_uses_pyi_when_stubs_preferred(self) -> None:
+        modname = "compiled_mod_with_stub"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            extension = modname + importlib.machinery.EXTENSION_SUFFIXES[0]
+            with open(os.path.join(tmpdir, extension), "wb"):
+                pass
+            with open(
+                os.path.join(tmpdir, f"{modname}.pyi"), "w", encoding="utf-8"
+            ) as stub:
+                stub.write("value: int\n")
+            with (
+                resources.augmented_sys_path([tmpdir]),
+                mock.patch.dict(manager.AstroidManager.brain, prefer_stubs=True),
+            ):
+                module = self.manager.ast_from_module_name(modname)
+        self.assertTrue(module.is_stub)
+        self.assertIn("value", module.locals)
+
+    def test_extension_does_not_use_pyi_by_default(self) -> None:
+        modname = "compiled_mod_with_ignored_stub"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            extension = modname + importlib.machinery.EXTENSION_SUFFIXES[0]
+            with open(os.path.join(tmpdir, extension), "wb"):
+                pass
+            with open(
+                os.path.join(tmpdir, f"{modname}.pyi"), "w", encoding="utf-8"
+            ) as stub:
+                stub.write("value: int\n")
+            with resources.augmented_sys_path([tmpdir]):
+                module = self.manager.ast_from_module_name(modname)
+        self.assertFalse(module.is_stub)
+        self.assertNotIn("value", module.locals)
+
+    def test_c_module_load_error_is_wrapped(self) -> None:
+        module_spec = spec.ModuleSpec("broken_builtin", spec.ModuleType.C_BUILTIN)
+        with mock.patch.object(
+            manager, "load_module_from_name", side_effect=RuntimeError("broken")
+        ):
+            with self.assertRaisesRegex(AstroidImportError, "Loading broken_builtin"):
+                self.manager._ast_from_c_module("broken_builtin", module_spec)
 
     def test_can_load_extension_stdlib_name_without_location(self) -> None:
         """A stdlib name with no resolved location is not trusted."""
@@ -378,10 +500,12 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_file_from_module(self) -> None:
         """Check if the unittest filepath is equals to the result of the method."""
+        module_spec = self.manager.file_from_module_name("unittest", None)
         self.assertEqual(
             _get_file_from_object(unittest),
-            self.manager.file_from_module_name("unittest", None).location,
+            module_spec.location,
         )
+        self.assertIs(self.manager.file_from_module_name("unittest", None), module_spec)
 
     def test_file_from_module_name_astro_building_exception(self) -> None:
         """Check if the method raises an exception with a wrong module name."""

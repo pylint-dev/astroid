@@ -11,6 +11,7 @@ from __future__ import annotations
 import difflib
 import os
 import sys
+import tempfile
 import textwrap
 import unittest
 from functools import partial
@@ -2774,6 +2775,139 @@ def test_import_with_global() -> None:
     assert "deque" in code.locals
     assert "VERSION" in code.locals
     assert "Path" in code.locals
+
+
+class StubScopedNodeTest(unittest.TestCase):
+    def test_stub_class_getattr_annassign(self) -> None:
+        module = builder.parse(
+            """
+            class Foo:
+                x: int
+            """,
+            is_stub=True,
+        )
+        cls = module.body[0]
+        assert isinstance(cls, nodes.ClassDef)
+        attrs = cls.getattr("x")
+        assert len(attrs) == 1
+
+    def test_nonstub_class_getattr_skips_bare_annassign(self) -> None:
+        module = builder.parse("""
+            class Foo:
+                x: int
+            """)
+        cls = module.body[0]
+        assert isinstance(cls, nodes.ClassDef)
+        with self.assertRaises(AttributeInferenceError):
+            cls.getattr("x")
+
+    def test_nonstub_subclass_inherits_stub_annassign(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            stub_path = os.path.join(tmp_dir, "stubbase.pyi")
+            with open(stub_path, "w", encoding="utf-8") as file:
+                file.write("class Base:\n    color: str\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                node = builder.extract_node(
+                    """
+                    from stubbase import Base
+                    class Sub(Base): ...
+                    Sub().color  #@
+                    """,
+                    module_name="user_mod",
+                )
+                inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+        assert inferred.name == "str"
+
+    def test_stub_subclass_skips_nonstub_annassign(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            source_path = os.path.join(tmp_dir, "sourcebase.py")
+            with open(source_path, "w", encoding="utf-8") as file:
+                file.write("class Base:\n    color: str\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                module = builder.parse(
+                    "from sourcebase import Base\nclass Sub(Base): ...",
+                    module_name="stub_mod",
+                    is_stub=True,
+                )
+                subclass = module.body[1]
+                assert isinstance(subclass, nodes.ClassDef)
+                with self.assertRaises(AttributeInferenceError):
+                    subclass.getattr("color")
+
+    def test_stub_funcdef_infer_call_result_int(self) -> None:
+        module = builder.parse("def f() -> int: ...", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], Instance)
+        assert results[0].name == "int"
+
+    def test_stub_funcdef_pass_infers_return_annotation(self) -> None:
+        module = builder.parse("def f() -> int: pass", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], Instance)
+        assert results[0].name == "int"
+
+    def test_stub_funcdef_non_placeholder_body_has_implicit_none_return(self) -> None:
+        module = builder.parse("def f() -> int:\n    x = 1\n    x", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], nodes.Const)
+        assert results[0].value is None
+
+    def test_stub_funcdef_infer_call_result_none(self) -> None:
+        module = builder.parse("def f() -> None: ...", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], nodes.Const)
+        assert results[0].value is None
+
+    def test_stub_funcdef_no_return_annotation(self) -> None:
+        module = builder.parse("def f(): ...", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert results[0] is util.Uninferable
+
+    def test_stub_funcdef_forward_ref_return(self) -> None:
+        module = builder.parse(
+            """
+            class Parser:
+                @classmethod
+                def create(cls) -> "Parser": ...
+            """,
+            is_stub=True,
+        )
+        cls = module.body[0]
+        method = cls.body[0]
+        results = list(method.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], Instance)
+        assert results[0].name == "Parser"
+
+    def test_stub_funcdef_unresolvable_forward_ref(self) -> None:
+        module = builder.parse(
+            'def f() -> "DoesNotExist": ...',
+            module_name="stub_mod",
+            is_stub=True,
+        )
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert results[0] is util.Uninferable
+
+    def test_nonstub_funcdef_ellipsis_infer_unchanged(self) -> None:
+        module = builder.parse("def f() -> int: ...")
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], nodes.Const)
+        assert results[0].value is None
 
 
 class TestFrameNodes:
