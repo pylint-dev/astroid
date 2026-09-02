@@ -841,7 +841,7 @@ class Arguments(
                 )
             )
         if self.vararg:
-            result.append(f"*{self.vararg}")
+            result.append(_format_starred_arg("*", self.vararg, self.varargannotation))
         if self.kwonlyargs:
             if not self.vararg:
                 result.append("*")
@@ -854,7 +854,7 @@ class Arguments(
                 )
             )
         if self.kwarg:
-            result.append(f"**{self.kwarg}")
+            result.append(_format_starred_arg("**", self.kwarg, self.kwargannotation))
         return ", ".join(result)
 
     def _get_arguments_data(
@@ -1047,6 +1047,13 @@ def _find_arg(argname, args):
         if arg.name == argname:
             return i, arg
     return None, None
+
+
+def _format_starred_arg(prefix: str, name: str, annotation: NodeNG | None) -> str:
+    """Format a ``*args``/``**kwargs`` argument with its annotation, if any."""
+    if annotation is None:
+        return f"{prefix}{name}"
+    return f"{prefix}{name}: {annotation.as_string()}"
 
 
 def _format_args(
