@@ -11,6 +11,7 @@ from __future__ import annotations
 import difflib
 import os
 import sys
+import tempfile
 import textwrap
 import unittest
 from functools import partial
@@ -2799,6 +2800,40 @@ class StubScopedNodeTest(unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         with self.assertRaises(AttributeInferenceError):
             cls.getattr("x")
+
+    def test_nonstub_subclass_inherits_stub_annassign(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            stub_path = os.path.join(tmp_dir, "stubbase.pyi")
+            with open(stub_path, "w", encoding="utf-8") as file:
+                file.write("class Base:\n    color: str\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                node = builder.extract_node(
+                    """
+                    from stubbase import Base
+                    class Sub(Base): ...
+                    Sub().color  #@
+                    """,
+                    module_name="user_mod",
+                )
+                inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+        assert inferred.name == "str"
+
+    def test_stub_subclass_skips_nonstub_annassign(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            source_path = os.path.join(tmp_dir, "sourcebase.py")
+            with open(source_path, "w", encoding="utf-8") as file:
+                file.write("class Base:\n    color: str\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                module = builder.parse(
+                    "from sourcebase import Base\nclass Sub(Base): ...",
+                    module_name="stub_mod",
+                    is_stub=True,
+                )
+                subclass = module.body[1]
+                assert isinstance(subclass, nodes.ClassDef)
+                with self.assertRaises(AttributeInferenceError):
+                    subclass.getattr("color")
 
     def test_stub_funcdef_infer_call_result_int(self) -> None:
         module = builder.parse("def f() -> int: ...", is_stub=True)

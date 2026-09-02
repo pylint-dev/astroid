@@ -2400,7 +2400,6 @@ class ClassDef(
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
 
-        is_stub = protocols._is_stub_node(self)
         result: list[InferenceResult] = []
         for value in values:
             if isinstance(value, node_classes.AssignName):
@@ -2408,7 +2407,7 @@ class ClassDef(
                 if (
                     isinstance(stmt, node_classes.AnnAssign)
                     and stmt.value is None
-                    and not is_stub
+                    and not protocols._is_stub_node(stmt)
                 ):
                     continue
             result.append(value)

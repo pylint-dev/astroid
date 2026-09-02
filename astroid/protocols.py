@@ -613,7 +613,17 @@ def assign_annassigned_stmts(
             yield inferred
 
 
-_TYPING_WRAPPERS = frozenset(("ClassVar", "Final", "Annotated"))
+_TYPING_WRAPPERS = frozenset(
+    (
+        "typing.ClassVar",
+        "typing.Final",
+        "typing.Annotated",
+        "typing_extensions.ClassVar",
+        "typing_extensions.Final",
+        "typing_extensions.Annotated",
+    )
+)
+_ANNOTATED_WRAPPERS = frozenset(("typing.Annotated", "typing_extensions.Annotated"))
 
 _INFERABLE_TYPING_TYPES = frozenset(("Dict", "FrozenSet", "List", "Set", "Tuple"))
 
@@ -636,14 +646,14 @@ def _is_stub_node(node: nodes.NodeNG) -> bool:
 def _unwrap_typing_wrapper(node: nodes.NodeNG) -> nodes.NodeNG:
     """Strip ClassVar/Final/Annotated wrappers from an annotation node."""
     while isinstance(node, nodes.Subscript):
-        name = None
-        if isinstance(node.value, nodes.Name):
-            name = node.value.name
-        elif isinstance(node.value, nodes.Attribute):
-            name = node.value.attrname
-        if name not in _TYPING_WRAPPERS:
+        try:
+            wrapper = next(node.value.infer())
+        except (InferenceError, StopIteration):
             break
-        if name == "Annotated" and isinstance(node.slice, nodes.Tuple):
+        wrapper_qname = wrapper.qname()
+        if wrapper_qname not in _TYPING_WRAPPERS:
+            break
+        if wrapper_qname in _ANNOTATED_WRAPPERS and isinstance(node.slice, nodes.Tuple):
             node = node.slice.elts[0]
         else:
             node = node.slice
