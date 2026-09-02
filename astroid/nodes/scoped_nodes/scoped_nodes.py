@@ -238,7 +238,7 @@ class Module(LocalsDictNodeNG):
         path: Sequence[str] | None = None,
         package: bool = False,
         pure_python: bool = True,
-        is_stub: bool = False,
+        is_stub: bool | None = False,
     ) -> None:
         self.name = name
         """The name of the module."""
@@ -258,7 +258,7 @@ class Module(LocalsDictNodeNG):
         self.pure_python = pure_python
         """Whether the ast was built from source."""
 
-        self.is_stub = is_stub
+        self.is_stub = bool(is_stub)
         """Whether the module was loaded from a ``.pyi`` stub file."""
 
         self.globals: dict[str, list[InferenceResult]]
@@ -1552,6 +1552,18 @@ class FunctionDef(
             elif yield_.scope() == self:
                 yield from yield_.value.infer(context=context)
 
+    @staticmethod
+    def _is_stub_placeholder_body(body: list[NodeNG]) -> bool:
+        """Check if a function body is a stub placeholder (``...`` or ``pass``)."""
+        if len(body) != 1:
+            return False
+        statement = body[0]
+        return isinstance(statement, node_classes.Pass) or (
+            isinstance(statement, node_classes.Expr)
+            and isinstance(statement.value, node_classes.Const)
+            and statement.value.value is ...
+        )
+
     def infer_call_result(
         self,
         caller: SuccessfulInferenceResult | None,
@@ -1617,7 +1629,9 @@ class FunctionDef(
 
         first_return = next(returns, None)
         if not first_return:
-            if not self.body and self.root().is_stub:  # pylint: disable=no-member
+            if protocols._is_stub_node(self) and self._is_stub_placeholder_body(
+                self.body
+            ):
                 if self.returns is not None:
                     yield from protocols.infer_instance_from_annotation(
                         self.returns, ctx=context
@@ -2386,6 +2400,7 @@ class ClassDef(
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
 
+        is_stub = protocols._is_stub_node(self)
         result: list[InferenceResult] = []
         for value in values:
             if isinstance(value, node_classes.AssignName):
@@ -2393,7 +2408,7 @@ class ClassDef(
                 if (
                     isinstance(stmt, node_classes.AnnAssign)
                     and stmt.value is None
-                    and not self.root().is_stub  # pylint: disable=no-member
+                    and not is_stub
                 ):
                     continue
             result.append(value)

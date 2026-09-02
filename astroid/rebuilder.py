@@ -76,20 +76,6 @@ class TreeRebuilder:
             type[ast.AST], Callable[[ast.AST, nodes.NodeNG], nodes.NodeNG]
         ] = {}
 
-    @staticmethod
-    def _is_stub_placeholder_body(body: list[nodes.NodeNG]) -> bool:
-        """Check if a function body is a stub placeholder (single ``...`` or ``pass``)."""
-        if len(body) != 1:
-            return False
-        stmt = body[0]
-        if isinstance(stmt, nodes.Pass):
-            return True
-        return (
-            isinstance(stmt, nodes.Expr)
-            and isinstance(stmt.value, nodes.Const)
-            and stmt.value.value is ...
-        )
-
     def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | None]:
         """Return the doc ast node."""
         try:
@@ -749,20 +735,6 @@ class TreeRebuilder:
             value=self.visit(node.value, newnode),
             type_annotation=type_annotation,
         )
-        if (
-            self._is_stub
-            and isinstance(newnode.value, nodes.Const)
-            and newnode.value.value is ...
-            and all(isinstance(t, ast.Name) for t in node.targets)
-        ):
-            newnode.value = nodes.Const(
-                value=None,
-                lineno=newnode.value.lineno,
-                col_offset=newnode.value.col_offset,
-                end_lineno=newnode.value.end_lineno,
-                end_col_offset=newnode.value.end_col_offset,
-                parent=newnode,
-            )
         return newnode
 
     def visit_annassign(
@@ -782,12 +754,6 @@ class TreeRebuilder:
             simple=node.simple,
             value=self.visit(node.value, newnode),
         )
-        if (
-            self._is_stub
-            and isinstance(newnode.value, nodes.Const)
-            and newnode.value.value is ...
-        ):
-            newnode.value = None
         return newnode
 
     @overload
@@ -1247,8 +1213,6 @@ class TreeRebuilder:
                 else []
             ),
         )
-        if self._is_stub and self._is_stub_placeholder_body(newnode.body):
-            newnode.body = []
         self._global_names.pop()
         parent.set_local(newnode.name, newnode)
         return newnode

@@ -968,11 +968,12 @@ class StubBuildTest(unittest.TestCase):
         module = builder.parse("x: int", is_stub=True)
         assert module.is_stub is True
 
-    def test_stub_annassign_ellipsis_stripped(self) -> None:
+    def test_stub_annassign_ellipsis_preserved(self) -> None:
         module = builder.parse("x: int = ...", is_stub=True)
         ann = module.body[0]
         assert isinstance(ann, nodes.AnnAssign)
-        assert ann.value is None
+        assert isinstance(ann.value, nodes.Const)
+        assert ann.value.value is ...
 
     def test_nonstub_annassign_ellipsis_preserved(self) -> None:
         module = builder.parse("x: int = ...")
@@ -988,12 +989,12 @@ class StubBuildTest(unittest.TestCase):
         assert isinstance(ann.value, nodes.Const)
         assert ann.value.value == 0
 
-    def test_stub_assign_ellipsis_replaced(self) -> None:
+    def test_stub_assign_ellipsis_preserved(self) -> None:
         module = builder.parse("MULTILINE = ...", is_stub=True)
         assign = module.body[0]
         assert isinstance(assign, nodes.Assign)
         assert isinstance(assign.value, nodes.Const)
-        assert assign.value.value is None
+        assert assign.value.value is ...
 
     def test_nonstub_assign_ellipsis_preserved(self) -> None:
         module = builder.parse("MULTILINE = ...")
@@ -1002,17 +1003,19 @@ class StubBuildTest(unittest.TestCase):
         assert isinstance(assign.value, nodes.Const)
         assert assign.value.value is ...
 
-    def test_stub_funcdef_ellipsis_body_cleared(self) -> None:
+    def test_stub_funcdef_ellipsis_body_preserved(self) -> None:
         module = builder.parse("def f() -> int: ...", is_stub=True)
         func = module.body[0]
         assert isinstance(func, nodes.FunctionDef)
-        assert func.body == []
+        assert func.body
+        compile(module.as_string(), "<stub>", "exec")
 
-    def test_stub_funcdef_pass_body_cleared(self) -> None:
+    def test_stub_funcdef_pass_body_preserved(self) -> None:
         module = builder.parse("def f() -> int: pass", is_stub=True)
         func = module.body[0]
         assert isinstance(func, nodes.FunctionDef)
-        assert func.body == []
+        assert len(func.body) == 1
+        assert isinstance(func.body[0], nodes.Pass)
 
     def test_stub_funcdef_raise_body_preserved(self) -> None:
         module = builder.parse(
@@ -1060,3 +1063,38 @@ class StubBuildTest(unittest.TestCase):
             with resources.augmented_sys_path([tmp_dir]):
                 module = AstroidManager().ast_from_module_name("dual_mod")
                 assert module.is_stub is False
+
+    def test_pyi_preferred_over_extension(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            extension_path = os.path.join(
+                tmp_dir, "compiled_mod" + importlib.machinery.EXTENSION_SUFFIXES[0]
+            )
+            pyi_path = os.path.join(tmp_dir, "compiled_mod.pyi")
+            with open(extension_path, "wb"):
+                pass
+            with open(pyi_path, "w", encoding="utf-8") as file:
+                file.write("value: int\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                self.manager.prefer_stubs = True
+                try:
+                    module = self.manager.ast_from_module_name("compiled_mod")
+                    assert module.is_stub is True
+                    assert "value" in module.locals
+                finally:
+                    self.manager.prefer_stubs = False
+
+    def test_pyi_does_not_replace_extension_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            extension_path = os.path.join(
+                tmp_dir,
+                "compiled_mod_default" + importlib.machinery.EXTENSION_SUFFIXES[0],
+            )
+            pyi_path = os.path.join(tmp_dir, "compiled_mod_default.pyi")
+            with open(extension_path, "wb"):
+                pass
+            with open(pyi_path, "w", encoding="utf-8") as file:
+                file.write("value: int\n")
+            with resources.augmented_sys_path([tmp_dir]):
+                module = self.manager.ast_from_module_name("compiled_mod_default")
+                assert module.is_stub is False
+                assert "value" not in module.locals

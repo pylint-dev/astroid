@@ -2808,6 +2808,22 @@ class StubScopedNodeTest(unittest.TestCase):
         assert isinstance(results[0], Instance)
         assert results[0].name == "int"
 
+    def test_stub_funcdef_pass_infers_return_annotation(self) -> None:
+        module = builder.parse("def f() -> int: pass", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], Instance)
+        assert results[0].name == "int"
+
+    def test_stub_funcdef_non_placeholder_body_has_implicit_none_return(self) -> None:
+        module = builder.parse("def f() -> int:\n    x = 1\n    x", is_stub=True)
+        func = module.body[0]
+        results = list(func.infer_call_result(None))
+        assert len(results) == 1
+        assert isinstance(results[0], nodes.Const)
+        assert results[0].value is None
+
     def test_stub_funcdef_infer_call_result_none(self) -> None:
         module = builder.parse("def f() -> None: ...", is_stub=True)
         func = module.body[0]
@@ -2830,7 +2846,6 @@ class StubScopedNodeTest(unittest.TestCase):
                 @classmethod
                 def create(cls) -> "Parser": ...
             """,
-            module_name="stub_mod",
             is_stub=True,
         )
         cls = module.body[0]

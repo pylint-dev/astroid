@@ -507,6 +507,17 @@ def get_source_file(
     filename = os.path.abspath(_path_from_filename(filename))
     base, orig_ext = os.path.splitext(filename)
     orig_ext = orig_ext.lstrip(".")
+    extension_suffix = max(
+        (
+            suffix
+            for suffix in importlib.machinery.EXTENSION_SUFFIXES
+            if filename.endswith(suffix)
+        ),
+        key=len,
+        default=None,
+    )
+    if extension_suffix is not None:
+        base = filename[: -len(extension_suffix)]
     # A non-standard extension (e.g. a custom suffix) is returned as-is, but a
     # compiled file falls through to the lookup below so its .py/.pyi stub is
     # found instead.
