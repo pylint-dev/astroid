@@ -2719,6 +2719,8 @@ class ClassDef(
             return None
         for slots in slots_attributes:
             # check if __slots__ is a valid type
+            if not hasattr(slots, "getattr"):
+                continue
             for meth in ITER_METHODS:
                 try:
                     slots.getattr(meth)

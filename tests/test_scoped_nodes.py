@@ -1585,6 +1585,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # must return None instead of raising ``InferenceError``.
         self.assertIsNone(module["Klass"].slots())
 
+    def test_slots_pep695_type_param_named_slots(self) -> None:
+        module = builder.parse("""
+        class C[__slots__]:
+            def __init__(self):
+                self.a = 1
+        """)
+        self.assertIsNone(module["C"].slots())
+
     def test_slots_added_dynamically_still_inferred(self) -> None:
         code = """
         class NodeBase(object):
