@@ -577,6 +577,7 @@ def infer_typing_namedtuple_class(class_node, context: InferenceContext | None =
         annassign.target.name
         for annassign in class_node.body
         if isinstance(annassign, nodes.AnnAssign)
+        and isinstance(annassign.target, nodes.AssignName)
     ]
     code = dedent("""
     from collections import namedtuple
