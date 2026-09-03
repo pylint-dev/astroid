@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import unittest
 
-from astroid import builder, nodes, util
+from astroid import bases, builder, nodes, util
 from astroid.exceptions import AttributeInferenceError
 
 
@@ -290,3 +290,17 @@ class NamedTupleTest(unittest.TestCase):
         assert isinstance(good_node_two_inferred, nodes.ClassDef)
         bad_node_inferred = next(bad_node.infer())
         assert bad_node_inferred == util.Uninferable
+
+    def test_namedtuple_annotated_attribute_target_does_not_crash(self) -> None:
+        """Reported in https://github.com/pylint-dev/astroid/issues/3257."""
+        node = builder.extract_node("""
+        from typing import NamedTuple
+
+        class C(NamedTuple):
+            a.b: str
+
+        C() #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.name == "C"

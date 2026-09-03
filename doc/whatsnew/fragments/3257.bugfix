@@ -1,0 +1,3 @@
+Do not crash with ``AttributeError`` when inferring a ``typing.NamedTuple`` class containing an annotated attribute assignment (such as ``a.b: str``).
+
+Closes #3257
