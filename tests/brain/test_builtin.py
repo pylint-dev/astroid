@@ -449,18 +449,56 @@ class TestShadowedBuiltins:
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "apple"
 
-    @pytest.mark.xfail(
-        reason="a bare annotation is taken for a binding, so the builtin is lost"
-    )
     def test_bare_annotation_does_not_shadow(self) -> None:
         """``len: int`` says what ``len`` should hold, it does not put anything there.
 
-        ``lookup()`` still hands back the annotated name, so the tip reads it as a
-        shadow and steps aside, where the builtin is really the one being called.
+        ``lookup()`` still hands back the annotated name, so the tip used to read
+        it as a shadow and step aside. At module scope the builtin is the one
+        being called.
         """
         node: nodes.Call = _extract_single_node("""
         len: int
         len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
+    def test_assignment_then_bare_annotation_still_shadows(self) -> None:
+        """``len = 5`` is a real binding. A later ``len: int`` does not undo it."""
+        node: nodes.Call = _extract_single_node("""
+        len = 5
+        len: int
+        len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_builtins_import_then_bare_annotation_stays_builtin(self) -> None:
+        node: nodes.Call = _extract_single_node("""
+        from builtins import str
+        str: object
+        str("apple") #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
+
+    def test_bare_annotation_in_function_body_shadows(self) -> None:
+        """A function-local ``len: int`` makes ``len`` local, so the call is not the builtin."""
+        node: nodes.Call = _extract_single_node("""
+        def f():
+            len: int
+            len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_bare_annotation_in_class_body_does_not_shadow(self) -> None:
+        node: nodes.Call = _extract_single_node("""
+        class C:
+            len: int
+            len([1, 2, 3]) #@
         """)
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
