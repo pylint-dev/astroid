@@ -134,9 +134,6 @@ class TypeBrain(unittest.TestCase):
         meth_inf = val_inf.getattr("__class_getitem__")[0]
         self.assertIsInstance(meth_inf, nodes.FunctionDef)
 
-    @pytest.mark.xfail(
-        reason="infer_type_sub looks 'type' up from the scope, so a parameter hides it"
-    )
     def test_type_subscript_next_to_a_parameter_named_type(self):
         """A parameter called ``type`` does not reach the annotation next to it.
 

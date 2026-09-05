@@ -222,6 +222,17 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
     return False
 
 
+def _is_bare_annotation(stmt: nodes.NodeNG) -> bool:
+    """True if *stmt* is a name bound only by ``name: T`` with no value.
+
+    At module or class scope that is not a binding: ``len: int`` still calls
+    the builtin. Inside a function it *is* a binding and makes the name local.
+    """
+    if isinstance(stmt, nodes.AssignName):
+        stmt = stmt.parent
+    return isinstance(stmt, nodes.AnnAssign) and stmt.value is None
+
+
 def _is_from_builtins_import(stmt: nodes.NodeNG, name: str) -> bool:
     """True if *stmt* is ``from builtins import ...`` binding *name* to ``builtins.name``.
 
@@ -256,6 +267,22 @@ def _is_builtin_call(node: nodes.Call) -> bool:
     frame, stmts = func.lookup(func.name)
     if isinstance(frame, nodes.Module) and frame.qname() == "builtins":
         return True
+    # Bare annotations in modules and classes are stored in __annotations__,
+    # they do not shadow. In a function they do, so leave those stmts alone.
+    if not isinstance(frame, (nodes.FunctionDef, nodes.Lambda)):
+        stmts = [stmt for stmt in stmts if not _is_bare_annotation(stmt)]
+        if not stmts:
+            # lookup() prefers the later AnnAssign, so an earlier real
+            # binding such as ``len = 5`` then ``len: int`` is dropped.
+            # Walk locals that appear before this call for one.
+            for stmt in frame.locals.get(func.name, ()):
+                if _is_bare_annotation(stmt):
+                    continue
+                stmt_line = getattr(stmt, "fromlineno", None) or stmt.lineno or 0
+                if stmt_line > (func.lineno or 0):
+                    continue
+                return _is_from_builtins_import(stmt, func.name)
+            return True
     return any(_is_from_builtins_import(stmt, func.name) for stmt in stmts)
 
 
