@@ -8,6 +8,7 @@ import functools
 import unittest
 
 from astroid import builder, nodes
+from astroid.const import PY312_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -100,6 +101,60 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(isinstance(base, nodes.ClassDef), base.__class__)
         self.assertEqual(base.name, "YO")
         self.assertEqual(base.root().name, "data.module")
+
+    def test_name_nested_in_default_looks_up_in_enclosing_scope(self) -> None:
+        """A name inside a default value is evaluated in the enclosing scope.
+
+        That holds for a name nested in the default, not only for the default
+        itself, so a comprehension or a lambda there must not see the
+        parameters it sits next to.
+        """
+        for default in ("[x for x in (v,)]", "lambda: v"):
+            with self.subTest(default=default):
+                module = builder.parse(f"""
+                    v = 42
+                    def func(v={default}):
+                        return v
+                """)
+                name = next(
+                    n
+                    for n in module["func"].args.defaults[0].nodes_of_class(nodes.Name)
+                    if n.name == "v"
+                )
+                _, stmts = name.lookup("v")
+                self.assertEqual(len(stmts), 1)
+                self.assertEqual(stmts[0].lineno, 2)
+
+    def test_name_in_annotation_looks_up_in_enclosing_scope(self) -> None:
+        """An annotation is evaluated in the enclosing scope, like a default."""
+        module = builder.parse("""
+            v = 42
+            def func(x: v = 1, v=None) -> v:
+                return x
+        """)
+        func = module["func"]
+        for name in (func.args.annotations[0], func.returns):
+            with self.subTest(name=name):
+                _, stmts = name.lookup("v")
+                self.assertEqual(len(stmts), 1)
+                self.assertEqual(stmts[0].lineno, 2)
+
+    @unittest.skipUnless(PY312_PLUS, "PEP 695 syntax requires Python 3.12")
+    def test_annotation_sees_type_parameters(self) -> None:
+        """Annotations are evaluated in the type parameter scope, defaults are not."""
+        module = builder.parse("""
+            def func[T](x: T = T) -> T:
+                return x
+        """)
+        func = module["func"]
+        for name in (func.args.annotations[0], func.returns):
+            with self.subTest(name=name):
+                _, stmts = name.lookup("T")
+                self.assertEqual(len(stmts), 1)
+                self.assertIsInstance(stmts[0].parent, nodes.TypeVar)
+
+        _, stmts = func.args.defaults[0].lookup("T")
+        self.assertEqual(stmts, [])
 
     def test_class(self) -> None:
         klass = self.module["YOUPI"]
