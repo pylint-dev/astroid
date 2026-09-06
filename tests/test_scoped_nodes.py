@@ -43,6 +43,7 @@ from astroid.exceptions import (
     TooManyLevelsError,
 )
 from astroid.manager import AstroidManager
+from astroid.nodes.scoped_nodes import scoped_nodes as _scoped_nodes
 from astroid.nodes.scoped_nodes.scoped_nodes import _is_metaclass
 
 from . import resources
@@ -2774,6 +2775,103 @@ def test_import_with_global() -> None:
     assert "deque" in code.locals
     assert "VERSION" in code.locals
     assert "Path" in code.locals
+
+
+class TestAncestorsCaching:
+    """Regression tests for the ``ClassDef.ancestors()`` per-instance cache."""
+
+    @staticmethod
+    def _fresh_leaf() -> nodes.ClassDef:
+        """Return a ``Leaf`` ClassDef with no cached ancestors."""
+        # ``extract_node``/``parse`` walks bases during build, which can
+        # populate ``_cached_ancestors``; drop it so each test exercises
+        # the cache-miss path on its first call.
+        leaf = extract_node("""
+            class Base: pass
+            class Mid(Base): pass
+            class Leaf(Mid):  #@
+                pass
+        """)
+        leaf.__dict__.pop("_cached_ancestors", None)
+        return leaf
+
+    def test_cache_hit_returns_same_tuple_on_second_call(self) -> None:
+        """A second ``ancestors(recurs=True)`` call reuses the cached tuple."""
+        leaf = self._fresh_leaf()
+        first = tuple(leaf.ancestors(recurs=True))
+        cached = leaf.__dict__["_cached_ancestors"]
+        # The cache stores the materialized tuple, and a second walk
+        # yields from that same tuple instance.
+        assert cached == first
+        second = tuple(leaf.ancestors(recurs=True))
+        assert second == first
+        # The cached object did not get rebuilt between calls.
+        assert leaf.__dict__["_cached_ancestors"] is cached
+
+    def test_recurs_false_bypasses_cache(self) -> None:
+        """``ancestors(recurs=False)`` must not populate or read the cache."""
+        leaf = self._fresh_leaf()
+        direct = [a.name for a in leaf.ancestors(recurs=False)]
+        assert direct == ["Mid"]
+        assert "_cached_ancestors" not in leaf.__dict__
+
+    @staticmethod
+    def test_cycle_does_not_infinite_loop() -> None:
+        """A cyclic class hierarchy unwinds via the ``_COMPUTING_ANCESTORS`` sentinel."""
+        # ``string.Template = A`` after ``class A(Template)`` is the
+        # shape called out in the cache comment: re-entering ``A``
+        # while it's still computing its ancestors must short-circuit
+        # rather than recurse forever.
+        module = parse("""
+            import string
+
+            class A(string.Template):
+                pass
+
+            string.Template = A
+        """)
+        klass = module["A"]
+        # Should terminate; the exact ancestor list depends on how the
+        # re-entry unwinds, but we only assert no infinite recursion.
+        ancestors = list(klass.ancestors(recurs=True))
+        assert all(isinstance(a, nodes.ClassDef) for a in ancestors)
+        # An incomplete walk drops the partial cache so a later call
+        # has another chance to populate it once inference tips settle.
+        assert "_cached_ancestors" not in klass.__dict__ or isinstance(
+            klass.__dict__["_cached_ancestors"], tuple
+        )
+
+    def test_exception_during_walk_clears_sentinel(self) -> None:
+        """If the walk raises, the ``_COMPUTING_ANCESTORS`` sentinel is removed.
+
+        Otherwise a transient failure would poison the cache and cause
+        every subsequent call to silently yield no ancestors.
+        """
+        # The patch/restore dance below trips ``redefined-variable-type``
+        # because ``_walk_ancestors`` flips between a plain function and a
+        # bound method. That's the whole point of the test.
+        # pylint: disable=redefined-variable-type
+        leaf = self._fresh_leaf()
+
+        sentinel_exc = RuntimeError("simulated walk failure")
+        original = _scoped_nodes.ClassDef._walk_ancestors
+
+        def _boom(self, *args, **kwargs):
+            raise sentinel_exc
+
+        _scoped_nodes.ClassDef._walk_ancestors = _boom
+        try:
+            with pytest.raises(RuntimeError, match="simulated walk failure"):
+                list(leaf.ancestors(recurs=True))
+        finally:
+            _scoped_nodes.ClassDef._walk_ancestors = original
+
+        # The sentinel must not have survived the failure.
+        assert "_cached_ancestors" not in leaf.__dict__
+        # A subsequent successful call repopulates the cache normally.
+        names = [a.name for a in leaf.ancestors(recurs=True)]
+        assert names == ["Mid", "Base", "object"]
+        assert isinstance(leaf.__dict__["_cached_ancestors"], tuple)
 
 
 class TestFrameNodes:
