@@ -1,0 +1,7 @@
+The 19 ``register_builtin_transform`` registrations are collapsed into a single
+dispatcher transform on ``nodes.Call``. The transform visitor previously ran 19
+predicates per ``Call`` node, each repeating the same ``isinstance`` checks; the
+dispatcher does them once and routes by name via a dict.
+
+Refs #3167
+Refs #1115

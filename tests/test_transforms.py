@@ -13,6 +13,8 @@ from collections.abc import Callable, Iterator
 import pytest
 
 from astroid import MANAGER, builder, nodes, parse, transforms
+from astroid.brain import brain_builtin_inference
+from astroid.brain.brain_builtin_inference import _builtin_dispatch_predicate
 from astroid.brain.brain_dataclasses import _looks_like_dataclass_field_call
 from astroid.const import IS_PYPY
 from astroid.manager import AstroidManager
@@ -273,3 +275,94 @@ class TestTransforms(unittest.TestCase):
                 assert "sys.setrecursionlimit" in records[0].message.args[0]
         finally:
             sys.setrecursionlimit(original_limit)
+
+
+class TestBuiltinDispatcher(unittest.TestCase):
+    """Cover the per-Call dispatcher that replaced 19 individual transforms.
+
+    The predicate is the hot path of the transform visitor — wrong answers
+    here either silently drop builtin inference (false negatives) or apply
+    builtin inference to user-defined names (false positives), so each
+    branch is worth a dedicated regression test.
+    """
+
+    def test_known_builtin_name_dispatches(self) -> None:
+        """``bool(...)`` resolves to the builtin's inferred constant."""
+        node = builder.extract_node("bool(1) #@")
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value is True
+
+    def test_dict_fromkeys_attribute_dispatches(self) -> None:
+        """``dict.fromkeys(...)`` flows through the Attribute branch of the predicate."""
+        node = builder.extract_node("dict.fromkeys(['a', 'b']) #@")
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        keys = sorted(k.value for k, _ in inferred.items)
+        assert keys == ["a", "b"]
+
+    def test_unknown_name_is_not_dispatched(self) -> None:
+        """A Call to a non-builtin name must not be claimed by the dispatcher."""
+        node = builder.extract_node("not_a_builtin(1, 2) #@")
+        assert _builtin_dispatch_predicate(node) is False
+
+    def test_non_dict_attribute_is_not_dispatched(self) -> None:
+        """Only ``dict.fromkeys`` Attributes are claimed; e.g., ``list.fromkeys``
+        is not, and neither are unrelated ``dict`` methods."""
+        list_fromkeys = builder.extract_node("list.fromkeys([1, 2]) #@")
+        assert _builtin_dispatch_predicate(list_fromkeys) is False
+
+        dict_other = builder.extract_node("dict.values() #@")
+        assert _builtin_dispatch_predicate(dict_other) is False
+
+    def test_dynamic_call_target_is_not_dispatched(self) -> None:
+        """Calls whose ``func`` is neither a Name nor an Attribute are skipped."""
+        node = builder.extract_node("(lambda x: x)(1) #@")
+        assert _builtin_dispatch_predicate(node) is False
+
+    def test_re_pattern_and_match_type_calls_are_not_dispatched(self) -> None:
+        """``Pattern = type(...)`` / ``Match = type(...)`` in stdlib ``re`` are
+        handed off to ``brain_re`` rather than the builtin ``type`` inference."""
+        re_ast = MANAGER.ast_from_module_name("re")
+        # In modern Python's stdlib these are produced via
+        # ``Pattern = type(...)`` / ``Match = type(...)`` assignments.
+        for name in ("Pattern", "Match"):
+            assign = re_ast.locals[name][0].parent
+            assert isinstance(assign, nodes.Assign)
+            assert isinstance(assign.value, nodes.Call)
+            assert isinstance(assign.value.func, nodes.Name)
+            assert assign.value.func.name == "type"
+            # The re-module type() call must not be claimed by the builtin
+            # dispatcher; brain_re owns its inference.
+            assert _builtin_dispatch_predicate(assign.value) is False
+
+    def test_register_builtin_transform_populates_dispatch_table(self) -> None:
+        """``register_builtin_transform`` must add the function to the dispatch
+        dict so the global dispatcher can route to it."""
+        marker = object()
+
+        def fake_transform(node, context=None):
+            return marker
+
+        original = brain_builtin_inference._BUILTIN_INFERENCE_FUNCS.get(
+            "_test_register_builtin"
+        )
+        try:
+            brain_builtin_inference.register_builtin_transform(
+                AstroidManager(), fake_transform, "_test_register_builtin"
+            )
+            assert (
+                brain_builtin_inference._BUILTIN_INFERENCE_FUNCS[
+                    "_test_register_builtin"
+                ]
+                is fake_transform
+            )
+        finally:
+            if original is None:
+                brain_builtin_inference._BUILTIN_INFERENCE_FUNCS.pop(
+                    "_test_register_builtin", None
+                )
+            else:
+                brain_builtin_inference._BUILTIN_INFERENCE_FUNCS[
+                    "_test_register_builtin"
+                ] = original
