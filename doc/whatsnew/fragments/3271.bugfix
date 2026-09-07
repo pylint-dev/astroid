@@ -1,0 +1,9 @@
+``int()`` calls are no longer inferred as a constant the call would not return.
+A second argument was dropped, so ``int('10', 2)`` was inferred as ``10`` instead
+of ``2``, and any first argument that was not an ``int`` or a ``str`` fell through
+to the value used for the no-argument form, so ``int(2.5)`` and ``int(b'12')``
+were inferred as ``0``. Values that cannot be resolved, including the ones that
+raise ``ValueError`` at runtime such as ``int('abc')``, are now left to the
+regular call inference instead of being reported as ``0``.
+
+Refs #3271

@@ -951,25 +951,31 @@ def infer_int(node, context: InferenceContext | None = None):
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
 
-    if call.positional_arguments:
+    if not call.positional_arguments:
+        return nodes.Const(0)
+
+    if len(call.positional_arguments) > 2:
+        raise UseInferenceDefault(
+            "TypeError: int() takes at most 2 arguments "
+            f"({len(call.positional_arguments)}) given"
+        )
+
+    # Both the value and the optional base have to be known: dropping the base
+    # or guessing a value the call would not return is worse than not inferring.
+    int_arguments = []
+    for argument in call.positional_arguments:
         try:
-            first_value = next(call.positional_arguments[0].infer(context=context))
+            inferred = next(argument.infer(context=context))
         except (InferenceError, StopIteration) as exc:
             raise UseInferenceDefault(str(exc)) from exc
-
-        if isinstance(first_value, util.UninferableBase):
+        if not isinstance(inferred, nodes.Const):
             raise UseInferenceDefault
+        int_arguments.append(inferred.value)
 
-        if isinstance(first_value, nodes.Const) and isinstance(
-            first_value.value, (int, str)
-        ):
-            try:
-                actual_value = int(first_value.value)
-            except ValueError:
-                return nodes.Const(0)
-            return nodes.Const(actual_value)
-
-    return nodes.Const(0)
+    try:
+        return nodes.Const(int(*int_arguments))
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise UseInferenceDefault(str(exc)) from exc
 
 
 def infer_dict_fromkeys(node, context: InferenceContext | None = None):

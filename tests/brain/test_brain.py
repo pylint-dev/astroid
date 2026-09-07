@@ -1553,11 +1553,51 @@ def test_infer_int() -> None:
     int('something else') #@
     int(unknown) #@
     int(b'a') #@
+    int(None) #@
+    int([]) #@
+    int(1, 2, 3) #@
     """)
     for node in ast_nodes:
         inferred = next(node.infer())
         assert isinstance(inferred, astroid.Instance)
+        # nodes.Const is an Instance too, so the value must be checked as well:
+        # a call that cannot be resolved must not be inferred as some constant.
+        assert not isinstance(inferred, nodes.Const)
         assert inferred.qname() == "builtins.int"
+
+
+def test_infer_int_second_argument() -> None:
+    """The base of an int() call is honoured instead of being dropped."""
+    binary, octal, hexadecimal, invalid_digit, unknown_base = astroid.extract_node("""
+    int('10', 2) #@
+    int('10', 8) #@
+    int('10', 16) #@
+    int('19', 8) #@
+    int('10', unknown) #@
+    """)
+    for node, expected in ((binary, 2), (octal, 8), (hexadecimal, 16)):
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == expected
+
+    for node in (invalid_digit, unknown_base):
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Instance)
+        assert not isinstance(inferred, nodes.Const)
+        assert inferred.qname() == "builtins.int"
+
+
+def test_infer_int_non_str_argument() -> None:
+    """Arguments other than int and str are converted instead of yielding zero."""
+    truncated, negative, from_bytes = astroid.extract_node("""
+    int(2.5) #@
+    int(-2.5) #@
+    int(b'12') #@
+    """)
+    for node, expected in ((truncated, 2), (negative, -2), (from_bytes, 12)):
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == expected
 
 
 def test_infer_dict_from_keys() -> None:
