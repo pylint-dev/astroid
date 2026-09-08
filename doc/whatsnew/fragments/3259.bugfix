@@ -1,0 +1,3 @@
+Avoid an ``IndexError`` when inferring an argument whose name matches a vararg.
+
+Closes #3259

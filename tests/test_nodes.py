@@ -2293,6 +2293,13 @@ def test_arguments_default_value():
     assert node.args.default_value("flavor").value == "good"
 
 
+def test_argument_inference_with_vararg_and_kwonly_name_collision():
+    node = extract_node("def fruit(seed, *seeds, seeds: tuple[seed]): ...")
+    annotation = node.args.kwonlyargs_annotations[0]
+
+    assert list(annotation.slice.infer()) == [Uninferable]
+
+
 def test_arguments_annotations():
     node = extract_node(
         "def fruit(eat: str, /, peel: bool, *args: int, trim: float, **kwargs: bytes): ..."

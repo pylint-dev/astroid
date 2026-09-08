@@ -936,7 +936,9 @@ class Arguments(
             given argument.
         """
         args = [
-            arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]
+            arg
+            for arg in self.arguments
+            if arg is not self.vararg_node and arg is not self.kwarg_node
         ]
 
         index = _find_arg(argname, self.kwonlyargs)[0]
