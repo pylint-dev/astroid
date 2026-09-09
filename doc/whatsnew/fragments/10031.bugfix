@@ -1,0 +1,8 @@
+Infer an augmented assignment on an instance of a builtin mutable container
+(``list``, ``set``, ``dict``, ``bytearray``) or of one of their subclasses as that
+instance, since their in-place operators mutate and return the same object.
+Previously the result was uninferable, so an attribute assigned to ``self`` after
+``self |= other`` in a ``set`` subclass was not recorded on the class and pylint
+reported ``no-member`` for it.
+
+Closes pylint-dev/pylint#10031

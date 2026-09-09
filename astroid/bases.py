@@ -351,6 +351,19 @@ class BaseInstance(Proxy):
             raise InferenceError(node=self, caller=caller, context=context)
 
 
+def _is_builtin_inplace_operator(method: SuccessfulInferenceResult) -> bool:
+    """Whether *method* is an in-place operator of a builtin type."""
+    from astroid.nodes._base_nodes import (  # pylint: disable=import-outside-toplevel
+        AUGMENTED_OP_METHOD,
+    )
+
+    return (
+        isinstance(method, nodes.FunctionDef)
+        and method.name in AUGMENTED_OP_METHOD.values()
+        and method.root().name == "builtins"
+    )
+
+
 class Instance(BaseInstance):
     """A special node representing a class instance."""
 
@@ -368,7 +381,21 @@ class Instance(BaseInstance):
         context: InferenceContext,
         method: SuccessfulInferenceResult,
     ) -> Generator[InferenceResult]:
-        return method.infer_call_result(self, context)
+        if (
+            isinstance(opnode, nodes.AugAssign)
+            # Literal containers (``nodes.List``, ``nodes.Dict``, ...) know their
+            # elements and keep their own handling.
+            and not isinstance(self, nodes.NodeNG)
+            and _is_builtin_inplace_operator(method)
+        ):
+            # The in-place operators of the builtin mutable containers, such as
+            # ``list.__iadd__`` or ``set.__ior__``, mutate the object and return
+            # it. They are implemented in C, so there is no body to infer that
+            # from; without this the result of ``self |= other`` in a ``set``
+            # subclass was uninferable.
+            yield self
+            return
+        yield from method.infer_call_result(self, context)
 
     def __repr__(self) -> str:
         return f"<Instance of {self._proxied.root().name}.{self._proxied.name} at 0x{id(self)}>"

@@ -5392,6 +5392,71 @@ def test_fstring_oversized_width_uninferable(code: str) -> None:
     assert list(node.infer()) == [util.Uninferable]
 
 
+def test_augassign_builtin_container_subclass() -> None:
+    """The in-place operators of the builtin containers return the same object.
+
+    They are implemented in C, so this cannot be inferred from their body, and
+    it also holds for subclasses.  Regression test for pylint-dev/pylint#10031.
+    """
+    ast_nodes = extract_node("""
+        class Ints(set):
+            def __init__(self):
+                self |= {0}
+                self  #@
+
+        class Items(list):
+            pass
+
+        items = Items()
+        items += [1]
+        items  #@
+
+        class Mapping(dict):
+            pass
+
+        mapping = Mapping()
+        mapping |= {"a": 1}
+        mapping  #@
+
+        data = bytearray()
+        data += b"a"
+        data  #@
+        """)
+    for node, name in zip(ast_nodes, ("Ints", "Items", "Mapping", "bytearray")):
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == name
+
+
+def test_augassign_builtin_container_subclass_instance_attrs() -> None:
+    """Attributes assigned to ``self`` after an in-place operator are recorded."""
+    klass = extract_node("""
+        class Ints(set):
+            def __init__(self):
+                self |= {0}
+                self.member = True
+        """)
+    assert "member" in klass.instance_attrs
+
+
+def test_augassign_user_defined_inplace_operator_still_inferred() -> None:
+    """A Python-level in-place operator is still inferred from its body."""
+    node = extract_node("""
+        class A:
+            def __ior__(self, other):
+                return 42
+
+        a = A()
+        a |= 1
+        a  #@
+        """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 42
+
+
 def test_augassign_recursion() -> None:
     """Make sure inference doesn't throw a RecursionError.
 
