@@ -1161,3 +1161,91 @@ def test_getattr_on_property_fset_with_annassign_does_not_crash() -> None:
             getattr(Base.x, "fset", None)  #@
     """)
     next(node.infer())
+
+
+def test_property_fset_fdel_without_accessors_are_none() -> None:
+    """``fset``/``fdel`` of a decorated property without setter/deleter are None.
+
+    Regression test for pylint-dev/pylint#8739.
+    """
+    fset, fdel = builder.extract_node("""
+    class C:
+        @property
+        def p(self):
+            return 1
+
+    C.p.fset  #@
+    C.p.fdel  #@
+    """)
+    for node in (fset, fdel):
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value is None
+
+
+def test_property_fset_fdel_with_accessors() -> None:
+    fset, fdel = builder.extract_node("""
+    class C:
+        @property
+        def p(self):
+            return 1
+
+        @p.setter
+        def p(self, value):
+            self._p = value
+
+        @p.deleter
+        def p(self):
+            del self._p
+
+    C.p.fset  #@
+    C.p.fdel  #@
+    """)
+    inferred = next(fset.infer())
+    assert isinstance(inferred, nodes.FunctionDef)
+    assert inferred.name == "fset"
+    inferred = next(fdel.infer())
+    assert isinstance(inferred, nodes.FunctionDef)
+    assert inferred.name == "fdel"
+
+
+def test_property_accessors_defined_in_any_order() -> None:
+    """The deleter can be defined before the setter."""
+    fset, fdel = builder.extract_node("""
+    class C:
+        @property
+        def p(self):
+            return 1
+
+        @p.deleter
+        def p(self):
+            del self._p
+
+        @p.setter
+        def p(self, value):
+            self._p = value
+
+    C.p.fset  #@
+    C.p.fdel  #@
+    """)
+    assert next(fset.infer()).name == "fset"
+    assert next(fdel.infer()).name == "fdel"
+
+
+def test_property_call_form_accessors_are_unknown() -> None:
+    """The accessors of ``property(getter, ...)`` are not known, so stay uninferable."""
+    fset, fdel = builder.extract_node("""
+    class C:
+        def _get(self):
+            return 1
+
+        def _set(self, value):
+            pass
+
+        p = property(_get, _set)
+
+    C.p.fset  #@
+    C.p.fdel  #@
+    """)
+    assert next(fset.infer()) is util.Uninferable
+    assert next(fdel.infer()) is util.Uninferable

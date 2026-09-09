@@ -1,0 +1,9 @@
+``fset`` and ``fdel`` of a property defined with the ``@property`` decorator are
+now inferred as ``None`` when the class body has no ``@name.setter`` or
+``@name.deleter``, matching the runtime, and ``fdel`` of a property that has a
+deleter is inferred as that function. Previously ``fset`` raised
+``InferenceError`` (which crashed pylint on ``C.p.fset``) and ``fdel`` was not
+known at all. The accessors of a property built by calling ``property()`` stay
+uninferable.
+
+Closes pylint-dev/pylint#8739

@@ -1019,29 +1019,44 @@ class PropertyModel(ObjectModel):
         property_accessor.postinit(args=func.args, body=func.body)
         return property_accessor
 
+    def _find_accessor(
+        self, kind: Literal["setter", "deleter"]
+    ) -> nodes.FunctionDef | nodes.AsyncFunctionDef | nodes.Const | nodes.Unknown:
+        """Find the ``@name.setter`` or ``@name.deleter`` function of a property
+        defined with the ``@property`` decorator, if the class body has one.
+
+        For a property without one, return ``None`` (the runtime value of
+        ``fset`` / ``fdel``). For a property built by calling ``property()``,
+        whose accessors are not known, return an ``Unknown`` node.
+        """
+        func = self._instance
+        function = func.function
+        if not (function.decorators and bases._is_property(function)):
+            return nodes.Unknown(parent=func)
+        for node in func.parent.body:
+            if not isinstance(node, (nodes.FunctionDef, nodes.AsyncFunctionDef)):
+                continue
+            # Match ``@name.setter`` syntactically first: once the name has been
+            # rebound by an earlier accessor, inferring the decorator no longer
+            # leads back to the property.
+            for decorator in node.decorators.nodes if node.decorators else ():
+                if (
+                    isinstance(decorator, nodes.Attribute)
+                    and decorator.attrname == kind
+                    and isinstance(decorator.expr, nodes.Name)
+                    and decorator.expr.name == function.name
+                ):
+                    return node
+            for dec_name in node.decoratornames():
+                if dec_name.endswith(f"{function.name}.{kind}"):
+                    return node
+        return node_classes.Const(value=None, parent=func)
+
     @property
     def attr_fset(self):
-        func = self._instance
-
-        def find_setter(func: Property) -> nodes.FunctionDef | None:
-            """
-            Given a property, find the corresponding setter function and returns it.
-
-            :param func: property for which the setter has to be found
-            :return: the setter function or None
-            """
-            for node in func.parent.body:
-                if isinstance(node, (nodes.FunctionDef, nodes.AsyncFunctionDef)):
-                    for dec_name in node.decoratornames():
-                        if dec_name.endswith(func.function.name + ".setter"):
-                            return node
-            return None
-
-        func_setter = find_setter(func)
-        if not func_setter:
-            raise InferenceError(
-                f"Unable to find the setter of property {func.function.name}"
-            )
+        func_setter = self._find_accessor("setter")
+        if not isinstance(func_setter, (nodes.FunctionDef, nodes.AsyncFunctionDef)):
+            return func_setter
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(
@@ -1065,6 +1080,38 @@ class PropertyModel(ObjectModel):
             end_col_offset=self._instance.end_col_offset,
         )
         property_accessor.postinit(args=func_setter.args, body=func_setter.body)
+        return property_accessor
+
+    @property
+    def attr_fdel(self) -> nodes.FunctionDef | nodes.Const | nodes.Unknown:
+        func_deleter = self._find_accessor("deleter")
+        if not isinstance(func_deleter, (nodes.FunctionDef, nodes.AsyncFunctionDef)):
+            return func_deleter
+
+        class PropertyFuncAccessor(nodes.FunctionDef):
+            def infer_call_result(
+                self,
+                caller: SuccessfulInferenceResult | None,
+                context: InferenceContext | None = None,
+            ) -> Iterator[InferenceResult]:
+                nonlocal func_deleter
+                if caller and len(caller.args) != 1:
+                    raise InferenceError(
+                        "fdel() needs a single argument", target=self, context=context
+                    )
+                yield from func_deleter.infer_call_result(
+                    caller=caller, context=context
+                )
+
+        property_accessor = PropertyFuncAccessor(
+            name="fdel",
+            parent=self._instance,
+            lineno=self._instance.lineno,
+            col_offset=self._instance.col_offset,
+            end_lineno=self._instance.end_lineno,
+            end_col_offset=self._instance.end_col_offset,
+        )
+        property_accessor.postinit(args=func_deleter.args, body=func_deleter.body)
         return property_accessor
 
     @property
