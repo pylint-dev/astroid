@@ -1249,3 +1249,53 @@ def test_property_call_form_accessors_are_unknown() -> None:
     """)
     assert next(fset.infer()) is util.Uninferable
     assert next(fdel.infer()) is util.Uninferable
+
+
+def test_property_accessor_calls_are_inferred() -> None:
+    """Calling ``fset``/``fdel`` infers the accessor's result, or fails on arity."""
+    fset_call, fdel_call, fset_bad, fdel_bad = builder.extract_node("""
+    class C:
+        @property
+        def p(self):
+            return 1
+
+        @p.setter
+        def p(self, value):
+            return "set"
+
+        @p.deleter
+        def p(self):
+            return "deleted"
+
+    C.p.fset(C(), 1)  #@
+    C.p.fdel(C())  #@
+    C.p.fset(C())  #@
+    C.p.fdel()  #@
+    """)
+    assert next(fset_call.infer()).value == "set"
+    assert next(fdel_call.infer()).value == "deleted"
+    with pytest.raises(InferenceError):
+        next(fset_bad.infer())
+    with pytest.raises(InferenceError):
+        next(fdel_bad.infer())
+
+
+def test_property_accessor_through_an_alias() -> None:
+    """An accessor decorated through another name is found by inference."""
+    fset, fset_call = builder.extract_node("""
+    class C:
+        @property
+        def p(self):
+            return 1
+
+        alias = p
+
+        @alias.setter
+        def p(self, value):
+            return 2
+
+    C.p.fset  #@
+    C.p.fset(C(), 1)  #@
+    """)
+    assert next(fset.infer()).name == "fset"
+    assert next(fset_call.infer()).value == 2
