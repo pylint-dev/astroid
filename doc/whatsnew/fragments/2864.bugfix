@@ -1,0 +1,6 @@
+Infer ``pathlib.Path.parents`` subscripts through a name the sequence was assigned
+to, as in ``parents = path.parents; parents[0]``, not only when subscripted directly.
+The check now looks at the path whose ``parents`` are subscripted rather than at what
+the property returns, which changed in Python 3.13 and again in 3.14.
+
+Closes #2864
