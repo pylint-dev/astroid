@@ -1,0 +1,6 @@
+The inference of calls to builtins such as ``type()``, ``len()``, ``list()`` or
+``dict.fromkeys()`` no longer applies when the name refers to a parameter, a
+variable or an import that shadows the builtin, as in ``def f(x, type): return
+type(x)``; the call is inferred through the shadowing definition instead.
+
+Closes pylint-dev/pylint#10994

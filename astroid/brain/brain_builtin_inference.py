@@ -212,14 +212,23 @@ def _builtin_filter_predicate(node, builtin_name) -> bool:
         # ```
         return False
     if isinstance(node.func, nodes.Name):
-        return node.func.name == builtin_name
+        return node.func.name == builtin_name and _refers_to_builtin(node.func)
     if isinstance(node.func, nodes.Attribute):
         return (
             node.func.attrname == "fromkeys"
             and isinstance(node.func.expr, nodes.Name)
             and node.func.expr.name == "dict"
+            and _refers_to_builtin(node.func.expr)
         )
     return False
+
+
+def _refers_to_builtin(node: nodes.Name) -> bool:
+    """Whether *node* refers to the builtin of that name, rather than to a
+    parameter, a variable or an import that shadows it.
+    """
+    scope, _ = node.lookup(node.name)
+    return isinstance(scope, nodes.Module) and scope.name == "builtins"
 
 
 def register_builtin_transform(

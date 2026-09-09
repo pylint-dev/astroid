@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from astroid import nodes, objects, util
+from astroid import bases, nodes, objects, util
 from astroid.builder import _extract_single_node, extract_node
 
 
@@ -156,3 +156,78 @@ class Number:
 """)
         inferit = function_def.infer_call_result(function_def, context=None)
         assert [a.name for a in inferit] == [util.Uninferable]
+
+
+class TestShadowedBuiltins:
+    """The builtin inference tips must not apply to a name that shadows a builtin.
+
+    Regression tests for pylint-dev/pylint#10994.
+    """
+
+    def test_parameter_shadowing_type(self) -> None:
+        node = extract_node("""
+        def convert(value, type):
+            return type(value)
+
+        convert(12.34, str)  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.qname() == "builtins.str"
+
+    def test_parameter_shadowing_len(self) -> None:
+        node = extract_node("""
+        def convert(value, len):
+            return len(value)
+
+        convert([1], str)  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.qname() == "builtins.str"
+
+    def test_module_level_shadowing(self) -> None:
+        node = extract_node("""
+        type = str
+        type(1)  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.qname() == "builtins.str"
+
+    def test_shadowed_dict_fromkeys(self) -> None:
+        node = extract_node("""
+        class dict:
+            @staticmethod
+            def fromkeys(keys):
+                return 42
+
+        dict.fromkeys([1])  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 42
+
+    def test_builtins_still_inferred(self) -> None:
+        type_call, len_call, fromkeys_call = extract_node("""
+        type(1)  #@
+        len([1, 2])  #@
+        dict.fromkeys([1])  #@
+        """)
+        inferred = next(type_call.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert inferred.name == "int"
+        inferred = next(len_call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 2
+        assert isinstance(next(fromkeys_call.infer()), nodes.Dict)
+
+    def test_rebinding_from_the_builtin_itself(self) -> None:
+        """``list = list(...)`` evaluates the builtin before rebinding the name."""
+        node = extract_node("""
+        list = list((1, 2))
+        list  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.List)
+        assert [elt.value for elt in inferred.elts] == [1, 2]
