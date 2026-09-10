@@ -1,0 +1,7 @@
+Fix a crash when a ``namedtuple`` or ``Enum`` type name or field name
+contains ``str.format`` markup, as in ``namedtuple("{0}", "abc")``. The name
+is interpolated into an error message that astroid then reformats, so
+building the message raised ``IndexError``. Inference now falls back to its
+default.
+
+Closes #3199
