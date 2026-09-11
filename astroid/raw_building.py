@@ -558,10 +558,15 @@ class InspectBuilder:
                 attach_dummy_node(node, name, member)
                 return True
 
-        # On PyPy during bootstrapping we infer _io while _module is
-        # builtins. In CPython _io names itself io, see http://bugs.python.org/issue18602
-        # Therefore, this basically checks whether we are not in PyPy.
-        if modname == "_io" and not self._module.__name__ == "builtins":
+        # A C accelerator module and the public module re-exporting it disagree
+        # about which of the two owns a member, in either direction. ``_ast``
+        # builds as ``_ast`` while ``_ast.AST.__module__`` is ``"ast"``, and
+        # before 3.12 ``_io`` built as ``io`` while
+        # ``_io.BufferedReader.__module__`` was ``"_io"``, see
+        # http://bugs.python.org/issue18602. Recording an import either way
+        # makes the two modules point at each other, so the member ends up
+        # uninferable. Build it here instead, this is where it really lives.
+        if self._module.__name__ in {f"_{modname}", modname.removeprefix("_")}:
             return False
 
         real_name = {"gtk": "gtk_gtk"}.get(modname, modname)

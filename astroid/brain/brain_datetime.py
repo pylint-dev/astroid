@@ -4,15 +4,20 @@
 
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
-from astroid.builder import AstroidBuilder
 from astroid.const import PY312_PLUS
 from astroid.manager import AstroidManager
 
 
 def datetime_transform() -> nodes.Module:
     """The datetime module was C-accelerated in Python 3.12, so use the
-    Python source."""
-    return AstroidBuilder(AstroidManager()).string_build("from _pydatetime import *")
+    Python source.
+
+    Hand over the module itself rather than a ``from _pydatetime import *``.
+    The extender adopts the classes it is given, so they end up named after
+    ``datetime``, which is where they are imported from, instead of after the
+    implementation they happen to be read from.
+    """
+    return AstroidManager().ast_from_module_name("_pydatetime")
 
 
 def register(manager: AstroidManager) -> None:

@@ -1904,6 +1904,23 @@ def test_crypt_brain() -> None:
         assert attr in module
 
 
+@pytest.mark.parametrize("name", ["time", "date", "datetime", "timedelta"])
+def test_datetime_brain_uses_public_names(name: str) -> None:
+    """The classes are named after datetime, not after the module they are read from.
+
+    ``datetime`` is written in C and astroid reads it from ``_pydatetime``.
+    Consumers match these classes by name, so the name has to be the one the
+    code under analysis imports, not the implementation detail behind it.
+    """
+    node = builder.extract_node(f"import datetime; datetime.{name}")
+    qnames = [inferred.qname() for inferred in node.inferred()]
+    assert f"datetime.{name}" in qnames
+    if PY312_PLUS:
+        # The C module is the only implementation, so there is nothing else to
+        # infer. Before 3.12 ``datetime.py`` carries a Python one as well.
+        assert qnames == [f"datetime.{name}"]
+
+
 @pytest.mark.parametrize(
     "code,expected_class,expected_value",
     [
