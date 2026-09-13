@@ -139,23 +139,24 @@ class SixBrainTest(unittest.TestCase):
         assert next(klass.ancestors()).name == "Enum"
 
     def test_with_metaclass_no_arguments(self) -> None:
-        # ``six.with_metaclass()`` with no positional argument must not crash
-        # the module build; the class is simply left untransformed.
-        module = builder.parse("""
+        # ``six.with_metaclass()`` with no positional metaclass argument is
+        # invalid; the transform raises InferenceError instead of IndexError.
+        for call in ("six.with_metaclass()", "six.with_metaclass(a=1)"):
+            with self.assertRaises(astroid.InferenceError):
+                builder.parse(f"""
+                import six
+                class A({call}):
+                    pass
+                """)
+        # With more than one base the class transform does not apply and the
+        # call itself is inferred; that raises too instead of yielding a
+        # bogus ``temporary_class`` ancestor.
+        klass = builder.extract_node("""
         import six
-        class A(six.with_metaclass()):
-            pass
-
-        class B(six.with_metaclass(a=1)):
+        class B(six.with_metaclass(), object):  #@
             pass
         """)
-        for name in ("A", "B"):
-            klass = module[name]
-            self.assertIsInstance(klass, nodes.ClassDef)
-            self.assertIsNone(getattr(klass, "_metaclass", None))
-            # Inferring the invalid call raises an InferenceError rather than
-            # yielding a bogus ``temporary_class`` ancestor.
-            self.assertEqual([a.name for a in klass.ancestors()], [])
+        self.assertEqual([a.name for a in klass.ancestors()], ["object"])
 
     def test_six_with_metaclass_with_additional_transform(self) -> None:
         def transform_class(cls: Any) -> ClassDef:

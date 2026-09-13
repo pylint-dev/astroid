@@ -222,9 +222,10 @@ def transform_six_with_metaclass(node):
     call = node.bases[0]
     if not call.args:
         # ``six.with_metaclass()`` written with no positional metaclass
-        # argument is invalid, but the predicate still matches it. Leave the
-        # class untransformed instead of indexing into an empty argument list.
-        return node
+        # argument is invalid, but the predicate still matches it.
+        raise InferenceError(
+            "six.with_metaclass() call has no metaclass argument", node=node
+        )
     node._metaclass = call.args[0]
     return node
 
