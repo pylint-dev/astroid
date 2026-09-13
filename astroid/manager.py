@@ -10,6 +10,7 @@ from various source and using a cache of built modules)
 from __future__ import annotations
 
 import collections
+import copy
 import os
 import types
 import zipimport
@@ -323,8 +324,11 @@ class AstroidManager:
                 )
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, AstroidBuildingError):
-            # we remove the traceback here to save on memory usage (since these exceptions are cached)
-            raise value.with_traceback(None)  # pylint: disable=no-member
+            # Raise a copy: as the exception propagates, Python attaches a fresh
+            # traceback to the object being raised. Raising the cached instance
+            # itself would pin the whole caller stack in the cache, and re-pin a
+            # new one on every cache hit.
+            raise copy.copy(value).with_traceback(None)
         return value
 
     def ast_from_module(
