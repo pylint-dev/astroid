@@ -1583,14 +1583,9 @@ def test_replace_frozen_dataclass() -> None:
 
 
 def test_property_default_huge_int_does_not_crash() -> None:
-    """A field shadowed by a property returning an integer too large to stringify
-    must not crash the dataclass transform.
-
-    ``_generate_dataclass_init`` renders the inferred property result as the
-    parameter default via ``as_string()``; ``repr()`` of an int past
-    ``sys.get_int_max_str_digits()`` raises ``ValueError``, which used to escape
-    the transform while merely building the module. The field keeps a default
-    (falling back to ``Uninferable``) rather than being dropped.
+    """A field shadowed by a property returning an integer too large to ``repr()``
+    (past ``sys.get_int_max_str_digits()``) must not crash the dataclass
+    transform, and the generated ``__init__`` keeps that integer as the default.
     """
     klass, call = astroid.extract_node("""
     from dataclasses import dataclass
@@ -1606,7 +1601,9 @@ def test_property_default_huge_int_does_not_crash() -> None:
     """)
     init = klass.locals["__init__"][0]
     assert [a.name for a in init.args.args] == ["self", "x"]
-    assert init.args.defaults[0].as_string() == "Uninferable"
+    default = init.args.defaults[0]
+    assert isinstance(default, nodes.Const)
+    assert default.value == 10**5000
 
     inferred = list(call.infer())
     assert len(inferred) == 1

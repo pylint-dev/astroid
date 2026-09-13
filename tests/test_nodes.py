@@ -83,6 +83,14 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.as_string(), "[Uninferable]")
         self.assertEqual(binop.as_string(), "[arg] * 1")
 
+    def test_as_string_int_past_str_digits_limit(self) -> None:
+        # repr() of this int raises ValueError under the default
+        # sys.get_int_max_str_digits() limit; hex is exempt and round-trips.
+        node = builder.extract_node("10 ** 5000")
+        inferred = next(node.infer())
+        self.assertEqual(inferred.as_string(), hex(10**5000))
+        self.assertEqual(builder.extract_node(inferred.as_string()).value, 10**5000)
+
     def test_frozenset_as_string(self) -> None:
         ast_nodes = builder.extract_node("""
         frozenset((1, 2, 3)) #@
