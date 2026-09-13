@@ -268,6 +268,9 @@ class Module(LocalsDictNodeNG):
         self.future_imports: set[str] = set()
         """The imports from ``__future__``."""
 
+        self._dynamic_getattr_nodes: dict[str, node_classes.NodeNG] = {}
+        """A map of the name served by a PEP 562 ``__getattr__`` to the node standing for it."""
+
         super().__init__(
             lineno=0, parent=None, col_offset=0, end_lineno=None, end_col_offset=None
         )
@@ -364,13 +367,83 @@ class Module(LocalsDictNodeNG):
             try:
                 result = [self.import_module(name, relative_only=True)]
             except (AstroidBuildingError, SyntaxError) as exc:
+                dynamic_attr = self._dynamic_getattr_node(name, context)
+                if dynamic_attr is not None:
+                    return [dynamic_attr]
                 raise AttributeInferenceError(
                     target=self, attribute=name, context=context
                 ) from exc
         result = [n for n in result if not isinstance(n, node_classes.DelName)]
         if result:
             return result
+        dynamic_attr = self._dynamic_getattr_node(name, context)
+        if dynamic_attr is not None:
+            return [dynamic_attr]
         raise AttributeInferenceError(target=self, attribute=name, context=context)
+
+    def dynamic_getattr(self) -> FunctionDef | None:
+        """Get the module level ``__getattr__`` of this module, if it has one.
+
+        A module can define a module level ``__getattr__`` (:pep:`562`) to serve
+        names that are not defined statically, so a failed lookup on such a
+        module does not mean the name is missing at runtime.
+
+        :returns: The ``__getattr__`` function, or None if there is none.
+        """
+        for local in reversed(self.locals.get("__getattr__", ())):
+            if isinstance(local, FunctionDef):
+                return local
+        return None
+
+    def has_dynamic_getattr(self, context: InferenceContext | None = None) -> bool:
+        """Check if the module defines a module level ``__getattr__`` (:pep:`562`).
+
+        :returns: Whether the module has a :pep:`562` ``__getattr__``.
+        """
+        return self.dynamic_getattr() is not None
+
+    def _dynamic_getattr_node(
+        self, name: str, context: InferenceContext | None = None
+    ) -> node_classes.NodeNG | None:
+        """Build the node standing for *name* when ``__getattr__`` serves it.
+
+        This is the ``__getattr__(name)`` call itself: inferring it gives the
+        value the module author returns for *name*, which is as much as can be
+        known about a name that is not defined statically. A ``__getattr__``
+        that returns nothing, such as the ``...`` body of a stub, only says that
+        the name exists, so an ``Unknown`` stands for it instead. Names starting
+        with ``__`` are left alone, as for classes.
+
+        The node is cached: inferring the same name twice has to reach the very
+        same node, otherwise the recursion guard of the inference context cannot
+        recognise it.
+
+        :returns: The node, or None if the module cannot serve *name*.
+        """
+        if name.startswith("__"):
+            return None
+        served = self._dynamic_getattr_nodes.get(name)
+        if served is None:
+            getattr_function = self.dynamic_getattr()
+            if getattr_function is None:
+                return None
+            if any(
+                returns.value is not None
+                for returns in getattr_function._get_return_nodes_skip_functions()
+            ):
+                call = node_classes.Call(
+                    lineno=0, col_offset=0, parent=self, end_lineno=0, end_col_offset=0
+                )
+                call.postinit(
+                    func=getattr_function,
+                    args=[node_classes.Const(name, parent=call)],
+                    keywords=[],
+                )
+                served = call
+            else:
+                served = node_classes.Unknown(parent=self)
+            self._dynamic_getattr_nodes[name] = served
+        return served
 
     def igetattr(
         self, name: str, context: InferenceContext | None = None
