@@ -625,25 +625,26 @@ class EnumBrainTest(unittest.TestCase):
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
 
-    def test_enum_oversized_integer_member_does_not_crash(self) -> None:
-        """A member value that cannot be rendered back into the mocked class body.
+    def test_enum_oversized_integer_member(self) -> None:
+        """An int member past ``sys.get_int_max_str_digits()`` is still mocked.
 
-        A hexadecimal literal is accepted by the tokenizer but its decimal
-        formatting can exceed ``sys.get_int_max_str_digits``, which used to make
-        the enum transform raise an uncaught ``ValueError``.
+        A hexadecimal literal is accepted by the tokenizer, but rendering its
+        value back in decimal used to make the enum transform raise ``ValueError``.
         """
         oversized = "0x" + "f" * 4000
-        class_node, member_value = builder.extract_node(f"""
+        big_value, small_value = builder.extract_node(f"""
         import enum
 
-        class Flags(enum.IntFlag):  #@
+        class Flags(enum.IntFlag):
             A = {oversized}
             B = 2
 
+        Flags.A.value  #@
         Flags.B.value  #@
         """)
-        assert isinstance(next(class_node.infer()), nodes.ClassDef)
-        # The unrepresentable member is left untransformed, but a well-formed
-        # sibling is still mocked and infers to its value.
-        inferred = member_value.inferred()
-        assert [n.value for n in inferred if isinstance(n, nodes.Const)] == [2]
+        inferred = next(big_value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == int(oversized, 16)
+        inferred = next(small_value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 2
