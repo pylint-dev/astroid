@@ -12,7 +12,7 @@ import pytest
 
 import astroid
 from astroid import bases, builder, nodes, objects, util
-from astroid.exceptions import InferenceError
+from astroid.exceptions import AttributeInferenceError, InferenceError
 from astroid.manager import AstroidManager
 
 
@@ -537,6 +537,41 @@ class EnumBrainTest(unittest.TestCase):
         mars, radius = enum_members.items
         assert mars[1].name == "MARS"
         assert radius[1].name == "radius"
+
+    def test_enum_bare_annotation_is_not_a_member(self) -> None:
+        """Originally reported in https://github.com/pylint-dev/pylint/issues/11413.
+
+        An annotation without a value declares the type of the member values, it
+        does not create a member, so it must not be replaced by the mocked member
+        class. ``Planet.mass`` raises ``AttributeError`` at runtime.
+        """
+        enum_class = astroid.extract_node("""
+        from enum import Enum
+        class Planet(Enum): #@
+            mass: int
+            MARS = 1
+        """)
+        with pytest.raises(AttributeInferenceError):
+            enum_class.getattr("mass")
+        mars = next(enum_class.igetattr("MARS"))
+        assert next(mars.igetattr("value")).value == 1
+
+    def test_enum_annotated_member_is_still_a_member(self) -> None:
+        """An annotation followed by an assignment of the same name is a member.
+
+        ``Planet.MARS`` is a member at runtime, so the annotation must not hide
+        the assignment that gives it its value.
+        """
+        enum_class = astroid.extract_node("""
+        from enum import Enum
+        class Planet(Enum): #@
+            MARS: int
+            MARS = 1
+        """)
+        mars = next(enum_class.igetattr("MARS"))
+        assert next(mars.igetattr("value")).value == 1
+        enum_members = next(enum_class.igetattr("__members__"))
+        assert [name.value for name, _ in enum_members.items] == ["MARS"]
 
     def test_local_enum_child_class_inference(self) -> None:
         """Originally reported in https://github.com/pylint-dev/pylint/issues/8897

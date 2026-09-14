@@ -2538,9 +2538,10 @@ def test_enums_type_annotation_str_member() -> None:
 
 @pytest.mark.parametrize("annotation", ["bool", "dict", "int", "str"])
 def test_enums_type_annotation_no_value(annotation) -> None:
-    """A type-annotated member of an Enum class which has no value where:
-    - `member.value.value` is `None`
-    is not inferred
+    """An annotation with no value in an Enum class body is not a member.
+
+    It declares the type of the member values, so the name it declares does not
+    exist at runtime and is not inferred as a member.
     """
     node = builder.extract_node("""
     from enum import Enum
@@ -2549,8 +2550,8 @@ def test_enums_type_annotation_no_value(annotation) -> None:
 
     Veg.TOMATO.value
     """)
-    inferred_member_value = node.inferred()[0]
-    assert inferred_member_value.value is None
+    with pytest.raises(InferenceError):
+        node.inferred()
 
 
 def test_enums_value2member_map_() -> None:
