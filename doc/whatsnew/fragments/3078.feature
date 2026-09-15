@@ -1,7 +1,6 @@
-``.pyi`` stub files are now loaded and used during inference. Stub
-function bodies (``...`` or ``pass``) infer the return type from the
-annotation, annotated assignments produce instances of the annotated type,
-and compiled extensions with an adjacent stub use the stub instead of
-runtime introspection.
+When ``--prefer-stubs`` is enabled in Pylint, ``.pyi`` stub files are now loaded
+and used during inference, and compiled extensions with an adjacent stub use
+the stub instead of runtime introspection. Stub functions whose bodies contain
+only ``...``, ``pass``, or a docstring infer the return type from the annotation.
 
 Closes #3078
