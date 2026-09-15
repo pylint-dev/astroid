@@ -2851,6 +2851,47 @@ class StubScopedNodeTest(unittest.TestCase):
         assert isinstance(results[0], Instance)
         assert results[0].name == "int"
 
+    def test_stub_docstring_only_infers_return_annotation(self) -> None:
+        for prefix in ("def", "async def"):
+            with self.subTest(prefix=prefix):
+                module = builder.parse(
+                    f'{prefix} f() -> str:\n    """Documentation"""',
+                    is_stub=True,
+                )
+                func = module.body[0]
+                assert func.body == []
+                assert isinstance(func.doc_node, nodes.Const)
+                assert func.doc_node.value == "Documentation"
+                results = list(func.infer_call_result(None))
+                assert len(results) == 1
+                assert isinstance(results[0], Instance)
+                assert results[0].name == "str"
+                compile(module.as_string(), "<stub>", "exec")
+
+    def test_stub_docstring_only_without_annotation_is_uninferable(self) -> None:
+        module = builder.parse('def f():\n    """Documentation"""', is_stub=True)
+        assert list(module.body[0].infer_call_result(None)) == [util.Uninferable]
+
+    def test_stub_docstring_only_property_infers_annotation(self) -> None:
+        module = builder.parse(
+            '''
+            class Validator:
+                @property
+                def title(self) -> str:
+                    """The title of the schema"""
+            value = Validator().title
+            ''',
+            is_stub=True,
+        )
+        result = next(module.locals["value"][0].infer())
+        assert isinstance(result, Instance)
+        assert result.name == "str"
+
+    def test_nonstub_docstring_only_inference_is_unchanged(self) -> None:
+        module = builder.parse('def f() -> str:\n    """Documentation"""')
+        with self.assertRaises(InferenceError):
+            list(module.body[0].infer_call_result(None))
+
     def test_stub_funcdef_non_placeholder_body_has_implicit_none_return(self) -> None:
         module = builder.parse("def f() -> int:\n    x = 1\n    x", is_stub=True)
         func = module.body[0]

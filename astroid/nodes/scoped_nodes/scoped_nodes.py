@@ -1554,7 +1554,9 @@ class FunctionDef(
 
     @staticmethod
     def _is_stub_placeholder_body(body: list[NodeNG]) -> bool:
-        """Check if a function body is a stub placeholder (``...`` or ``pass``)."""
+        """Check if a function body is empty, ``...``, or ``pass``."""
+        if not body:
+            return True
         if len(body) != 1:
             return False
         statement = body[0]
