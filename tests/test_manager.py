@@ -392,6 +392,35 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             None,
         )
 
+    def test_file_from_module_name_cached_exception_has_no_traceback(self) -> None:
+        """The cached exception must not hold on to the caller's stack.
+
+        Raising the cached instance itself lets Python attach a fresh traceback to
+        it while it propagates, which keeps every caller frame alive for as long as
+        the cache does. Check the cache, not the raised object: the raised one is
+        expected to carry a traceback.
+        """
+        modname = "unhandledModuleWithoutTraceback"
+        key = (modname, None)
+        # ``_mod_file_cache`` lives in ``AstroidManager.brain`` and is shared
+        # between manager instances, so drop our entry again afterwards.
+        try:
+            # The second call is a cache hit, which used to re-pin a new stack.
+            for _ in range(2):
+                # Not ``assertRaises``: it calls ``with_traceback(None)`` on the
+                # exception it caught, which would clear the cached one for us.
+                try:
+                    self.manager.file_from_module_name(modname, None)
+                except AstroidBuildingError:
+                    pass
+                else:
+                    self.fail("file_from_module_name did not raise")
+                cached = self.manager._mod_file_cache[key]
+                assert isinstance(cached, AstroidImportError)
+                self.assertIsNone(cached.__traceback__)
+        finally:
+            self.manager._mod_file_cache.pop(key, None)
+
     def test_ast_from_module(self) -> None:
         ast = self.manager.ast_from_module(unittest)
         self.assertEqual(ast.pure_python, True)

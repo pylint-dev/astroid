@@ -1,0 +1,8 @@
+``AstroidManager.file_from_module_name`` no longer lets its cache of failed imports
+hold on to the stack of whichever call first hit the failure. The cached exception
+was raised as-is, so Python attached a fresh traceback to it as it propagated,
+pinning every caller frame for as long as the cache lives, and re-pinning a new one
+on each cache hit. A copy is raised instead. This frees memory, not time: how much
+depends on how many distinct imports fail, and there is no change in run time.
+
+Refs #3278
