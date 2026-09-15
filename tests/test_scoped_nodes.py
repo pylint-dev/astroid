@@ -2543,15 +2543,22 @@ def test_enums_type_annotation_no_value(annotation) -> None:
     It declares the type of the member values, so the name it declares does not
     exist at runtime and is not inferred as a member.
     """
-    node = builder.extract_node("""
+    node = builder.extract_node(f"""
     from enum import Enum
     class Veg(Enum):
         TOMATO: {annotation}
 
     Veg.TOMATO.value
     """)
-    with pytest.raises(InferenceError):
-        node.inferred()
+    # The lookup of a name an Enum class does not have is delegated to
+    # ``EnumMeta.__getattr__`` up to Python 3.11, which gives ``Uninferable``.
+    # That method was removed from the standard library in 3.12, leaving
+    # nothing to delegate to, so from 3.12 on the inference fails instead.
+    if PY312_PLUS:
+        with pytest.raises(InferenceError):
+            node.inferred()
+    else:
+        assert node.inferred() == [util.Uninferable]
 
 
 def test_enums_value2member_map_() -> None:
