@@ -204,11 +204,13 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     class complex64(complexfloating): pass
     class int16(signedinteger): pass
     class float96(floating): pass
+    class float128(floating): pass
     class int8(signedinteger): pass
     class uint32(unsignedinteger): pass
     class uint8(unsignedinteger): pass
     class _typedict(dict): pass
     class complex192(complexfloating): pass
+    class complex256(complexfloating): pass
     class timedelta64(signedinteger):
         def __init__(self, nb, unit=None): pass
     class int32(signedinteger): pass
@@ -270,6 +272,25 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     return parse(module_src)
 
 
+def _inject_numpy_platform_scalar_types(node: nodes.Module) -> None:
+    """Copy platform-specific scalar types into the top-level numpy module.
+
+    NumPy 2 binds these names through a ``globals()`` loop that static
+    analysis cannot track. This mirrors NumPy 1.x, where the same fake
+    classes reached the top level through a star import.
+    """
+    extension = numpy_core_numerictypes_transform()
+    for name in ("float96", "float128", "complex192", "complex256"):
+        if name in node.locals:
+            continue
+        objs = extension.locals.get(name)
+        if objs:
+            for obj in objs:
+                if isinstance(obj, nodes.NodeNG) and obj.parent is extension:
+                    obj.parent = node
+            node.locals[name] = objs
+
+
 def register(manager: AstroidManager) -> None:
     register_module_extender(
         manager, "numpy.core.numerictypes", numpy_core_numerictypes_transform
@@ -277,4 +298,7 @@ def register(manager: AstroidManager) -> None:
     # NumPy 2.0 renamed numpy.core to numpy._core; keep both hooks.
     register_module_extender(
         manager, "numpy._core.numerictypes", numpy_core_numerictypes_transform
+    )
+    manager.register_transform(
+        nodes.Module, _inject_numpy_platform_scalar_types, lambda n: n.name == "numpy"
     )
