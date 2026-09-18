@@ -7,7 +7,10 @@
 """Astroid hooks for numpy.core.numerictypes and numpy._core.numerictypes modules."""
 
 from astroid import nodes
-from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
+from astroid.brain.brain_numpy_utils import (
+    numpy_supports_type_hints,
+    numpy_version_2_or_later,
+)
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
@@ -110,7 +113,7 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
         def __class_getitem__(cls, value):
             return cls
         """
-    return parse(generic_src + """
+    module_src = generic_src + """
     class dtype(object):
         def __init__(self, obj, align=False, copy=False):
             self.alignment = None
@@ -216,45 +219,55 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     class int64(signedinteger): pass
 
     buffer_type = memoryview
-    bool8 = bool_
     byte = int8
-    bytes0 = bytes_
     cdouble = complex128
-    cfloat = complex128
     clongdouble = complex192
-    clongfloat = complex192
-    complex_ = complex128
     csingle = complex64
     double = float64
-    float_ = float64
     half = float16
-    int0 = int32
     int_ = int32
     intc = int32
     intp = int32
     long = int32
-    longcomplex = complex192
     longdouble = float96
-    longfloat = float96
     longlong = int64
-    object0 = object_
     object_ = object_
     short = int16
     single = float32
-    singlecomplex = complex64
-    str0 = str_
-    string_ = bytes_
     ubyte = uint8
     uint = uint32
-    uint0 = uint32
     uintc = uint32
     uintp = uint32
     ulonglong = uint64
+    ushort = uint16
+    """
+    if not numpy_version_2_or_later():
+        # Aliases removed in NumPy 2.0, kept for NumPy 1.x.
+        module_src += """
+    bool8 = bool_
+    bytes0 = bytes_
+    cfloat = complex128
+    clongfloat = complex192
+    complex_ = complex128
+    float_ = float64
+    int0 = int32
+    longcomplex = complex192
+    longfloat = float96
+    object0 = object_
+    singlecomplex = complex64
+    str0 = str_
+    string_ = bytes_
+    uint0 = uint32
     unicode = str_
     unicode_ = str_
-    ushort = uint16
     void0 = void
-    """)
+    """
+    if numpy_version_2_or_later():
+        # Added in NumPy 2.0.
+        module_src += """
+    class ulong(unsignedinteger): pass
+    """
+    return parse(module_src)
 
 
 def register(manager: AstroidManager) -> None:
