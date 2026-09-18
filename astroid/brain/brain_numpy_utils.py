@@ -20,6 +20,14 @@ def numpy_supports_type_hints() -> bool:
     return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
 
 
+def numpy_version_2_or_later() -> bool:
+    """Returns True if the installed numpy is version 2 or later."""
+    try:
+        return int(_get_numpy_version()[0]) >= 2
+    except ValueError:
+        return False
+
+
 def _get_numpy_version() -> tuple[str, str, str]:
     """
     Return the numpy version number if numpy can be imported.
