@@ -6,6 +6,7 @@ import platform
 import sys
 import textwrap
 import unittest
+from importlib.metadata import PackageNotFoundError, version
 from unittest import mock
 
 import pytest
@@ -27,6 +28,13 @@ except ImportError:
     HAS_NUMPY = False
 else:
     HAS_NUMPY = True
+
+try:
+    # numpy.distutils was removed in NumPy 2.0. Read the version from the
+    # installed metadata so the deprecated module is never imported here
+    HAS_NUMPY_DISTUTILS = int(version("numpy").split(".")[0]) < 2
+except (PackageNotFoundError, ValueError):
+    HAS_NUMPY_DISTUTILS = False
 
 
 class NonRegressionTests(unittest.TestCase):
@@ -103,13 +111,13 @@ multiply([1, 2], [3, 4])
         inferred = callfunc.inferred()
         self.assertEqual(len(inferred), 1)
 
-    @unittest.skipUnless(HAS_NUMPY and not PY312_PLUS, "Needs numpy and < Python 3.12")
+    @unittest.skipUnless(
+        HAS_NUMPY and HAS_NUMPY_DISTUTILS and not PY312_PLUS,
+        "Needs numpy.distutils (removed in numpy 2.0) and < Python 3.12",
+    )
     def test_numpy_distutils(self):
         """Special handling of virtualenv's patching of distutils shouldn't interfere
         with numpy.distutils.
-
-        PY312_PLUS -- This test will likely become unnecessary when Python 3.12 is
-        numpy's minimum version. (numpy.distutils will be removed then.)
         """
         node = extract_node("""
 from numpy.distutils.misc_util import is_sequence
