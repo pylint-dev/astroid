@@ -241,6 +241,8 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
     )
     def test_numpy_core_umath_numpy_2_ufuncs(self):
         """Test that ufuncs added in NumPy 2.0 are inferred."""
-        inferred_values = list(self._inferred_numpy_func_call("bitwise_count"))
-        self.assertTrue(len(inferred_values) == 1)
-        self.assertTrue(inferred_values[0].pytype() == ".ndarray")
+        for func_ in ("bitwise_count", "vecdot"):
+            with self.subTest(func=func_):
+                inferred_values = list(self._inferred_numpy_func_call(func_))
+                self.assertTrue(len(inferred_values) == 1)
+                self.assertTrue(inferred_values[0].pytype() == ".ndarray")
