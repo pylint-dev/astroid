@@ -9,6 +9,7 @@
 """Astroid hooks for numpy.core.umath and numpy._core.umath modules."""
 
 from astroid import nodes
+from astroid.brain.brain_numpy_utils import numpy_version_2_or_later
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
@@ -19,7 +20,7 @@ def numpy_core_umath_transform() -> nodes.Module:
         """out=None, where=True, casting='same_kind', order='K', """
         """dtype=None, subok=True"""
     )
-    return parse(f"""
+    src = f"""
     class FakeUfunc:
         def __init__(self):
             self.__doc__ = str()
@@ -144,7 +145,13 @@ def numpy_core_umath_transform() -> nodes.Module:
     right_shift = FakeUfuncTwoArgs()
     subtract = FakeUfuncTwoArgs()
     true_divide = FakeUfuncTwoArgs()
-    """)
+    """
+    if numpy_version_2_or_later():
+        # New ufuncs added in NumPy 2.0.
+        src += """
+    bitwise_count = FakeUfuncOneArg()
+    """
+    return parse(src)
 
 
 def register(manager: AstroidManager) -> None:
