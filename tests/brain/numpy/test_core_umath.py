@@ -12,6 +12,7 @@ except ImportError:
     HAS_NUMPY = False
 
 from astroid import bases, builder, nodes
+from astroid.brain.brain_numpy_utils import numpy_version_2_or_later
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -233,3 +234,13 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                             f" as a ndarray and not as {effective_infer}"
                         ),
                     )
+
+    @unittest.skipUnless(
+        HAS_NUMPY and numpy_version_2_or_later(),
+        "This test requires the numpy library with version 2 or later.",
+    )
+    def test_numpy_core_umath_numpy_2_ufuncs(self):
+        """Test that ufuncs added in NumPy 2.0 are inferred."""
+        inferred_values = list(self._inferred_numpy_func_call("bitwise_count"))
+        self.assertTrue(len(inferred_values) == 1)
+        self.assertTrue(inferred_values[0].pytype() == ".ndarray")
