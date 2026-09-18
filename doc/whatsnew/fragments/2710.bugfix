@@ -1,0 +1,4 @@
+Add support for NumPy 2.x, fixing false positives when analyzing
+code that uses NumPy 2.
+
+Closes #2710
