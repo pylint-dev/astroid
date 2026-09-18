@@ -6,7 +6,7 @@
 # `pylint` to emit `no-member` message for all numpy's attributes. (see pylint's module
 # typecheck in `_emit_no_member` function)
 
-"""Astroid hooks for numpy.core.umath module."""
+"""Astroid hooks for numpy.core.umath and numpy._core.umath modules."""
 
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
@@ -149,3 +149,5 @@ def numpy_core_umath_transform() -> nodes.Module:
 
 def register(manager: AstroidManager) -> None:
     register_module_extender(manager, "numpy.core.umath", numpy_core_umath_transform)
+    # NumPy 2.0 renamed numpy.core to numpy._core; keep both hooks.
+    register_module_extender(manager, "numpy._core.umath", numpy_core_umath_transform)
