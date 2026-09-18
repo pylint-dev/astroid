@@ -3,7 +3,7 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
 """
-Astroid hooks for numpy.core.einsumfunc module:
+Astroid hooks for numpy.core.einsumfunc and numpy._core.einsumfunc modules:
 https://github.com/numpy/numpy/blob/main/numpy/core/einsumfunc.py.
 """
 
@@ -23,4 +23,8 @@ def numpy_core_einsumfunc_transform() -> nodes.Module:
 def register(manager: AstroidManager) -> None:
     register_module_extender(
         manager, "numpy.core.einsumfunc", numpy_core_einsumfunc_transform
+    )
+    # NumPy 2.0 renamed numpy.core to numpy._core; keep both hooks.
+    register_module_extender(
+        manager, "numpy._core.einsumfunc", numpy_core_einsumfunc_transform
     )

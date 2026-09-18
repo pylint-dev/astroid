@@ -4,7 +4,7 @@
 
 # TODO(hippo91) : correct the methods signature.
 
-"""Astroid hooks for numpy.core.numerictypes module."""
+"""Astroid hooks for numpy.core.numerictypes and numpy._core.numerictypes modules."""
 
 from astroid import nodes
 from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
@@ -260,4 +260,8 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
 def register(manager: AstroidManager) -> None:
     register_module_extender(
         manager, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+    )
+    # NumPy 2.0 renamed numpy.core to numpy._core; keep both hooks.
+    register_module_extender(
+        manager, "numpy._core.numerictypes", numpy_core_numerictypes_transform
     )

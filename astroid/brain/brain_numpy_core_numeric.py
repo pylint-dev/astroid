@@ -2,7 +2,7 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
-"""Astroid hooks for numpy.core.numeric module."""
+"""Astroid hooks for numpy.core.numeric and numpy._core.numeric modules."""
 
 import functools
 
@@ -34,6 +34,10 @@ METHODS_TO_BE_INFERRED = {"ones": """def ones(shape, dtype=None, order='C'):
 def register(manager: AstroidManager) -> None:
     register_module_extender(
         manager, "numpy.core.numeric", numpy_core_numeric_transform
+    )
+    # NumPy 2.0 renamed numpy.core to numpy._core; keep both hooks.
+    register_module_extender(
+        manager, "numpy._core.numeric", numpy_core_numeric_transform
     )
 
     manager.register_transform(
