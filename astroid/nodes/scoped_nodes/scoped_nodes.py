@@ -874,6 +874,116 @@ def _infer_decorator_callchain(node):
     return None
 
 
+class TypeParamScope(LocalsDictNodeNG):
+    """The implicit scope created by PEP 695 type parameters.
+
+    A generic class, function or type alias such as ``class C[T: Bound]`` creates
+    a hidden scope (an "annotation scope" in CPython terms) that holds its type
+    parameters and that lexically wraps the owner. Type parameter bounds and
+    defaults are evaluated in this scope, so they may forward-reference names
+    defined later in an enclosing scope and may reference sibling type
+    parameters. The owner (the :class:`ClassDef`, :class:`FunctionDef` or
+    :class:`TypeAlias`) is the ``parent`` of this node.
+
+    The scope exists for name resolution only: it is reachable as the ``parent``
+    of the type parameters, but no node yields it from ``get_children()``, so the
+    visitable tree is exactly what it was before. The type parameters stay listed
+    in the owner's ``_astroid_fields`` and keep being registered in the owner's
+    ``locals``, so tree walkers and tools that model scopes from ``locals`` are
+    unaffected.
+    """
+
+    _astroid_fields = ("type_params",)
+    _other_other_fields = ("locals",)
+
+    def __init__(
+        self,
+        lineno: int,
+        col_offset: int,
+        parent: NodeNG,
+        *,
+        end_lineno: int | None,
+        end_col_offset: int | None,
+    ) -> None:
+        self.locals = {}
+        """A map of the name of a local variable to the node defining the local."""
+
+        super().__init__(
+            lineno=lineno,
+            col_offset=col_offset,
+            end_lineno=end_lineno,
+            end_col_offset=end_col_offset,
+            parent=parent,
+        )
+
+    @property
+    def type_params(
+        self,
+    ) -> list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]:
+        """The type parameters living in this scope.
+
+        They are owned by the parent (and listed in its ``_astroid_fields``), so
+        this is a view onto the parent's list rather than a second list reference
+        that could desync if a transform replaces them on the parent.
+        """
+        return self.parent.type_params if self.parent else []
+
+    @type_params.setter
+    def type_params(
+        self, value: list[nodes.TypeVar | nodes.ParamSpec | nodes.TypeVarTuple]
+    ) -> None:
+        # ``type_params`` is in ``_astroid_fields``, so a generic tree rewriter
+        # such as TransformVisitor may assign it. Write through to the owner to
+        # keep a single source of truth.
+        assert self.parent is not None
+        self.parent.type_params = value
+
+    def qname(self) -> str:
+        """Get the 'qualified' name of the node.
+
+        The scope is transparent for naming purposes, so this reports the
+        enclosing frame: a type parameter stays ``module.C.T`` rather than
+        gaining an intermediate component. Going through the frame also skips a
+        :class:`TypeAlias` owner, which is not a scope and whose ``qname()``
+        reports the runtime type (``typing.TypeAliasType``).
+        """
+        return self.frame().qname()
+
+    def scope_lookup(
+        self, node: _base_nodes.LookupMixIn, name: str, offset: int = 0
+    ) -> tuple[LocalsDictNodeNG, list[nodes.NodeNG]]:
+        """Lookup where the given name is assigned."""
+        # Type parameters declared together share a single scope, so a bound or
+        # default may reference a sibling regardless of declaration order.
+        if name in self.locals:
+            return self, list(self.locals[name])
+
+        # Bounds and defaults are evaluated lazily, so they may
+        # forward-reference names defined later in an enclosing scope. Resolve
+        # them in the enclosing scope(s) without line-based filtering. Class
+        # scopes do not extend to nested scopes, so the class body is skipped
+        # (mirroring LocalsDictNodeNG._scope_lookup), but an enclosing class's
+        # own type parameters remain visible.
+        assert self.parent is not None and self.parent.parent is not None
+        pscope: LocalsDictNodeNG | None = self.parent.parent.scope()
+        while pscope is not None:
+            if isinstance(pscope, ClassDef):
+                tp_scope = pscope.type_param_scope
+                if tp_scope is not None and name in tp_scope.locals:
+                    return tp_scope, list(tp_scope.locals[name])
+                pscope = pscope.parent and pscope.parent.scope()
+                continue
+            if name in pscope.locals:
+                return pscope, list(pscope.locals[name])
+            return pscope.scope_lookup(node, name)
+        # Only reachable if every enclosing scope is a class and the outermost
+        # one has no parent, mirroring LocalsDictNodeNG._scope_lookup.
+        return builtin_lookup(name)  # pragma: no cover
+
+    def get_children(self):
+        yield from self.type_params
+
+
 class Lambda(_base_nodes.FilterStmtsBaseNode, LocalsDictNodeNG):
     """Class representing an :class:`ast.Lambda` node.
 
@@ -1088,6 +1198,9 @@ class FunctionDef(
     )
     _multi_line_block_fields = ("body",)
     returns = None
+
+    type_param_scope: TypeParamScope | None = None
+    """The PEP 695 type parameter scope, if this function is generic."""
 
     decorators: node_classes.Decorators | None
     """The decorators that are applied to this method or function."""
@@ -1842,6 +1955,10 @@ class ClassDef(
 
     :type: Decorators or None
     """
+
+    type_param_scope: TypeParamScope | None = None
+    """The PEP 695 type parameter scope, if this class is generic."""
+
     special_attributes = ClassModel()
     """The names of special attributes that this class has.
 

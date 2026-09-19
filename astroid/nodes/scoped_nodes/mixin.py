@@ -92,6 +92,11 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         while pscope is not None:
             if not isinstance(pscope, scoped_nodes.ClassDef):
                 return pscope.scope_lookup(node, name)
+            # A class body does not extend to nested scopes, but its PEP 695
+            # type parameters do (they are visible in method bodies).
+            tp_scope = pscope.type_param_scope
+            if tp_scope is not None and name in tp_scope.locals:
+                return tp_scope, list(tp_scope.locals[name])
             pscope = pscope.parent and pscope.parent.scope()
 
         # self is at the top level of a module, or is enclosed only by ClassDefs
