@@ -12,7 +12,8 @@ from typing import Any
 import pytest
 
 import astroid
-from astroid import extract_node, nodes
+from astroid import builder, extract_node, nodes, protocols
+from astroid.bases import Instance
 from astroid.const import PY312_PLUS
 from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
@@ -574,3 +575,150 @@ class TestGenericTypeSyntax:
         assigned = next(param_spec.name.assigned_stmts())
         assert isinstance(assigned, nodes.ParamSpec)
         assert assigned is param_spec
+
+
+class StubAnnotationInferenceTest(unittest.TestCase):
+    def test_wrapper_lookup_preserves_inference_context(self) -> None:
+        module = builder.parse(
+            """
+            from typing import Dict
+            x: Dict[str, int] = ...
+            """,
+            is_stub=True,
+        )
+        assignment = module.body[1]
+        inferred = list(
+            protocols.infer_instance_from_annotation(
+                assignment.annotation, ctx=InferenceContext()
+            )
+        )
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "Dict"
+
+    def test_stub_annassign_infers_instance(self) -> None:
+        module = builder.parse("x: int = ...", is_stub=True)
+        ann = module.body[0]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "int"
+
+    def test_stub_classvar_unwrapped(self) -> None:
+        module = builder.parse(
+            """
+            from typing import ClassVar
+            x: ClassVar[int] = ...
+            """,
+            is_stub=True,
+        )
+        ann = module.body[1]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "int"
+
+    def test_stub_qualified_classvar_unwrapped(self) -> None:
+        module = builder.parse(
+            """
+            import typing
+            x: typing.ClassVar[int] = ...
+            """,
+            is_stub=True,
+        )
+        ann = module.body[1]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "int"
+
+    def test_stub_aliased_final_unwrapped(self) -> None:
+        module = builder.parse(
+            """
+            from typing import Final as Immutable
+            x: Immutable[int] = ...
+            """,
+            is_stub=True,
+        )
+        ann = module.body[1]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "int"
+
+    def test_user_defined_final_is_not_unwrapped(self) -> None:
+        module = builder.parse(
+            """
+            class Final:
+                def __class_getitem__(cls, item): ...
+            x: Final[int] = ...
+            """,
+            is_stub=True,
+        )
+        ann = module.body[1]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert inferred[0] is Uninferable
+
+    def test_unknown_subscript_annotation_is_uninferable(self) -> None:
+        module = builder.parse("x: Missing[int] = ...", is_stub=True)
+        ann = module.body[0]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert inferred[0] is Uninferable
+
+    def test_stub_annotated_unwrapped(self) -> None:
+        module = builder.parse(
+            """
+            from typing import Annotated
+            x: Annotated[int, 'meta'] = ...
+            """,
+            is_stub=True,
+        )
+        ann = module.body[1]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "int"
+
+    def test_stub_typing_extensions_annotated_unwrapped(self) -> None:
+        module = builder.parse(
+            """
+            from typing_extensions import Annotated
+            x: Annotated[int, 'meta'] = ...
+            """,
+            is_stub=True,
+        )
+        ann = module.body[1]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "int"
+
+    def test_stub_assign_with_type_comment(self) -> None:
+        module = builder.parse("x = ...  # type: int", is_stub=True)
+        assign = module.body[0]
+        inferred = list(assign.assigned_stmts())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "int"
+
+    def test_stub_annassign_undefined_annotation(self) -> None:
+        module = builder.parse("x: Undefined = ...", is_stub=True)
+        ann = module.body[0]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert inferred[0] is Uninferable
+
+    def test_stub_annassign_non_type_annotation(self) -> None:
+        module = builder.parse(
+            """
+            MY_CONST = 42
+            x: MY_CONST = ...
+            """,
+            is_stub=True,
+        )
+        ann = module.body[1]
+        inferred = list(ann.assigned_stmts())
+        assert len(inferred) == 1
+        assert inferred[0] is Uninferable

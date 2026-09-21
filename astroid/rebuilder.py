@@ -64,9 +64,11 @@ class TreeRebuilder:
         self,
         manager: AstroidManager,
         data: str | None = None,
+        is_stub: bool = False,
     ) -> None:
         self._manager = manager
         self._data = data.split("\n") if data else None
+        self._is_stub = is_stub
         self._global_names: list[dict[str, list[nodes.Global]]] = []
         self._import_from_nodes: list[tuple[nodes.ImportFrom, Collection[str]]] = []
         self._delayed_assattr: list[nodes.AssignAttr] = []
@@ -177,6 +179,7 @@ class TreeRebuilder:
             file=modpath,
             path=[modpath],
             package=package,
+            is_stub=self._is_stub,
         )
         newnode.postinit(
             [self.visit(child, newnode) for child in node.body],
