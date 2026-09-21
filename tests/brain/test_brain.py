@@ -942,13 +942,11 @@ class ReBrainTest(unittest.TestCase):
 
     def test_re_compile_inferred_as_pattern(self):
         """Test re.compile() is inferred as an instance of re.Pattern (#520)."""
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         import re
         _ENCODING_RGX = re.compile(r"f")
         _ENCODING_RGX #@
-        """
-        )
+        """)
         inferred = list(node.infer())
         assert len(inferred) == 1
         assert isinstance(inferred[0], Instance)
@@ -956,12 +954,10 @@ class ReBrainTest(unittest.TestCase):
 
     def test_re_compile_with_flags_inferred_as_pattern(self):
         """re.compile() with a flags argument is still inferred as re.Pattern."""
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
         import re
         re.compile(r"f", re.IGNORECASE) #@
-        """
-        )
+        """)
         inferred = list(node.infer())
         assert len(inferred) == 1
         assert isinstance(inferred[0], Instance)
