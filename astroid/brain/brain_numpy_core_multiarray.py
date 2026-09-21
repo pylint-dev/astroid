@@ -12,7 +12,6 @@ from astroid.brain.brain_numpy_utils import (
     infer_numpy_attribute,
     infer_numpy_name,
     member_name_looks_like_numpy_member,
-    numpy_version_2_or_later,
 )
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
@@ -28,13 +27,10 @@ def numpy_core_multiarray_transform() -> nodes.Module:
 
     def vdot(a, b):
         return numpy.ndarray([0, 0])
-        """
-    if numpy_version_2_or_later():
-        # New ufunc added in NumPy 2.0.
-        src += """
+
     def vecdot(a, b):
         return numpy.ndarray([0, 0])
-    """
+        """
     return parse(src)
 
 

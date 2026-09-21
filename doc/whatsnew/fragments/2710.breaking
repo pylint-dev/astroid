@@ -1,0 +1,6 @@
+Drop support for NumPy 1.x. The numpy brains now unconditionally describe the
+NumPy 2 API: aliases removed in NumPy 2.0 (``np.float_``, ``np.unicode_``, ...)
+are no longer inferred, and members added in NumPy 2.0 (``np.ulong``,
+``ndarray.mT``, ``np.vecdot``, ...) are always available.
+
+Refs #2710

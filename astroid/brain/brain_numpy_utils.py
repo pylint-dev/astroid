@@ -10,37 +10,6 @@ from astroid import nodes
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
 
-# Class subscript is available in numpy starting with version 1.20.0
-NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
-
-
-def numpy_supports_type_hints() -> bool:
-    """Returns True if numpy supports type hints."""
-    np_ver = _get_numpy_version()
-    return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
-
-
-def numpy_version_2_or_later() -> bool:
-    """Returns True if the installed numpy is version 2 or later."""
-    try:
-        return int(_get_numpy_version()[0]) >= 2
-    except ValueError:
-        return False
-
-
-def _get_numpy_version() -> tuple[str, str, str]:
-    """
-    Return the numpy version number if numpy can be imported.
-
-    Otherwise returns ('0', '0', '0')
-    """
-    try:
-        import numpy  # pylint: disable=import-outside-toplevel
-
-        return tuple(numpy.version.version.split("."))
-    except (ImportError, AttributeError):
-        return ("0", "0", "0")
-
 
 def infer_numpy_name(
     sources: dict[str, str], node: nodes.Name, context: InferenceContext | None = None
