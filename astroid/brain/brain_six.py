@@ -220,6 +220,12 @@ def transform_six_with_metaclass(node):
     If so, inject its argument as the metaclass of the underlying class.
     """
     call = node.bases[0]
+    if not call.args:
+        # ``six.with_metaclass()`` written with no positional metaclass
+        # argument is invalid, but the predicate still matches it.
+        raise InferenceError(
+            "six.with_metaclass() call has no metaclass argument", node=node
+        )
     node._metaclass = call.args[0]
     return node
 
