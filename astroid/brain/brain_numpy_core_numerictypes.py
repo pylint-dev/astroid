@@ -7,10 +7,6 @@
 """Astroid hooks for numpy.core.numerictypes and numpy._core.numerictypes modules."""
 
 from astroid import nodes
-from astroid.brain.brain_numpy_utils import (
-    numpy_supports_type_hints,
-    numpy_version_2_or_later,
-)
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
@@ -106,9 +102,7 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
         def transpose(self): return uninferable
         def var(self): return uninferable
         def view(self): return uninferable
-        """
-    if numpy_supports_type_hints():
-        generic_src += """
+
         @classmethod
         def __class_getitem__(cls, value):
             return cls
@@ -242,31 +236,7 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     uintp = uint32
     ulonglong = uint64
     ushort = uint16
-    """
-    if not numpy_version_2_or_later():
-        # Aliases removed in NumPy 2.0, kept for NumPy 1.x.
-        module_src += """
-    bool8 = bool_
-    bytes0 = bytes_
-    cfloat = complex128
-    clongfloat = complex192
-    complex_ = complex128
-    float_ = float64
-    int0 = int32
-    longcomplex = complex192
-    longfloat = float96
-    object0 = object_
-    singlecomplex = complex64
-    str0 = str_
-    string_ = bytes_
-    uint0 = uint32
-    unicode = str_
-    unicode_ = str_
-    void0 = void
-    """
-    if numpy_version_2_or_later():
-        # Added in NumPy 2.0.
-        module_src += """
+
     class ulong(unsignedinteger): pass
     """
     return parse(module_src)
@@ -276,8 +246,7 @@ def _inject_numpy_platform_scalar_types(node: nodes.Module) -> None:
     """Copy platform-specific scalar types into the top-level numpy module.
 
     NumPy 2 binds these names through a ``globals()`` loop that static
-    analysis cannot track. This mirrors NumPy 1.x, where the same fake
-    classes reached the top level through a star import.
+    analysis cannot track.
     """
     extension = numpy_core_numerictypes_transform()
     for name in ("float96", "float128", "complex192", "complex256"):

@@ -6,43 +6,9 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
-from importlib import metadata
-
 from astroid import nodes
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
-
-# Class subscript is available in numpy starting with version 1.20.0
-NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
-
-
-def numpy_supports_type_hints() -> bool:
-    """Returns True if numpy supports type hints."""
-    np_ver = _get_numpy_version()
-    return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
-
-
-def numpy_version_2_or_later() -> bool:
-    """Returns True if the installed numpy is version 2 or later."""
-    try:
-        return int(_get_numpy_version()[0]) >= 2
-    except ValueError:
-        return False
-
-
-@lru_cache
-def _get_numpy_version() -> tuple[str, str, str]:
-    """
-    Return the numpy version number if numpy is installed.
-
-    Otherwise returns ('0', '0', '0'). Read from the package metadata rather
-    than by importing numpy, which may resolve to the analysed code.
-    """
-    try:
-        return tuple(metadata.version("numpy").split("."))
-    except metadata.PackageNotFoundError:
-        return ("0", "0", "0")
 
 
 def infer_numpy_name(

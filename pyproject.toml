@@ -43,7 +43,7 @@ dev = [
 test = [
   # Packages used to run additional tests
   "attrs",
-  "numpy>=2.4.6,<3; python_version<'3.12'",
+  "numpy>=2.4.6,<3; python_version<'3.14'",
   "pyqt6",
   "python-dateutil",
   "regex",

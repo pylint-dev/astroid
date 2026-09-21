@@ -12,11 +12,6 @@ except ImportError:
     HAS_NUMPY = False
 
 from astroid import builder, nodes
-from astroid.brain.brain_numpy_utils import (
-    NUMPY_VERSION_TYPE_HINTS_SUPPORT,
-    numpy_supports_type_hints,
-    numpy_version_2_or_later,
-)
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -151,10 +146,6 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                     msg=f"Illicit type for {attr_:s} ({inferred_values[-1].pytype()})",
                 )
 
-    @unittest.skipUnless(
-        HAS_NUMPY and numpy_version_2_or_later(),
-        "This test requires the numpy library with version 2 or later.",
-    )
     def test_numpy_ndarray_numpy_2_members(self):
         """Test members added to ndarray in NumPy 2.0."""
         inferred_values = list(self._inferred_ndarray_attribute("mT"))
@@ -174,10 +165,6 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         self.assertTrue(len(inferred_values) == 1)
         self.assertIsInstance(inferred_values[-1], nodes.Const)
 
-    @unittest.skipUnless(
-        HAS_NUMPY and numpy_supports_type_hints(),
-        f"This test requires the numpy library with a version above {NUMPY_VERSION_TYPE_HINTS_SUPPORT}",
-    )
     def test_numpy_ndarray_class_support_type_indexing(self):
         """Test that numpy ndarray class can be subscripted (type hints)."""
         src = """
