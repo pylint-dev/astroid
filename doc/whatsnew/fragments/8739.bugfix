@@ -1,8 +1,10 @@
 Infer ``None`` for the ``fset`` of a property declared with ``@property`` and no
 ``.setter``, as CPython does, instead of raising. The lookup escaped as a bare
 ``StopIteration`` and was reported as a crash on code as simple as ``C.p.fset``.
-Properties built by a ``property(...)`` call are left as they were: the setter
-argument is not modelled, so ``fset`` stays uninferable rather than being reported
-as ``None``.
+
+A property built by a ``property(...)`` call now infers as uninferable rather than
+raising, because the setter argument is not modelled and its absence proves nothing.
+Property-like decorators that have no ``fset`` at runtime, such as
+``functools.cached_property``, keep raising as before.
 
 Closes pylint-dev/pylint#8739
