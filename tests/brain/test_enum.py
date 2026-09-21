@@ -624,3 +624,27 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``DuplicateBasesError``.
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
+
+    def test_enum_oversized_integer_member(self) -> None:
+        """An int member past ``sys.get_int_max_str_digits()`` is still mocked.
+
+        A hexadecimal literal is accepted by the tokenizer, but rendering its
+        value back in decimal used to make the enum transform raise ``ValueError``.
+        """
+        oversized = "0x" + "f" * 4000
+        big_value, small_value = builder.extract_node(f"""
+        import enum
+
+        class Flags(enum.IntFlag):
+            A = {oversized}
+            B = 2
+
+        Flags.A.value  #@
+        Flags.B.value  #@
+        """)
+        inferred = next(big_value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == int(oversized, 16)
+        inferred = next(small_value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 2
