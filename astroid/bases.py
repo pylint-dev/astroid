@@ -329,11 +329,16 @@ class BaseInstance(Proxy):
         context = bind_context_to_node(context, self)
         inferred = False
 
-        # If the call is an attribute on the instance, we infer the attribute itself
+        # If the call is an attribute on the instance, we infer the attribute itself.
+        # A failed lookup here must not abort inference entirely -- fall through to
+        # resolving __call__ normally below. See issue #3077.
         if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
-            for res in self.igetattr(caller.func.attrname, context):
-                inferred = True
-                yield res
+            try:
+                for res in self.igetattr(caller.func.attrname, context):
+                    inferred = True
+                    yield res
+            except InferenceError:
+                pass
 
         # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
