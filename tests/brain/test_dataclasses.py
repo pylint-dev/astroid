@@ -1580,3 +1580,32 @@ def test_replace_frozen_dataclass() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0].name == "FrozenPoint"
+
+
+def test_property_default_huge_int_does_not_crash() -> None:
+    """A field shadowed by a property returning an integer too large to ``repr()``
+    (past ``sys.get_int_max_str_digits()``) must not crash the dataclass
+    transform, and the generated ``__init__`` keeps that integer as the default.
+    """
+    klass, call = astroid.extract_node("""
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:  #@
+        x: int
+        @property
+        def x(self):
+            return 10 ** 5000
+
+    A(1)  #@
+    """)
+    init = klass.locals["__init__"][0]
+    assert [a.name for a in init.args.args] == ["self", "x"]
+    default = init.args.defaults[0]
+    assert isinstance(default, nodes.Const)
+    assert default.value == 10**5000
+
+    inferred = list(call.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "A"

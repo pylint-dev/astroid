@@ -217,7 +217,12 @@ class AsStringVisitor:
         """return an nodes.Const node as string"""
         if node.value is Ellipsis:
             return "..."
-        return repr(node.value)
+        try:
+            return repr(node.value)
+        except ValueError:
+            # repr() of an int past sys.get_int_max_str_digits() raises;
+            # hex() is exempt from that limit and round-trips as source.
+            return hex(node.value)
 
     def visit_continue(self, node: nodes.Continue) -> str:
         """return an nodes.Continue node as string"""
