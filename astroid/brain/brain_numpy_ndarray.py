@@ -7,10 +7,22 @@
 from __future__ import annotations
 
 from astroid import nodes
+from astroid.brain.brain_numpy_utils import (
+    CLASS_GETITEM_SRC,
+    numpy_2_or_later,
+    numpy_supports_type_hints,
+)
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
+
+# Members added to ndarray in NumPy 2.0.
+_NUMPY_2_MEMBERS_SRC = """
+        mT = numpy.ndarray([0, 0])
+        device = str()
+        def to_device(self, device): return np.ndarray([0, 0])
+"""
 
 
 def infer_numpy_ndarray(node, context: InferenceContext | None = None):
@@ -140,14 +152,11 @@ def infer_numpy_ndarray(node, context: InferenceContext | None = None):
         def transpose(self, *axes): return np.ndarray([0, 0])
         def var(self, axis=None, dtype=None, out=None, ddof=0, keepdims=False): return np.ndarray([0, 0])
         def view(self, dtype=None, type=None): return np.ndarray([0, 0])
-        mT = numpy.ndarray([0, 0])
-        device = str()
-        def to_device(self, device): return np.ndarray([0, 0])
-
-        @classmethod
-        def __class_getitem__(cls, value):
-            return cls
     """
+    if numpy_supports_type_hints():
+        ndarray += CLASS_GETITEM_SRC
+    if numpy_2_or_later():
+        ndarray += _NUMPY_2_MEMBERS_SRC
     node = extract_node(ndarray)
     return node.infer(context=context)
 
