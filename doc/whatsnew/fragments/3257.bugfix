@@ -1,0 +1,3 @@
+Fix ``AttributeError`` when inferring a ``typing.NamedTuple`` class containing an annotated attribute or subscript target (e.g. ``a.b: str`` or ``a[0]: str``).
+
+Closes #3257
