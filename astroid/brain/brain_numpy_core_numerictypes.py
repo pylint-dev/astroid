@@ -7,9 +7,40 @@
 """Astroid hooks for numpy.core.numerictypes and numpy._core.numerictypes modules."""
 
 from astroid import nodes
+from astroid.brain.brain_numpy_utils import (
+    CLASS_GETITEM_SRC,
+    numpy_2_or_later,
+    numpy_supports_type_hints,
+)
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
+
+# Scalar types added in NumPy 2.0.
+_NUMPY_2_TYPES_SRC = """
+    class ulong(unsignedinteger): pass
+"""
+
+# Aliases removed in NumPy 2.0.
+_NUMPY_1_ALIASES_SRC = """
+    bool8 = bool_
+    bytes0 = bytes_
+    cfloat = complex128
+    clongfloat = complex192
+    complex_ = complex128
+    float_ = float64
+    int0 = int32
+    longcomplex = complex192
+    longfloat = float96
+    object0 = object_
+    singlecomplex = complex64
+    str0 = str_
+    string_ = bytes_
+    uint0 = uint32
+    unicode = str_
+    unicode_ = str_
+    void0 = void
+"""
 
 
 def numpy_core_numerictypes_transform() -> nodes.Module:
@@ -102,11 +133,9 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
         def transpose(self): return uninferable
         def var(self): return uninferable
         def view(self): return uninferable
-
-        @classmethod
-        def __class_getitem__(cls, value):
-            return cls
         """
+    if numpy_supports_type_hints():
+        generic_src += CLASS_GETITEM_SRC
     module_src = generic_src + """
     class dtype(object):
         def __init__(self, obj, align=False, copy=False):
@@ -236,9 +265,8 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     uintp = uint32
     ulonglong = uint64
     ushort = uint16
-
-    class ulong(unsignedinteger): pass
     """
+    module_src += _NUMPY_2_TYPES_SRC if numpy_2_or_later() else _NUMPY_1_ALIASES_SRC
     return parse(module_src)
 
 
@@ -246,7 +274,8 @@ def _inject_numpy_platform_scalar_types(node: nodes.Module) -> None:
     """Copy platform-specific scalar types into the top-level numpy module.
 
     NumPy 2 binds these names through a ``globals()`` loop that static
-    analysis cannot track.
+    analysis cannot track. This mirrors NumPy 1.x, where the same fake
+    classes reached the top level through a star import.
     """
     extension = numpy_core_numerictypes_transform()
     for name in ("float96", "float128", "complex192", "complex256"):
