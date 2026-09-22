@@ -6,40 +6,71 @@
 
 from __future__ import annotations
 
+import re
+from functools import lru_cache
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as distribution_version
+
 from astroid import nodes
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
 
-# Class subscript is available in numpy starting with version 1.20.0
-NUMPY_VERSION_TYPE_HINTS_SUPPORT = ("1", "20", "0")
+# Subscripting a scalar type, as in ``np.float64[int]``, requires the
+# ``__class_getitem__`` numpy defines from version 1.20 onwards.
+NUMPY_TYPE_HINTS_SUPPORT = (1, 20)
+NUMPY_2 = (2,)
+
+CLASS_GETITEM_SRC = """
+        @classmethod
+        def __class_getitem__(cls, value):
+            return cls
+"""
+
+_LEADING_DIGITS = re.compile(r"\d+")
+
+
+def _parse_version(raw_version: str) -> tuple[int, ...] | None:
+    """Turn a numpy version string into a tuple of integers.
+
+    Everything from the first non numeric component onwards is dropped, so
+    ``"2.0.0rc1"`` and ``"2.0.0.dev0+g1234"`` are both read as ``(2, 0, 0)``.
+    Returns None if no leading numeric component can be found.
+    """
+    parsed = []
+    for part in raw_version.split("."):
+        match = _LEADING_DIGITS.match(part)
+        if match is None:
+            break
+        parsed.append(int(match.group()))
+    return tuple(parsed) or None
+
+
+@lru_cache(maxsize=1)
+def numpy_version() -> tuple[int, ...] | None:
+    """Return the version of the installed numpy, or None if it is unknown.
+
+    The version is read from the distribution metadata so that numpy does
+    not have to be imported. None is returned when numpy is not installed
+    or when its version cannot be parsed; callers then assume the most
+    recent numpy API.
+    """
+    try:
+        raw_version = distribution_version("numpy")
+    except PackageNotFoundError:
+        return None
+    return _parse_version(raw_version)
+
+
+def numpy_2_or_later() -> bool:
+    """Whether the installed numpy is version 2 or later, or unknown."""
+    version = numpy_version()
+    return version is None or version >= NUMPY_2
 
 
 def numpy_supports_type_hints() -> bool:
-    """Returns True if numpy supports type hints."""
-    np_ver = _get_numpy_version()
-    return np_ver and np_ver > NUMPY_VERSION_TYPE_HINTS_SUPPORT
-
-
-def numpy_version_2_or_later() -> bool:
-    """Returns True if the installed numpy is version 2 or later."""
-    try:
-        return int(_get_numpy_version()[0]) >= 2
-    except ValueError:
-        return False
-
-
-def _get_numpy_version() -> tuple[str, str, str]:
-    """
-    Return the numpy version number if numpy can be imported.
-
-    Otherwise returns ('0', '0', '0')
-    """
-    try:
-        import numpy  # pylint: disable=import-outside-toplevel
-
-        return tuple(numpy.version.version.split("."))
-    except (ImportError, AttributeError):
-        return ("0", "0", "0")
+    """Whether the installed numpy defines ``__class_getitem__``, or is unknown."""
+    version = numpy_version()
+    return version is None or version >= NUMPY_TYPE_HINTS_SUPPORT
 
 
 def infer_numpy_name(
