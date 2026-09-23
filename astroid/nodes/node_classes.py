@@ -935,19 +935,17 @@ class Arguments(
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        args = [
-            arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]
-        ]
-
         index = _find_arg(argname, self.kwonlyargs)[0]
         if (index is not None) and (len(self.kw_defaults) > index):
             if self.kw_defaults[index] is not None:
                 return self.kw_defaults[index]
             raise NoDefault(func=self.parent, name=argname)
 
-        index = _find_arg(argname, args)[0]
+        positional = [*(self.posonlyargs or ()), *(self.args or ())]
+        index = _find_arg(argname, positional)[0]
         if index is not None:
-            idx = index - (len(args) - len(self.defaults) - len(self.kw_defaults))
+            # ``defaults`` covers the last positional arguments.
+            idx = index - (len(positional) - len(self.defaults))
             if idx >= 0:
                 return self.defaults[idx]
 
