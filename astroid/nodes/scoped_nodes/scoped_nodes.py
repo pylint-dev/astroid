@@ -10,6 +10,7 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 
 from __future__ import annotations
 
+import collections
 import io
 import itertools
 import os
@@ -74,37 +75,57 @@ def _c3_merge(sequences, cls, context):
 
     Adapted from http://www.python.org/download/releases/2.3/mro/.
 
+    Instead of rescanning every tail to validate each candidate, the number of
+    times each class appears in a tail is tracked and updated as heads advance,
+    so the merge is linear in the total size of *sequences*.
     """
+    sequences = [s for s in sequences if s]
+    heads = [0] * len(sequences)
+    tail_counts: collections.Counter[ClassDef] = collections.Counter(
+        node for seq in sequences for node in itertools.islice(seq, 1, None)
+    )
+    remaining = sum(len(seq) for seq in sequences)
     result = []
-    while True:
-        sequences = [s for s in sequences if s]  # purge empty sequences
-        if not sequences:
-            return result
-        for s1 in sequences:  # find merge candidates among seq heads
-            candidate = s1[0]
-            for s2 in sequences:
-                if candidate in s2[1:]:
-                    candidate = None
-                    break  # reject the current head, it appears later
-            else:
+    while remaining:
+        live = [(seq, head) for seq, head in zip(sequences, heads) if head < len(seq)]
+        if len(live) == 1:
+            # Only one sequence left, e.g. the tail of a single base's mro:
+            # it is merged as is if it holds no duplicate.
+            seq, head = live[0]
+            rest = seq[head:]
+            if len(set(rest)) == len(rest):
+                result.extend(rest)
+                return result
+        # find merge candidates among seq heads
+        for seq, head in zip(sequences, heads):
+            if head < len(seq) and not tail_counts[seq[head]]:
+                candidate = seq[head]
                 break
-        if not candidate:
+        else:
             # Show all the remaining bases, which were considered as
             # candidates for the next mro sequence.
             raise InconsistentMroError(
                 message="Cannot create a consistent method resolution order "
                 "for MROs {mros} of class {cls!r}.",
-                mros=sequences,
+                mros=[
+                    seq[head:] for seq, head in zip(sequences, heads) if head < len(seq)
+                ],
                 cls=cls,
                 context=context,
             )
 
         result.append(candidate)
         # remove the chosen candidate
-        for seq in sequences:
-            if seq[0] == candidate:
-                del seq[0]
-    return None
+        for i, seq in enumerate(sequences):
+            head = heads[i]
+            if head < len(seq) and seq[head] is candidate:
+                head += 1
+                heads[i] = head
+                remaining -= 1
+                if head < len(seq):
+                    # The new head is no longer part of this sequence's tail
+                    tail_counts[seq[head]] -= 1
+    return result
 
 
 def clean_typing_generic_mro(sequences: list[list[ClassDef]]) -> None:
