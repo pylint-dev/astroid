@@ -1,0 +1,5 @@
+Fix a crash when inferring an f-string or ``str.format()`` call whose ``c`` format
+spec gets an out-of-range code point, such as ``f"{-1:c}"``. These now infer to
+``Uninferable``, like the ``%c`` case fixed in #3254.
+
+Closes #3301

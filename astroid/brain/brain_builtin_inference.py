@@ -1147,11 +1147,12 @@ def _infer_str_format_call(
         formatted_string = formatter.format(
             format_template, *pos_values, **keyword_values
         )
-    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, OverflowError):
         # AttributeError: named field in format string was not found in the arguments
         # IndexError: there are too few arguments to interpolate
         # TypeError: Unsupported format string
         # ValueError: Unknown format code
+        # OverflowError: "c" with an out-of-range code point, e.g. "{:c}".format(-1)
         return iter([util.Uninferable])
 
     return iter([nodes.const_factory(formatted_string)])
