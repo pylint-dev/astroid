@@ -1,0 +1,7 @@
+Infer recent constant-key assignments to built-in dictionaries and lists. This
+prevents stale inference from a container literal across reads, writes, deletes,
+aliases, and deeper subscript chains while preserving custom item access
+semantics.
+
+Refs #3220
+Refs pylint-dev/pylint#10050
