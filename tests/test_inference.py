@@ -2993,6 +2993,104 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         else:
             self.assertIs(inferred.bool_value(), True)
 
+    def test_bool_value_metaclass(self) -> None:
+        """A class' truthiness follows its metaclass' ``__bool__``/``__len__``.
+
+        Reproducer from https://github.com/pylint-dev/astroid/issues/183 —
+        ``bool(C)`` runs ``type(C).__bool__(C)`` (falling back to
+        ``__len__``), so a metaclass that overrides either overrides the
+        class' truthiness. A class without such an override stays truthy.
+        """
+        classes = extract_node("""
+        class FalseLenMeta(type):
+            def __len__(cls):
+                return 0
+        class TrueLenMeta(type):
+            def __len__(cls):
+                return 3
+        class FalseBoolMeta(type):
+            def __bool__(cls):
+                return False
+        class TrueBoolMeta(type):
+            def __bool__(cls):
+                return True
+        class BoolWinsMeta(type):
+            def __bool__(cls):
+                return True
+            def __len__(cls):
+                return 0
+        class InferErrorMeta(type):
+            def __bool__(cls):
+                return undefined_name
+        class NoBoolNoLenMeta(type):
+            pass
+
+        class FalseLenCls(metaclass=FalseLenMeta):
+            pass
+        class TrueLenCls(metaclass=TrueLenMeta):
+            pass
+        class FalseBoolCls(metaclass=FalseBoolMeta):
+            pass
+        class TrueBoolCls(metaclass=TrueBoolMeta):
+            pass
+        class BoolWinsCls(metaclass=BoolWinsMeta):
+            pass
+        class InferErrorCls(metaclass=InferErrorMeta):
+            pass
+        class NoOverrideCls(metaclass=NoBoolNoLenMeta):
+            pass
+        class NoMetaclassCls:
+            pass
+
+        FalseLenCls  #@
+        TrueLenCls  #@
+        FalseBoolCls  #@
+        TrueBoolCls  #@
+        BoolWinsCls  #@
+        InferErrorCls  #@
+        NoOverrideCls  #@
+        NoMetaclassCls  #@
+        """)
+        expected = (
+            False,
+            True,
+            False,
+            True,
+            True,
+            util.Uninferable,
+            True,
+            True,
+        )
+        for node, expected_value in zip(classes, expected):
+            inferred = next(node.infer())
+            self.assertEqual(
+                inferred.bool_value(),
+                expected_value,
+                msg=f"bool_value() for {node.name} was wrong",
+            )
+
+    def test_bool_value_metaclass_bool_call(self) -> None:
+        """``bool(cls)`` inference respects the metaclass override too."""
+        false_call, true_call = extract_node("""
+        class FalseMeta(type):
+            def __len__(cls):
+                return 0
+        class TrueMeta(type):
+            def __bool__(cls):
+                return True
+        class FalseCls(metaclass=FalseMeta):
+            pass
+        class TrueCls(metaclass=TrueMeta):
+            pass
+
+        bool(FalseCls)  #@
+        bool(TrueCls)  #@
+        """)
+        (false_inferred,) = false_call.inferred()
+        self.assertEqual(false_inferred.value, False)
+        (true_inferred,) = true_call.inferred()
+        self.assertEqual(true_inferred.value, True)
+
     def test_infer_coercion_rules_for_floats_complex(self) -> None:
         ast_nodes = extract_node("""
         1 + 1.0 #@

@@ -2970,12 +2970,53 @@ class ClassDef(
         """
         return self._compute_mro(context=context)
 
-    def bool_value(self, context: InferenceContext | None = None) -> Literal[True]:
-        """Determine the boolean value of this node.
+    def bool_value(
+        self, context: InferenceContext | None = None
+    ) -> bool | util.UninferableBase:
+        """Determine the boolean value of this class.
 
-        :returns: The boolean value of this node.
-            For a :class:`ClassDef` this is always ``True``.
+        A class is normally truthy, but if its metaclass defines
+        ``__bool__`` or ``__len__`` those override the default, mirroring
+        Python's own semantics (``bool(C)`` is ``type(C).__bool__(C)``,
+        falling back to ``type(C).__len__(C)``).
+
+        :returns: ``True`` when no metaclass override applies (the default),
+            the truthiness inferred from the metaclass's ``__bool__`` /
+            ``__len__`` return value when one is found, or
+            :data:`~astroid.util.Uninferable` when a metaclass override
+            exists but its return value cannot be inferred.
         """
+        metaclass = self.metaclass(context=context)
+        if metaclass is None or isinstance(metaclass, util.UninferableBase):
+            return True
+        # ``type`` and ``object`` do not define non-default ``__bool__`` /
+        # ``__len__``, so a class whose metaclass is ``type`` itself keeps
+        # the historical always-truthy behavior.
+        if metaclass.qname() == "builtins.type":
+            return True
+        context = context or InferenceContext()
+        context.boundnode = self
+        for method_name in ("__bool__", "__len__"):
+            try:
+                meth = next(metaclass.igetattr(method_name, context=context), None)
+            except (AttributeInferenceError, InferenceError):
+                continue
+            if meth is None or not hasattr(meth, "infer_call_result"):
+                continue
+            if not meth.callable():
+                continue
+            try:
+                context.callcontext = CallContext(args=[], callee=meth)
+                for value in meth.infer_call_result(self, context=context):
+                    if isinstance(value, util.UninferableBase):
+                        return value
+                    try:
+                        inferred = next(value.infer(context=context))
+                    except (InferenceError, StopIteration):
+                        return util.Uninferable
+                    return inferred.bool_value()
+            except InferenceError:
+                continue
         return True
 
     def get_children(self):
