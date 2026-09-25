@@ -698,7 +698,8 @@ class ExceptionModelTest(unittest.TestCase):
         """)
         assert isinstance(ast_nodes, list)
         args = next(ast_nodes[0].infer())
-        assert isinstance(args, nodes.Tuple)
+        assert isinstance(args, astroid.Instance)
+        assert args.qname() == "builtins.tuple"
         tb = next(ast_nodes[1].infer())
         # Python 3.11: If 'contextlib' is loaded, '__traceback__'
         # could be set inside '__exit__' method in
@@ -836,9 +837,24 @@ class TestExceptionInstanceModel:
         ast_node = builder.extract_node("""
         BaseException() #@
         """)
-        args: nodes.Tuple = next(ast_node.infer()).getattr("args")[0]
-        # BaseException doesn't have any required args, not even a string
-        assert not args.elts
+        args = next(ast_node.infer()).getattr("args")[0]
+        # BaseException doesn't have any required args, not even a string:
+        # ``args`` is a tuple whose contents are not known.
+        assert isinstance(args, astroid.Instance)
+        assert args.qname() == "builtins.tuple"
+
+    def test_args_unpacking_has_unknown_length(self) -> None:
+        """``args`` is not a known empty tuple: unpacking it cannot be checked."""
+        ast_node = builder.extract_node("""
+        try:
+            pass
+        except ValueError as err:
+            err.args #@
+        """)
+        args = next(ast_node.infer())
+        assert isinstance(args, astroid.Instance)
+        assert args.qname() == "builtins.tuple"
+        assert not isinstance(args, nodes.Tuple)
 
 
 @pytest.mark.parametrize("parentheses", (True, False))
