@@ -4770,9 +4770,10 @@ class FormattedValue(NodeNG):
                         end_col_offset=self.end_col_offset,
                     )
                     continue
-                except (ValueError, TypeError, MemoryError):
+                except (ValueError, TypeError, MemoryError, OverflowError):
                     # ValueError/TypeError: invalid format spec
                     # MemoryError: format spec with huge width (e.g. f'{0:11111111111}')
+                    # OverflowError: "c" with an out-of-range code point (e.g. f'{-1:c}')
                     yield util.Uninferable
                     uninferable_already_generated = True
                 continue
