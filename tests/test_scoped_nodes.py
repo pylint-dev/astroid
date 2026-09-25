@@ -1585,6 +1585,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # must return None instead of raising ``InferenceError``.
         self.assertIsNone(module["Klass"].slots())
 
+    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
     def test_slots_pep695_type_param_named_slots(self) -> None:
         module = builder.parse("""
         class C[__slots__]:
