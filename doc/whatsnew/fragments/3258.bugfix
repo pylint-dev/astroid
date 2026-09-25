@@ -1,0 +1,7 @@
+``ClassDef.slots()`` no longer crashes on a class that declares a PEP 695
+type parameter literally named ``__slots__`` (e.g. ``class C[__slots__]:``).
+The type parameter's ``TypeVar`` node was mistaken for the class's actual
+``__slots__`` value; ``slots()`` now returns ``None`` for such classes
+instead of raising ``AttributeError``.
+
+Refs #3258
