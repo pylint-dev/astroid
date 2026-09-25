@@ -1,0 +1,6 @@
+An annotation without a value in an ``Enum`` body is no longer treated as a
+member. Such an annotation declares the type of the member values, so the name
+it declares does not exist at runtime and accessing it raises ``AttributeError``.
+Inference now leaves it alone instead of replacing it with a mocked member.
+
+Refs pylint-dev/pylint#11413
