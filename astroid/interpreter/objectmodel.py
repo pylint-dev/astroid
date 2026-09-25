@@ -964,6 +964,20 @@ class DictModel(ObjectModel):
         return self._generic_dict_attribute(values_obj, "values")
 
 
+def _decorator_defines_fset(func: Property) -> bool:
+    """Whether the decorator that produced *func* implements ``property.fset``.
+
+    ``functools.cached_property`` is modelled as a ``Property`` but has no
+    ``fset`` at runtime, and neither do the property-likes recognised by name.
+    """
+    try:
+        names = func.function.decoratornames()
+    except (AttributeError, InferenceError):
+        return False
+    with_fset = bases.PROPERTIES - {"functools.cached_property"}
+    return bool(with_fset.intersection(names))
+
+
 class PropertyModel(ObjectModel):
     """Model for a builtin property."""
 
@@ -1043,9 +1057,15 @@ class PropertyModel(ObjectModel):
 
         func_setter = find_setter(func)
         if not func_setter:
-            raise InferenceError(
-                f"Unable to find the setter of property {func.function.name}"
-            )
+            if func.name == "<property>":
+                # property(getter, setter): infer_property() models the getter
+                # alone, so a setter argument is invisible to find_setter().
+                return util.Uninferable
+            if not _decorator_defines_fset(func):
+                raise InferenceError(
+                    f"Unable to find the setter of property {func.function.name}"
+                )
+            return node_classes.Const(value=None, parent=func)
 
         class PropertyFuncAccessor(nodes.FunctionDef):
             def infer_call_result(
