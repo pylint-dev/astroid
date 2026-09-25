@@ -940,6 +940,29 @@ class ReBrainTest(unittest.TestCase):
         assert isinstance(inferred2, nodes.ClassDef)
         assert isinstance(inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef)
 
+    def test_re_compile_inferred_as_pattern(self):
+        """Test re.compile() is inferred as an instance of re.Pattern (#520)."""
+        node = builder.extract_node("""
+        import re
+        _ENCODING_RGX = re.compile(r"f")
+        _ENCODING_RGX #@
+        """)
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].qname() == "re.Pattern"
+
+    def test_re_compile_with_flags_inferred_as_pattern(self):
+        """re.compile() with a flags argument is still inferred as re.Pattern."""
+        node = builder.extract_node("""
+        import re
+        re.compile(r"f", re.IGNORECASE) #@
+        """)
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].qname() == "re.Pattern"
+
 
 class BrainNamedtupleAnnAssignTest(unittest.TestCase):
     def test_no_crash_on_ann_assign_in_namedtuple(self) -> None:

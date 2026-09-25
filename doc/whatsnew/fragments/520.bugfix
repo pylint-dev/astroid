@@ -1,0 +1,5 @@
+``re.compile()`` is now correctly inferred as an instance of ``re.Pattern`` instead
+of ``Uninferable``/the raw pattern argument, fixing a false ``no-member`` on
+subsequent ``.match()``/``.search()``/etc. calls on a module-level compiled pattern.
+
+Closes #520
