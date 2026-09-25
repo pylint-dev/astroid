@@ -12,6 +12,7 @@ except ImportError:
     HAS_GI = False
 
 from astroid import builder, nodes
+from astroid.brain.brain_gi import _looks_like_require_version
 
 
 @unittest.skipUnless(HAS_GI, "This test requires the gobject introspection library.")
@@ -54,4 +55,56 @@ class GiBrainClassificationTest(unittest.TestCase):
             funcdef.argnames()[0],
             {"self", funcdef.args.vararg},
             "Method does not accept 'self' as first argument",
+        )
+
+
+class RequireVersionMatchTest(unittest.TestCase):
+    """``_looks_like_require_version`` must only match gi's ``require_version``.
+
+    A match triggers ``import gi`` and ``gi.require_version(...)`` at build time,
+    so a false positive runs that side effect for unrelated source. This test
+    needs no gi and asserts the predicate, not the side effect.
+    """
+
+    @staticmethod
+    def _call(source: str) -> nodes.Call:
+        call = builder.extract_node(source)
+        assert isinstance(call, nodes.Call)
+        return call
+
+    def test_bare_name_from_gi_matches(self):
+        self.assertTrue(
+            _looks_like_require_version(
+                self._call(
+                    'from gi import require_version\nrequire_version("Gtk", "3.0")'
+                )
+            )
+        )
+
+    def test_gi_attribute_matches(self):
+        self.assertTrue(
+            _looks_like_require_version(
+                self._call('import gi\ngi.require_version("Gtk", "3.0")')
+            )
+        )
+
+    def test_local_function_does_not_match(self):
+        self.assertFalse(
+            _looks_like_require_version(
+                self._call(
+                    'def require_version(a, b): return None\nrequire_version("Gtk", "3.0")'
+                )
+            )
+        )
+
+    def test_undefined_name_does_not_match(self):
+        self.assertFalse(
+            _looks_like_require_version(self._call('require_version("Gtk", "3.0")'))
+        )
+
+    def test_other_module_attribute_does_not_match(self):
+        self.assertFalse(
+            _looks_like_require_version(
+                self._call('import other\nother.require_version("Gtk", "3.0")')
+            )
         )

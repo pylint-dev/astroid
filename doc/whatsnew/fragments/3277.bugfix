@@ -1,0 +1,8 @@
+``brain_gi`` no longer imports ``gi`` and calls ``gi.require_version`` for a bare
+``require_version(name, version)`` call in the analysed source that does not
+resolve to gi's function, such as a project-local function of that name or an
+undefined name. ``_looks_like_require_version`` now requires the bare-name form
+to be imported from ``gi``, matching the guard already applied to the
+``gi.require_version`` attribute form.
+
+Refs #3277
