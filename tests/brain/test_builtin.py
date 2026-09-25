@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from astroid import nodes, objects, util
+from astroid import bases, nodes, objects, util
 from astroid.builder import _extract_single_node, extract_node
 
 
@@ -156,3 +156,350 @@ class Number:
 """)
         inferit = function_def.infer_call_result(function_def, context=None)
         assert [a.name for a in inferit] == [util.Uninferable]
+
+
+class TestShadowedBuiltins:
+    """A name shadowing a builtin must not be inferred as that builtin.
+
+    The transforms registered by ``register_builtin_transform`` are selected on
+    the identifier alone, so every one of them used to fire on a shadowing name.
+    """
+
+    @pytest.mark.parametrize(
+        "code",
+        [
+            pytest.param(
+                """
+                def bool(x):
+                    return "shadowed"
+                bool(1) #@
+                """,
+                id="bool",
+            ),
+            pytest.param(
+                """
+                def int(x):
+                    return "shadowed"
+                int("1") #@
+                """,
+                id="int",
+            ),
+            pytest.param(
+                """
+                def isinstance(obj, cls):
+                    return "shadowed"
+                isinstance(1, int) #@
+                """,
+                id="isinstance",
+            ),
+            pytest.param(
+                """
+                def len(x):
+                    return "shadowed"
+                len([1, 2, 3]) #@
+                """,
+                id="len",
+            ),
+            pytest.param(
+                """
+                def list(x):
+                    return "shadowed"
+                list("ab") #@
+                """,
+                id="list",
+            ),
+            pytest.param(
+                """
+                def str(x):
+                    return "shadowed"
+                str(42) #@
+                """,
+                id="str",
+            ),
+            pytest.param(
+                """
+                def type(x):
+                    return "shadowed"
+                type(1) #@
+                """,
+                id="type",
+            ),
+            pytest.param(
+                """
+                len = lambda x: "shadowed"
+                len([1, 2, 3]) #@
+                """,
+                id="assignment-instead-of-def",
+            ),
+            pytest.param(
+                """
+                class dict:
+                    @staticmethod
+                    def fromkeys(keys):
+                        return "shadowed"
+                dict.fromkeys("ab") #@
+                """,
+                id="dict.fromkeys",
+            ),
+        ],
+    )
+    def test_shadowed_builtin_call(self, code: str) -> None:
+        node: nodes.Call = _extract_single_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "shadowed"
+
+    def test_shadowed_by_a_parameter_pylint10994(self) -> None:
+        """https://github.com/pylint-dev/pylint/issues/10994"""
+        node: nodes.Call = _extract_single_node("""
+        def convert_type(x, type):
+            return type(x)
+
+        convert_type(12.34, str) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == "builtins.str"
+
+    @pytest.mark.parametrize(
+        "code,expected",
+        [
+            pytest.param("bool(0) #@", nodes.Const, id="bool"),
+            pytest.param("callable(len) #@", nodes.Const, id="callable"),
+            pytest.param("dict(a=1) #@", nodes.Dict, id="dict"),
+            pytest.param("dict.fromkeys(['a']) #@", nodes.Dict, id="dict.fromkeys"),
+            pytest.param("frozenset([1]) #@", objects.FrozenSet, id="frozenset"),
+            pytest.param("int('42') #@", nodes.Const, id="int"),
+            pytest.param("isinstance(1, int) #@", nodes.Const, id="isinstance"),
+            pytest.param("issubclass(bool, int) #@", nodes.Const, id="issubclass"),
+            pytest.param("len([1, 2, 3]) #@", nodes.Const, id="len"),
+            pytest.param("list((1, 2)) #@", nodes.List, id="list"),
+            pytest.param("set([1]) #@", nodes.Set, id="set"),
+            pytest.param("slice(1, 2) #@", nodes.Slice, id="slice"),
+            pytest.param("str(42) #@", nodes.Const, id="str"),
+            pytest.param("tuple([1, 2]) #@", nodes.Tuple, id="tuple"),
+            pytest.param("type(1) #@", nodes.ClassDef, id="type"),
+            pytest.param(
+                'getattr("apple", "upper") #@', bases.BoundMethod, id="getattr"
+            ),
+            pytest.param('hasattr("apple", "upper") #@', nodes.Const, id="hasattr"),
+            pytest.param(
+                "property(lambda self: 1) #@", objects.Property, id="property"
+            ),
+            pytest.param(
+                """
+                class Animal:
+                    def speak(self):
+                        return "generic"
+
+                class Cat(Animal):
+                    def speak(self):
+                        super() #@
+                """,
+                objects.Super,
+                id="super",
+            ),
+            pytest.param(
+                """
+                from builtins import str
+                str(42) #@
+                """,
+                nodes.Const,
+                id="from-builtins-import",
+            ),
+            pytest.param(
+                """
+                from builtins import *
+                str(42) #@
+                """,
+                nodes.Const,
+                id="from-builtins-star-import",
+            ),
+            pytest.param(
+                """
+                class Fruit:
+                    size = len("apple")  #@
+                    def len(self):
+                        return 0
+                """,
+                nodes.Const,
+                id="class-body-before-method-shadow",
+            ),
+            pytest.param(
+                """
+                len([1, 2, 3])  #@
+                def len(x):
+                    return "shadowed"
+                """,
+                nodes.Const,
+                id="module-use-before-def",
+            ),
+        ],
+    )
+    def test_unshadowed_builtin_call(self, code: str, expected: type) -> None:
+        """The brains must keep firing when the builtin is not shadowed."""
+        node = _extract_single_node(code)
+        if isinstance(node, nodes.Assign):
+            node = node.value
+        assert isinstance(node, nodes.Call)
+        inferred = next(node.infer())
+        assert isinstance(inferred, expected)
+
+    def test_default_arg_uses_enclosing_builtin(self) -> None:
+        """Defaults are evaluated in the enclosing scope, not the function body."""
+        func: nodes.FunctionDef = extract_node("""
+            def h(x, len=len([1, 2, 3])):
+                return x
+            """)
+        call = next(d for d in func.args.defaults if isinstance(d, nodes.Call))
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
+    def test_kwonly_default_uses_enclosing_builtin(self) -> None:
+        func: nodes.FunctionDef = extract_node("""
+            def h(x, *, len=len([1, 2, 3])):
+                return x
+            """)
+        call = next(
+            d for d in (func.args.kw_defaults or ()) if isinstance(d, nodes.Call)
+        )
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
+    @pytest.mark.parametrize(
+        "default",
+        [
+            pytest.param("[len(y) for y in ([1, 2, 3],)]", id="comprehension"),
+            pytest.param("lambda: len([1, 2, 3])", id="lambda"),
+        ],
+    )
+    def test_nested_scope_in_default_uses_enclosing_builtin(self, default: str) -> None:
+        """A comprehension or lambda in a default is still in the enclosing scope."""
+        func: nodes.FunctionDef = extract_node(f"""
+            def h(x, len={default}):
+                return x
+            """)
+        call = next(func.args.defaults[0].nodes_of_class(nodes.Call))
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
+    def test_shadowing_in_another_scope_is_ignored(self) -> None:
+        node: nodes.Call = _extract_single_node("""
+        def takes_a_len(len):
+            return len
+
+        len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
+    def test_builtins_import_under_another_builtin_name(self) -> None:
+        """``str`` here is really ``builtins.int``, so it must not infer as ``str``.
+
+        ``lookup()`` already guarantees the binding is called ``str``; what is
+        left to check is *what* was imported under that name.
+        """
+        node: nodes.Call = _extract_single_node("""
+        from builtins import int as str
+        str(42) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, bases.Instance)
+        assert inferred.pytype() == "builtins.int"
+
+    def test_annotation_uses_enclosing_builtin(self) -> None:
+        """Annotations are evaluated in the enclosing scope, like defaults."""
+        func: nodes.FunctionDef = extract_node("""
+            def h(x: str("apple") = 1, str=None):
+                return x
+            """)
+        inferred = next(func.args.annotations[0].infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
+
+    @pytest.mark.parametrize(
+        "signature",
+        [
+            pytest.param('*args: str("apple"), str=None', id="vararg"),
+            pytest.param('str=None, **kwargs: str("apple")', id="kwarg"),
+            pytest.param('x: str("apple") = 1, /, *, str=None', id="posonly"),
+            pytest.param('*, x: str("apple") = 1, str=None', id="kwonly"),
+        ],
+    )
+    def test_every_annotation_uses_enclosing_builtin(self, signature: str) -> None:
+        func: nodes.FunctionDef = extract_node(f"""
+            def h({signature}):
+                return 1
+            """)
+        call = next(func.args.nodes_of_class(nodes.Call))
+        inferred = next(call.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
+
+    def test_return_annotation_uses_enclosing_builtin(self) -> None:
+        func: nodes.FunctionDef = extract_node("""
+            def h(x, str=None) -> str("apple"):
+                return x
+            """)
+        inferred = next(func.returns.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
+
+    def test_bare_annotation_does_not_shadow(self) -> None:
+        """``len: int`` says what ``len`` should hold, it does not put anything there.
+
+        ``lookup()`` still hands back the annotated name, so the tip used to read
+        it as a shadow and step aside. At module scope the builtin is the one
+        being called.
+        """
+        node: nodes.Call = _extract_single_node("""
+        len: int
+        len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
+
+    def test_assignment_then_bare_annotation_still_shadows(self) -> None:
+        """``len = 5`` is a real binding. A later ``len: int`` does not undo it."""
+        node: nodes.Call = _extract_single_node("""
+        len = 5
+        len: int
+        len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_builtins_import_then_bare_annotation_stays_builtin(self) -> None:
+        node: nodes.Call = _extract_single_node("""
+        from builtins import str
+        str: object
+        str("apple") #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "apple"
+
+    def test_bare_annotation_in_function_body_shadows(self) -> None:
+        """A function-local ``len: int`` makes ``len`` local, so the call is not the builtin."""
+        node: nodes.Call = _extract_single_node("""
+        def f():
+            len: int
+            len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    def test_bare_annotation_in_class_body_does_not_shadow(self) -> None:
+        node: nodes.Call = _extract_single_node("""
+        class C:
+            len: int
+            len([1, 2, 3]) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 3
