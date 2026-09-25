@@ -6193,7 +6193,8 @@ def test_subclass_of_exception(code) -> None:
     inferred = next(extract_node(code).infer())
     assert isinstance(inferred, Instance)
     args = next(inferred.igetattr("args"))
-    assert isinstance(args, nodes.Tuple)
+    assert isinstance(args, Instance)
+    assert args.qname() == "builtins.tuple"
 
 
 def test_ifexp_inference() -> None:

@@ -1,0 +1,5 @@
+The ``args`` attribute of an exception instance is now inferred as a ``tuple``
+instance of unknown contents instead of a known empty tuple, so unpacking
+``exc.args`` no longer looks unbalanced.
+
+Closes pylint-dev/pylint#11312
