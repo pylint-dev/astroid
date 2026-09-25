@@ -5392,6 +5392,16 @@ def test_fstring_oversized_width_uninferable(code: str) -> None:
     assert list(node.infer()) == [util.Uninferable]
 
 
+@pytest.mark.parametrize("code", ["f'{-1:c}'", "f'{0x110000:c}'"])
+def test_fstring_out_of_range_char_uninferable(code: str) -> None:
+    """An out-of-range code point for ``c`` must not raise ``OverflowError``.
+
+    Regression test for https://github.com/pylint-dev/astroid/issues/3301
+    """
+    node = extract_node(code)
+    assert list(node.infer()) == [util.Uninferable]
+
+
 def test_augassign_recursion() -> None:
     """Make sure inference doesn't throw a RecursionError.
 

@@ -1,0 +1,5 @@
+Infer an f-string without crashing when a ``c`` format spec receives an
+out-of-range code point, such as ``f'{-1:c}'``. The evaluation now catches
+``OverflowError`` and yields ``Uninferable``.
+
+Closes #3301
