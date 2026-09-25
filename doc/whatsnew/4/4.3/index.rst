@@ -4,6 +4,57 @@
 
 .. towncrier release notes start
 
+What's new in astroid 4.3.2?
+----------------------------
+Release date: 2026-09-25
+
+
+Bug Fixes
+---------
+
+- Fix a crash when a ``namedtuple`` or ``Enum`` type name or field name
+  contains ``str.format`` markup, as in ``namedtuple("{0}", "abc")``. The name
+  is interpolated into an error message that astroid then reformats, so
+  building the message raised ``IndexError``. Inference now falls back to its
+  default.
+
+  Closes #3199 (`#3199 <https://github.com/pylint-dev/astroid/issues/3199>`_)
+
+- Infer a functional ``TypeVar`` or ``NewType`` whose name is not an identifier
+  without splicing that name into the synthesized class source. A crafted value
+  such as ``TypeVar("T(Base): #")`` no longer breaks out of the identifier
+  position to inject bases or a body; the name is assigned to the class verbatim.
+
+  Refs #3217 (`#3217 <https://github.com/pylint-dev/astroid/issues/3217>`_)
+
+- Raise ``InferenceError`` instead of crashing with ``IndexError`` when a class
+  uses ``six.with_metaclass()`` with no positional metaclass argument, both while
+  building the module and when the call is inferred.
+
+  Refs #3248 (`#3248 <https://github.com/pylint-dev/astroid/issues/3248>`_)
+
+- ``ClassDef.slots()`` no longer crashes on a class that declares a PEP 695
+  type parameter literally named ``__slots__`` (e.g. ``class C[__slots__]:``).
+  The type parameter's ``TypeVar`` node was mistaken for the class's actual
+  ``__slots__`` value; ``slots()`` now returns ``None`` for such classes
+  instead of raising ``AttributeError``.
+
+  Refs #3258 (`#3258 <https://github.com/pylint-dev/astroid/issues/3258>`_)
+
+- Fix a crash when inferring an f-string or ``str.format()`` call whose ``c`` format
+  spec gets an out-of-range code point, such as ``f"{-1:c}"``. These now infer to
+  ``Uninferable``, like the ``%c`` case fixed in #3254.
+
+  Closes #3301 (`#3301 <https://github.com/pylint-dev/astroid/issues/3301>`_)
+
+- The ``args`` attribute of an exception instance is now inferred as a ``tuple``
+  instance of unknown contents instead of a known empty tuple, so unpacking
+  ``exc.args`` no longer looks unbalanced.
+
+  Closes pylint-dev/pylint#11312 (`#11312 <https://github.com/pylint-dev/astroid/issues/11312>`_)
+
+
+
 What's new in astroid 4.3.1?
 ----------------------------
 Release date: 2026-08-17

@@ -1,5 +1,0 @@
-Raise ``InferenceError`` instead of crashing with ``IndexError`` when a class
-uses ``six.with_metaclass()`` with no positional metaclass argument, both while
-building the module and when the call is inferred.
-
-Refs #3248
