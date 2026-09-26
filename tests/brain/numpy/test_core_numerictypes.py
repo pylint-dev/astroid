@@ -4,8 +4,13 @@
 
 from __future__ import annotations
 
+import os
+import sys
+import tempfile
 import unittest
+from importlib import metadata
 from typing import ClassVar
+from unittest import mock
 
 try:
     import numpy  # pylint: disable=unused-import
@@ -484,3 +489,34 @@ class NumpyBrainUtilsTest(unittest.TestCase):
         node = builder.extract_node(src)
         cls_node = node.inferred()[0]
         self.assertIs(cls_node, Uninferable)
+
+
+class NumpyVersionTest(unittest.TestCase):
+    def test_get_numpy_version_does_not_import_numpy(self) -> None:
+        """A numpy.py in the analysed project must not be executed."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "numpy.py"), "w", encoding="utf-8") as f:
+                f.write("raise AssertionError('numpy was imported')\n")
+            sys.path.insert(0, tmpdir)
+            _get_numpy_version.cache_clear()
+            try:
+                with mock.patch.dict(sys.modules):
+                    for name in [n for n in sys.modules if n.split(".")[0] == "numpy"]:
+                        del sys.modules[name]
+                    version = _get_numpy_version()
+                    self.assertNotIn("numpy", sys.modules)
+            finally:
+                sys.path.remove(tmpdir)
+                _get_numpy_version.cache_clear()
+        if HAS_NUMPY:
+            self.assertNotEqual(version, ("0", "0", "0"))
+
+    def test_get_numpy_version_without_numpy(self) -> None:
+        _get_numpy_version.cache_clear()
+        try:
+            with mock.patch.object(
+                metadata, "version", side_effect=metadata.PackageNotFoundError
+            ):
+                self.assertEqual(_get_numpy_version(), ("0", "0", "0"))
+        finally:
+            _get_numpy_version.cache_clear()
