@@ -3,7 +3,7 @@
 
 # Packages used to run additional tests
 attrs
-numpy>=2.2.6,<3; python_version<"3.12"
+numpy>=2.2.6,<3; python_version<"3.14"
 python-dateutil
 PyQt6
 regex

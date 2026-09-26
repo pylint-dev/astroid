@@ -9,10 +9,15 @@
 """Astroid hooks for numpy.core.umath and numpy._core.umath modules."""
 
 from astroid import nodes
-from astroid.brain.brain_numpy_utils import numpy_version_2_or_later
+from astroid.brain.brain_numpy_utils import numpy_2_or_later
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
+
+# Ufuncs added in NumPy 2.0.
+_NUMPY_2_UFUNCS_SRC = """
+    bitwise_count = FakeUfuncOneArg()
+"""
 
 
 def numpy_core_umath_transform() -> nodes.Module:
@@ -146,11 +151,8 @@ def numpy_core_umath_transform() -> nodes.Module:
     subtract = FakeUfuncTwoArgs()
     true_divide = FakeUfuncTwoArgs()
     """
-    if numpy_version_2_or_later():
-        # New ufuncs added in NumPy 2.0.
-        src += """
-    bitwise_count = FakeUfuncOneArg()
-    """
+    if numpy_2_or_later():
+        src += _NUMPY_2_UFUNCS_SRC
     return parse(src)
 
 

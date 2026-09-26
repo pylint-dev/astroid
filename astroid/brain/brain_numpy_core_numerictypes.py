@@ -8,12 +8,39 @@
 
 from astroid import nodes
 from astroid.brain.brain_numpy_utils import (
+    CLASS_GETITEM_SRC,
+    numpy_2_or_later,
     numpy_supports_type_hints,
-    numpy_version_2_or_later,
 )
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
+
+# Scalar types added in NumPy 2.0.
+_NUMPY_2_TYPES_SRC = """
+    class ulong(unsignedinteger): pass
+"""
+
+# Aliases removed in NumPy 2.0.
+_NUMPY_1_ALIASES_SRC = """
+    bool8 = bool_
+    bytes0 = bytes_
+    cfloat = complex128
+    clongfloat = complex192
+    complex_ = complex128
+    float_ = float64
+    int0 = int32
+    longcomplex = complex192
+    longfloat = float96
+    object0 = object_
+    singlecomplex = complex64
+    str0 = str_
+    string_ = bytes_
+    uint0 = uint32
+    unicode = str_
+    unicode_ = str_
+    void0 = void
+"""
 
 
 def numpy_core_numerictypes_transform() -> nodes.Module:
@@ -108,11 +135,7 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
         def view(self): return uninferable
         """
     if numpy_supports_type_hints():
-        generic_src += """
-        @classmethod
-        def __class_getitem__(cls, value):
-            return cls
-        """
+        generic_src += CLASS_GETITEM_SRC
     module_src = generic_src + """
     class dtype(object):
         def __init__(self, obj, align=False, copy=False):
@@ -243,32 +266,7 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     ulonglong = uint64
     ushort = uint16
     """
-    if not numpy_version_2_or_later():
-        # Aliases removed in NumPy 2.0, kept for NumPy 1.x.
-        module_src += """
-    bool8 = bool_
-    bytes0 = bytes_
-    cfloat = complex128
-    clongfloat = complex192
-    complex_ = complex128
-    float_ = float64
-    int0 = int32
-    longcomplex = complex192
-    longfloat = float96
-    object0 = object_
-    singlecomplex = complex64
-    str0 = str_
-    string_ = bytes_
-    uint0 = uint32
-    unicode = str_
-    unicode_ = str_
-    void0 = void
-    """
-    if numpy_version_2_or_later():
-        # Added in NumPy 2.0.
-        module_src += """
-    class ulong(unsignedinteger): pass
-    """
+    module_src += _NUMPY_2_TYPES_SRC if numpy_2_or_later() else _NUMPY_1_ALIASES_SRC
     return parse(module_src)
 
 
