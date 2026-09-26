@@ -1,0 +1,6 @@
+Preserve the length of inferred list and tuple concatenations when an element
+has multiple possible values. An ambiguous or uninferable element is now
+represented as unknown instead of being expanded into multiple sequence items.
+
+Refs #3221
+Closes pylint-dev/pylint#2621

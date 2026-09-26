@@ -1249,6 +1249,62 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred[0].elts[0].value, 1)
         self.assertEqual(inferred[0].elts[1].value, 2)
 
+    def test_binary_op_tuple_add_preserves_ambiguous_element(self) -> None:
+        node = extract_node("""
+        def choose():
+            value = 1
+            if value < 0:
+                value = -value
+            return value
+
+        (0, choose()) + (2,) #@
+        """)
+
+        inferred = next(node.infer())
+
+        self.assertIsInstance(inferred, nodes.Tuple)
+        self.assertEqual(len(inferred.elts), 3)
+        self.assertIsInstance(inferred.elts[1], nodes.Unknown)
+
+    def test_binary_op_sequence_add_preserves_ambiguous_edge_elements(self) -> None:
+        expressions = extract_node("""
+        def choose():
+            value = 1
+            if value < 0:
+                value = -value
+            return value
+
+        (choose(), 1) + (2, choose()) #@
+        [choose(), 1] + [2, choose()] #@
+        """)
+
+        for expression, sequence_type in zip(expressions, (nodes.Tuple, nodes.List)):
+            with self.subTest(sequence_type=sequence_type):
+                inferred = next(expression.infer())
+
+                self.assertIsInstance(inferred, sequence_type)
+                self.assertEqual(len(inferred.elts), 4)
+                self.assertIsInstance(inferred.elts[0], nodes.Unknown)
+                self.assertEqual(inferred.elts[1].value, 1)
+                self.assertEqual(inferred.elts[2].value, 2)
+                self.assertIsInstance(inferred.elts[3], nodes.Unknown)
+
+    def test_binary_op_tuple_add_preserves_uninferable_elements(self) -> None:
+        node = extract_node("""
+        from missing import Unknown
+
+        (Unknown, 1) + (2, Unknown) #@
+        """)
+
+        inferred = next(node.infer())
+
+        self.assertIsInstance(inferred, nodes.Tuple)
+        self.assertEqual(len(inferred.elts), 4)
+        self.assertIsInstance(inferred.elts[0], nodes.Unknown)
+        self.assertEqual(inferred.elts[1].value, 1)
+        self.assertEqual(inferred.elts[2].value, 2)
+        self.assertIsInstance(inferred.elts[3], nodes.Unknown)
+
     def test_binary_op_custom_class(self) -> None:
         code = """
         class myarray:
