@@ -1,0 +1,7 @@
+The numpy brain no longer imports ``numpy`` to find out its version. That import
+ran during inference, after the analysed project had been added to ``sys.path``,
+so a ``numpy.py`` shipped with the project was executed as soon as an attribute
+such as ``foo.ndarray`` was inferred. The version is now read from the installed
+package metadata.
+
+Refs #3308
