@@ -81,6 +81,24 @@ class RequireVersionMatchTest(unittest.TestCase):
             )
         )
 
+    def test_star_import_from_gi_matches(self):
+        self.assertTrue(
+            _looks_like_require_version(
+                self._call('from gi import *\nrequire_version("Gtk", "3.0")')
+            )
+        )
+
+    def test_star_import_shadowed_by_local_does_not_match(self):
+        self.assertFalse(
+            _looks_like_require_version(
+                self._call(
+                    "from gi import *\n"
+                    "def require_version(a, b): return None\n"
+                    'require_version("Gtk", "3.0")'
+                )
+            )
+        )
+
     def test_gi_attribute_matches(self):
         self.assertTrue(
             _looks_like_require_version(
