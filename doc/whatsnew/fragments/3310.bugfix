@@ -1,0 +1,6 @@
+Fix a ``TypeError`` crash when inferring ``random.sample()`` on a sequence whose
+elements are inferred objects such as ``Instance``. Those are not source nodes
+and cannot be rebuilt from constructor arguments, so they are now kept as they
+are instead of being cloned.
+
+Closes #3310
