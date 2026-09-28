@@ -1071,9 +1071,6 @@ class RandomSampleTest(unittest.TestCase):
     def test_no_crash_on_instance_element(self) -> None:
         """Test that random.sample does not crash when an element is not a source node.
 
-        An ``Instance`` is not a ``NodeNG`` and cannot be rebuilt from
-        constructor arguments, so it has to be kept as it is rather than cloned.
-
         Regression test for https://github.com/pylint-dev/astroid/issues/3310
         """
         node = astroid.extract_node("""
