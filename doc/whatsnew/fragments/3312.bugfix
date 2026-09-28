@@ -1,0 +1,4 @@
+Fix ``TypeError`` in ``ClassDef.getitem`` when ``__class_getitem__`` is uninferable
+or returns an uninferable object.
+
+Closes #3312

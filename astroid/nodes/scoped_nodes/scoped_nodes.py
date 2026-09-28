@@ -2624,12 +2624,18 @@ class ClassDef(
 
         method = methods[0]
 
+        if isinstance(method, util.UninferableBase):
+            return util.Uninferable
+
         # Create a new callcontext for providing index as an argument.
         new_context = bind_context_to_node(context, self)
         new_context.callcontext = CallContext(args=[index], callee=method)
 
         try:
-            return next(method.infer_call_result(self, new_context), util.Uninferable)
+            call_results = method.infer_call_result(self, new_context)
+            if isinstance(call_results, util.UninferableBase):
+                return util.Uninferable
+            return next(call_results, util.Uninferable)
         except AttributeError as exc:
             # Starting with python3.9, builtin types list, dict etc...
             # are subscriptable thanks to __class_getitem___ classmethod.
@@ -2647,7 +2653,7 @@ class ClassDef(
             if not method.callable():
                 raise AstroidTypeError(node=self, context=context) from exc
             raise
-        except InferenceError:
+        except (InferenceError, TypeError):
             return util.Uninferable
 
     def methods(self):

@@ -4443,6 +4443,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             with self.assertRaises(AstroidTypeError):
                 node.getitem(nodes.Const(0))
 
+    def test_getitem_with_uninferable_class_getitem(self) -> None:
+        """``__class_getitem__`` may resolve to an ``Uninferable`` node or return
+        ``Uninferable``, which is not an iterator.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3312
+        """
+        node = extract_node("""
+        class C: pass
+        type.__class_getitem__ = min()
+        C[0] #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(inferred, util.Uninferable)
+
     def test_infer_arg_called_type_is_uninferable(self) -> None:
         node = extract_node("""
         def func(type):
