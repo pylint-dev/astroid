@@ -1,4 +1,4 @@
 Fix a ``TypeError`` crash when inferring ``random.sample()`` on a sequence whose
-elements are inferred as ``Instance``. 
+elements are inferred as ``Instance``.
 
 Closes #3310
