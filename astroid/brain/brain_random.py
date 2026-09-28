@@ -20,6 +20,11 @@ ACCEPTED_ITERABLES_FOR_SAMPLE = (nodes.List, nodes.Set, nodes.Tuple)
 def _clone_node_with_lineno(node, parent, lineno):
     if isinstance(node, nodes.EvaluatedObject):
         node = node.original
+    if not isinstance(node, nodes.NodeNG):
+        # Inferred objects, such as ``Instance``, are not source nodes: they
+        # cannot be rebuilt from constructor arguments, so pass them through
+        # untouched instead of attempting to clone them.
+        return node
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields
