@@ -1,0 +1,8 @@
+Fix an ``IndexError`` crash when inferring an argument of a function whose
+keyword-only parameter shares the name of the ``*args`` parameter (e.g.
+``def f(x, *y, y): ...``). The shared name dropped the keyword-only entry from
+the positional list, so ``Arguments.default_value`` computed an index past the
+end of ``defaults``; it now reports no default in that case, matching what the
+caller already expects.
+
+Closes #3259

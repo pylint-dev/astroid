@@ -167,6 +167,21 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(NoDefault):
             node.args.default_value("name")
 
+    def test_default_value_out_of_bounds_no_crash(self) -> None:
+        """A keyword-only argument sharing the vararg's name drops it from
+        ``args``, so the positional-default index points past ``defaults``.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3259
+        """
+        node = extract_node("def f(x, *y, y: tuple[x]): ...")
+        with self.assertRaises(NoDefault):
+            node.args.default_value("x")
+
+        # The annotation ``tuple[x]`` infers ``x`` through the same path and
+        # must degrade to Uninferable instead of raising IndexError.
+        annotation = node.args.kwonlyargs_annotations[0]
+        self.assertEqual(list(annotation.infer()), [util.Uninferable])
+
     def test_infer_abstract_property_return_values(self) -> None:
         module = parse("""
         import abc
