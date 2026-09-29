@@ -323,13 +323,11 @@ class ClassModelTest(unittest.TestCase):
         Inferring ``Class.__bases__`` must return a Tuple parented to the class so
         callers can safely use ``.root()`` (e.g. pylint's stdlib checker).
         """
-        node = builder.extract_node(
-            """
+        node = builder.extract_node("""
             class C:
                 pass
             C.__bases__  #@
-            """
-        )
+            """)
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Tuple)
         self.assertIsInstance(inferred.parent, nodes.ClassDef)
