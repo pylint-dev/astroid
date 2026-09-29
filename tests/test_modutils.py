@@ -11,7 +11,7 @@ import os
 import shutil
 import sys
 import tempfile
-import unittest
+import unittest.mock
 import xml
 from pathlib import Path
 from xml.etree import ElementTree
@@ -675,3 +675,22 @@ def test_no_import_done_for_submodule_sharing_std_lib_name() -> None:
             )
     finally:
         sys.path.pop(0)
+
+
+def test_no_import_done_for_missing_submodule_of_std_lib_named_package() -> None:
+    """A package shadowing a stdlib name must not run when a submodule is missing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        os.mkdir(os.path.join(tmpdir, "xmlrpc"))
+        with open(
+            os.path.join(tmpdir, "xmlrpc", "__init__.py"), "w", encoding="utf-8"
+        ) as f:
+            f.write("raise AssertionError('xmlrpc was imported')\n")
+        sys.path.insert(0, tmpdir)
+        try:
+            with unittest.mock.patch.dict(sys.modules):
+                sys.modules.pop("xmlrpc", None)
+                with pytest.raises(ImportError):
+                    spec.find_spec(["xmlrpc", "missing"])
+                assert "xmlrpc" not in sys.modules
+        finally:
+            sys.path.pop(0)
