@@ -11,6 +11,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from astroid import nodes
+from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
     from astroid import objects
@@ -98,10 +99,18 @@ class AsStringVisitor:
 
         return False
 
+    def _unpack_operand(self, value: nodes.NodeNG) -> str:
+        """Render a ``*``/``**`` unpack operand, parenthesized when it binds
+        looser than the unpacking, e.g. ``[*(a or b)]``."""
+        rendered = value.accept(self)
+        if value.op_precedence() < OP_PRECEDENCE["|"]:
+            return f"({rendered})"
+        return rendered
+
     # visit_<node> methods ###########################################
 
     def visit_await(self, node: nodes.Await) -> str:
-        return f"await {node.value.accept(self)}"
+        return f"await {self._precedence_parens(node, node.value)}"
 
     def visit_asyncwith(self, node: nodes.AsyncWith) -> str:
         return f"async {self.visit_with(node)}"
@@ -251,13 +260,12 @@ class AsStringVisitor:
 
     def _visit_dict(self, node: nodes.Dict) -> Iterator[str]:
         for key, value in node.items:
-            key = key.accept(self)
-            value = value.accept(self)
-            if key == "**":
+            key_str = key.accept(self)
+            if key_str == "**":
                 # It can only be a DictUnpack node.
-                yield key + value
+                yield key_str + self._unpack_operand(value)
             else:
-                yield f"{key}: {value}"
+                yield f"{key_str}: {value.accept(self)}"
 
     def visit_dictunpack(self, node: nodes.DictUnpack) -> str:
         return "**"
@@ -265,12 +273,11 @@ class AsStringVisitor:
     def visit_dictcomp(self, node: nodes.DictComp) -> str:
         """return an nodes.DictComp node as string"""
         key = node.key.accept(self)
-        value = node.value.accept(self)
         generators = " ".join(n.accept(self) for n in node.generators)
         if key == "**":
             # PEP 798 dict-comprehension unpacking, e.g. ``{**d for d in dicts}``.
-            return f"{{{key}{value} {generators}}}"
-        return f"{{{key}: {value} {generators}}}"
+            return f"{{{key}{self._unpack_operand(node.value)} {generators}}}"
+        return f"{{{key}: {node.value.accept(self)} {generators}}}"
 
     def visit_expr(self, node: nodes.Expr) -> str:
         """return an nodes.Expr node as string"""
@@ -649,7 +656,7 @@ class AsStringVisitor:
 
     def visit_starred(self, node: nodes.Starred) -> str:
         """return Starred node as string"""
-        return "*" + node.value.accept(self)
+        return "*" + self._unpack_operand(node.value)
 
     def visit_match(self, node: nodes.Match) -> str:
         """Return an nodes.Match node as string."""
