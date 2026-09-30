@@ -1,0 +1,10 @@
+``as_string`` now renders the annotations of ``*args`` and ``**kwargs``.
+``Arguments.format_args`` built those two parameters from their names alone, so
+``def func(*args: str, **kwargs: float)`` came back as
+``def func(*args, **kwargs)`` even though ``varargannotation`` and
+``kwargannotation`` were set on the node. Positional and keyword-only
+parameters already rendered theirs. A PEP 646 ``def func(*args: *Ts)`` is
+covered as well. Code that compares or reparses ``as_string`` output for such
+signatures will see the annotations.
+
+Refs #3222
