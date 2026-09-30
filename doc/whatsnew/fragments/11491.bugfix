@@ -1,3 +1,0 @@
-Fix ``AssertionError`` in ``NodeNG.root()`` when inferring ``Class.__bases__``, which previously returned a parentless ``Tuple``.
-
-Closes pylint-dev/pylint#11491
