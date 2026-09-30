@@ -239,6 +239,8 @@ class ClassModelTest(unittest.TestCase):
         base_nodes = next(ast_nodes[6].infer())
         self.assertIsInstance(base_nodes, nodes.Tuple)
         self.assertEqual([cls.name for cls in base_nodes.elts], ["object"])
+        self.assertIsInstance(base_nodes.parent, nodes.ClassDef)
+        self.assertEqual(base_nodes.root().name, "fake_module")
 
         cls = next(ast_nodes[7].infer())
         self.assertIsInstance(cls, nodes.ClassDef)
@@ -250,6 +252,24 @@ class ClassModelTest(unittest.TestCase):
         subclasses = next(ast_nodes[9].infer())
         self.assertIsInstance(subclasses, nodes.List)
         self.assertEqual([cls.name for cls in subclasses.elts], ["B", "C"])
+
+    def test_class_bases_has_module_root(self) -> None:
+        """Regression test for pylint-dev/pylint#11491.
+
+        Inferring ``Class.__bases__`` must return a Tuple parented to the class so
+        callers can safely use ``.root()`` (e.g. pylint's stdlib checker).
+        """
+        node = builder.extract_node("""
+            class C:
+                pass
+            C.__bases__  #@
+            """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Tuple)
+        self.assertIsInstance(inferred.parent, nodes.ClassDef)
+        self.assertEqual(inferred.parent.name, "C")
+        # Must not raise AssertionError from NodeNG.root().
+        self.assertIsInstance(inferred.root(), nodes.Module)
 
 
 class ModuleModelTest(unittest.TestCase):
