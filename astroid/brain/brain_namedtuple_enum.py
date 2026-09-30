@@ -438,7 +438,22 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
             ):
                 continue
 
-            stmt = values[0].statement()
+            # An annotation without a value declares the type of the member
+            # values, it does not create a member, so it must not be replaced
+            # by the mocked member class.
+            stmt = next(
+                (
+                    statement
+                    for statement in (value.statement() for value in values)
+                    if not (
+                        isinstance(statement, nodes.AnnAssign)
+                        and statement.value is None
+                    )
+                ),
+                None,
+            )
+            if stmt is None:
+                continue
             if isinstance(stmt, nodes.Assign):
                 if isinstance(stmt.targets[0], nodes.Tuple):
                     targets = stmt.targets[0].itered()
@@ -449,15 +464,13 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
             else:
                 continue
 
-            inferred_return_value = None
-            if stmt.value is not None:
-                if isinstance(stmt.value, nodes.Const):
-                    if isinstance(stmt.value.value, str):
-                        inferred_return_value = repr(stmt.value.value)
-                    else:
-                        inferred_return_value = stmt.value.value
+            if isinstance(stmt.value, nodes.Const):
+                if isinstance(stmt.value.value, str):
+                    inferred_return_value = repr(stmt.value.value)
                 else:
-                    inferred_return_value = stmt.value.as_string()
+                    inferred_return_value = stmt.value.value
+            else:
+                inferred_return_value = stmt.value.as_string()
 
             new_targets = []
             for target in targets:
@@ -500,8 +513,6 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
                 new_targets.append(fake.instantiate_class())
-                if stmt.value is None:
-                    continue
                 dunder_members[local] = fake
             node.locals[local] = new_targets
 
