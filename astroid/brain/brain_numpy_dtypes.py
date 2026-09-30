@@ -56,9 +56,39 @@ DTYPE_CLASS_NAMES = (
 )
 
 
+# The DType classes do not share ``numpy.dtype``'s ``(obj, align, copy)``
+# constructor. Most take no argument at all; these take one positional-only
+# argument (their ``__text_signature__``), and ``StringDType`` is keyword-only.
+_POSITIONAL_PARAMETER = {
+    "BytesDType": "size",
+    "StrDType": "size",
+    "VoidDType": "length",
+    "DateTime64DType": "unit",
+    "TimeDelta64DType": "unit",
+}
+
+_STRING_DTYPE = """
+class StringDType(numpy.dtype):
+    def __init__(self, *, na_object=None, coerce=True):
+        self.na_object = na_object
+        self.coerce = coerce
+"""
+
+
+def _dtype_class(name: str) -> str:
+    if name == "StringDType":
+        return _STRING_DTYPE
+    parameter = _POSITIONAL_PARAMETER.get(name)
+    signature = f"self, {parameter}, /" if parameter else "self"
+    return f"""
+class {name}(numpy.dtype):
+    def __init__({signature}): ...
+"""
+
+
 def numpy_dtypes_transform() -> nodes.Module:
-    classes = "\n".join(f"class {name}(numpy.dtype): ..." for name in DTYPE_CLASS_NAMES)
-    return parse(f"import numpy\n{classes}\n")
+    classes = "".join(_dtype_class(name) for name in DTYPE_CLASS_NAMES)
+    return parse(f"import numpy\n{classes}")
 
 
 def register(manager: AstroidManager) -> None:

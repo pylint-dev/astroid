@@ -57,3 +57,50 @@ class TestBrainNumpyDtypes:
             if isinstance(getattr(numpy.dtypes, name), type)
         }
         assert not exposed - set(DTYPE_CLASS_NAMES)
+
+    @pytest.mark.parametrize(
+        "name, expected",
+        [
+            ("Float64DType", []),
+            ("ObjectDType", []),
+            ("BytesDType", ["size"]),
+            ("StrDType", ["size"]),
+            ("VoidDType", ["length"]),
+            ("DateTime64DType", ["unit"]),
+            ("TimeDelta64DType", ["unit"]),
+        ],
+    )
+    def test_dtype_class_has_its_own_constructor(
+        self, name: str, expected: list[str]
+    ) -> None:
+        """The DType classes do not inherit ``numpy.dtype(obj, align, copy)``."""
+        node = builder.extract_node(f"""
+        import numpy as np
+        np.dtypes.{name} #@
+        """)
+        init = next(node.infer()).local_attr("__init__")[0]
+        assert init.parent.name == name
+        positional = [arg.name for arg in init.args.posonlyargs + init.args.args]
+        assert positional == ["self", *expected]
+        assert not init.args.kwonlyargs
+        if expected:
+            assert [arg.name for arg in init.args.posonlyargs] == ["self", *expected]
+
+    def test_string_dtype_constructor_is_keyword_only(self) -> None:
+        node = builder.extract_node("""
+        import numpy as np
+        np.dtypes.StringDType #@
+        """)
+        init = next(node.infer()).local_attr("__init__")[0]
+        assert [arg.name for arg in init.args.kwonlyargs] == ["na_object", "coerce"]
+        assert [arg.name for arg in init.args.args] == ["self"]
+
+    @pytest.mark.parametrize("attribute", ["na_object", "coerce"])
+    def test_string_dtype_instance_attributes_are_inferred(
+        self, attribute: str
+    ) -> None:
+        node = builder.extract_node(f"""
+        import numpy as np
+        np.dtypes.StringDType(na_object=None).{attribute} #@
+        """)
+        assert node.inferred()
