@@ -702,6 +702,84 @@ class TypingBrain(unittest.TestCase):
             for attr in ("__required_keys__", "__optional_keys__"):
                 assert cls.getattr(attr), f"{cls.name}.{attr} not found"
 
+    def test_typed_dict_is_inferred_once(self) -> None:
+        """Every use of TypedDict infers to the same class.
+
+        A fresh class per inference put several distinct ``TypedDict`` nodes in
+        the MRO of a class deriving from more than one TypedDict, which made
+        ``ClassDef.mro()`` raise ``DuplicateBasesError`` for its subclasses.
+
+        See https://github.com/pylint-dev/pylint/issues/9222
+        """
+        code = builder.extract_node("""
+        import typing
+        from typing import TypedDict
+
+        class A(typing.TypedDict):  #@
+            a: int
+
+        class B(typing.TypedDict):  #@
+            b: int
+
+        class C(TypedDict):  #@
+            c: int
+        """)
+        bases = [next(cls.bases[0].infer()) for cls in code]
+        assert all(base.qname() == "typing.TypedDict" for base in bases)
+        assert bases[0] is bases[1] is bases[2]
+
+    def test_typed_dict_diamond_mro(self) -> None:
+        """A class deriving from several TypedDicts has a duplicate-free MRO.
+
+        See https://github.com/pylint-dev/pylint/issues/9222
+        """
+        code = builder.extract_node("""
+        import typing
+        import typing_extensions
+
+        class A(typing.TypedDict):
+            a: int
+
+        class B(typing.TypedDict):
+            b: int
+
+        class C(typing_extensions.TypedDict):
+            c: int
+
+        class ABC(A, B, C):  #@
+            d: int
+
+        class ABCD(ABC):  #@
+            e: int
+        """)
+        assertEqualMro(
+            code[0],
+            [
+                ".ABC",
+                ".A",
+                ".B",
+                "typing.TypedDict",
+                ".C",
+                "typing_extensions.TypedDict",
+                "builtins.dict",
+                "builtins.object",
+            ],
+        )
+        assertEqualMro(
+            code[1],
+            [
+                ".ABCD",
+                ".ABC",
+                ".A",
+                ".B",
+                "typing.TypedDict",
+                ".C",
+                "typing_extensions.TypedDict",
+                "builtins.dict",
+                "builtins.object",
+            ],
+        )
+
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
