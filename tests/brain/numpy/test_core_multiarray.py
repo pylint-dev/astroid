@@ -76,11 +76,20 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         """)
         return node.infer()
 
+    def _inferred_numpy_from_import_func_call(self, func_name, *func_args):
+        node = builder.extract_node(f"""
+        import numpy as np
+        from numpy import {func_name:s}
+        {func_name:s}({','.join(func_args):s})
+        """)
+        return node.infer()
+
     def test_numpy_function_calls_inferred_as_ndarray(self):
         """Test that calls to numpy functions are inferred as numpy.ndarray."""
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
+            self._inferred_numpy_from_import_func_call,
         ):
             for func_ in self.numpy_functions_returning_array:
                 with self.subTest(typ=func_):
@@ -99,6 +108,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
+            self._inferred_numpy_from_import_func_call,
         ):
             for func_ in self.numpy_functions_returning_bool:
                 with self.subTest(typ=func_):
@@ -117,6 +127,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
+            self._inferred_numpy_from_import_func_call,
         ):
             for func_ in self.numpy_functions_returning_dtype:
                 with self.subTest(typ=func_):
@@ -135,6 +146,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
+            self._inferred_numpy_from_import_func_call,
         ):
             for func_ in self.numpy_functions_returning_none:
                 with self.subTest(typ=func_):
@@ -153,6 +165,7 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
         for infer_wrapper in (
             self._inferred_numpy_func_call,
             self._inferred_numpy_no_alias_func_call,
+            self._inferred_numpy_from_import_func_call,
         ):
             for func_ in self.numpy_functions_returning_tuple:
                 with self.subTest(typ=func_):
@@ -165,3 +178,23 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                         inferred_values[-1].pytype() == "builtins.tuple",
                         msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                     )
+
+    def test_same_name_not_from_numpy_is_left_alone(self):
+        """Only a name bound by ``from numpy import`` gets the numpy stub."""
+        array_node = builder.extract_node("""
+        from array import array
+        array('i', [1])
+        """)
+        where_node = builder.extract_node("""
+        def where(cond, x, y):
+            return (cond, x, y)
+        where(1, 2, 3)
+        """)
+        for node, expected in (
+            (array_node, "array.array"),
+            (where_node, "builtins.tuple"),
+        ):
+            with self.subTest(expected=expected):
+                inferred_values = list(node.infer())
+                self.assertEqual(len(inferred_values), 1)
+                self.assertEqual(inferred_values[0].pytype(), expected)
