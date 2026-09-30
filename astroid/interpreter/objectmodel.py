@@ -596,7 +596,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___bases__(self):
-        obj = node_classes.Tuple()
+        obj = node_classes.Tuple(parent=self._instance)
         context = InferenceContext()
         elts = list(self._instance._inferred_bases(context))
         obj.postinit(elts=elts)
