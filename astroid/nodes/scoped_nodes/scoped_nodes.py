@@ -1550,7 +1550,30 @@ class FunctionDef(
             if yield_.value is None:
                 yield node_classes.Const(None, parent=yield_, lineno=yield_.lineno)
             elif yield_.scope() == self:
-                yield from yield_.value.infer(context=context)
+                if isinstance(yield_, node_classes.YieldFrom):
+                    yield from self._infer_yield_from_values(yield_.value, context)
+                else:
+                    yield from yield_.value.infer(context=context)
+
+    @staticmethod
+    def _infer_yield_from_values(
+        iterable: NodeNG, context: InferenceContext | None
+    ) -> Iterator[InferenceResult]:
+        """Infer the values produced by ``yield from <iterable>``.
+
+        Unlike ``yield``, ``yield from`` does not yield the inferred operand
+        itself but each of the values it produces. Iterables that are empty
+        or exhausted contribute nothing, and iterables whose values cannot be
+        determined statically contribute ``Uninferable``.
+        """
+        for inferred in iterable.infer(context=context):
+            if isinstance(inferred, bases.Generator):
+                yield from inferred.infer_yield_types()
+            elif isinstance(inferred, (node_classes.List, node_classes.Tuple)):
+                for element in inferred.elts:
+                    yield from element.infer(context=context)
+            else:
+                yield util.Uninferable
 
     @staticmethod
     def _is_stub_placeholder_body(body: list[NodeNG]) -> bool:
