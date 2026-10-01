@@ -580,7 +580,9 @@ class SpecialReader(Reader):
 """)
     attr = mod.body[0].body[0].body[0].value.expr  # `self.data` in Header.process
     inferred = list(attr.infer())
-    assert any(isinstance(node, bases.Instance) and node.name == "Data" for node in inferred)
+    assert any(
+        isinstance(node, bases.Instance) and node.name == "Data" for node in inferred
+    )
     assert any(node is Uninferable for node in inferred)
 
 
@@ -605,7 +607,10 @@ class SpecialReader(Reader):
 SpecialReader().data  #@
 """)
     inferred = node.inferred()
-    assert any(isinstance(node, bases.Instance) and node.name == "SpecialData" for node in inferred)
+    assert any(
+        isinstance(node, bases.Instance) and node.name == "SpecialData"
+        for node in inferred
+    )
     assert any(node is Uninferable for node in inferred)
 
 
