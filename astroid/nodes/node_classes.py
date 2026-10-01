@@ -1900,7 +1900,7 @@ class Compare(NodeNG):
 
             try:
                 expr = op_func(left, right)
-            except TypeError as exc:
+            except (TypeError, ValueError) as exc:
                 raise AstroidTypeError from exc
 
             if retval is None:

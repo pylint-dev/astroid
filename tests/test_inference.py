@@ -7517,3 +7517,16 @@ def test_decimal_inference():
     for node in extract_node(code):
         module = node.do_import_module(node.modname)
         module.getattr(node.names[0][0])
+
+
+def test_compare_valueerror() -> None:
+    # ``bytes.__contains__`` range-checks its argument, so an out-of-range
+    # int raises ``ValueError`` (not ``TypeError``) on membership tests.
+    # Inference must stay uninferable instead of propagating the error.
+    code = """
+    257 in b""
+    """
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert inferred[0] is util.Uninferable
