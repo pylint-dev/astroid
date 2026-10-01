@@ -543,3 +543,95 @@ def test_chained_attribute_inherited() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == 42
+
+
+def test_factory_class_attribute_call_includes_uninferable() -> None:
+    """Calls through an overridable factory class attribute (#3210).
+
+    ``self.data_class()`` resolves to ``Data`` on ``Reader``, but a subclass
+    can override ``data_class``, so the exact return class is not certain.
+    The inferred results must include ``Uninferable`` to avoid asserting
+    more than is known, which previously caused false ``no-member``
+    positives in pylint (astropy's ``BaseReader`` is the real-world case).
+    """
+    mod = builder.parse("""
+class Header:
+    def process(self):
+        return self.data.is_multiline
+
+class Data:
+    pass
+
+class SpecialData(Data):
+    def __init__(self):
+        self.is_multiline = True
+
+class Reader:
+    header_class = Header
+    data_class = Data
+
+    def __init__(self):
+        self.header = self.header_class()
+        self.data = self.data_class()
+        self.header.data = self.data
+
+class SpecialReader(Reader):
+    data_class = SpecialData
+""")
+    attr = mod.body[0].body[0].body[0].value.expr  # `self.data` in Header.process
+    inferred = list(attr.infer())
+    assert any(isinstance(node, bases.Instance) and node.name == "Data" for node in inferred)
+    assert any(node is Uninferable for node in inferred)
+
+
+def test_factory_class_attribute_call_subclass_override_still_resolves() -> None:
+    """The subclass override of the factory attribute is still picked up."""
+    node = builder.extract_node("""
+class Data:
+    pass
+
+class SpecialData(Data):
+    pass
+
+class Reader:
+    data_class = Data
+
+    def __init__(self):
+        self.data = self.data_class()
+
+class SpecialReader(Reader):
+    data_class = SpecialData
+
+SpecialReader().data  #@
+""")
+    inferred = node.inferred()
+    assert any(isinstance(node, bases.Instance) and node.name == "SpecialData" for node in inferred)
+    assert any(node is Uninferable for node in inferred)
+
+
+def test_factory_class_attribute_call_direct_call_stays_precise() -> None:
+    """Direct calls and class-level calls keep their precise inference."""
+    node = builder.extract_node("""
+class Data:
+    pass
+
+class Reader:
+    data_class = Data
+
+Reader.data_class()  #@
+""")
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "Data"
+
+    node = builder.extract_node("""
+class Data:
+    pass
+
+Data()  #@
+""")
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "Data"
