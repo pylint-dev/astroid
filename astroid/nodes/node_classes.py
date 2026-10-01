@@ -1760,6 +1760,7 @@ class Call(NodeNG):
         if context is not None:
             callcontext.extra_context = self._populate_context_lookup(context.clone())
 
+        yield_uninferable = False
         for callee in self.func.infer(context):
             if isinstance(callee, util.UninferableBase):
                 yield callee
@@ -1772,9 +1773,37 @@ class Call(NodeNG):
                     yield from callee.infer_call_result(
                         caller=self, context=callcontext
                     )
+                    if self._is_instance_factory_call(callee):
+                        yield_uninferable = True
             except InferenceError:
                 continue
+        if yield_uninferable:
+            # The call went through an attribute of an instance (for example
+            # ``self.data_class()``) and resolved to a class. Subclasses may
+            # override that attribute, so the exact return class asserted by
+            # the callee alone is more than we know (#3210).
+            yield util.Uninferable
         return InferenceErrorInfo(node=self, context=context)
+
+    def _is_instance_factory_call(self, callee: InferenceResult) -> bool:
+        """Whether ``callee`` is a class reached through an instance attribute.
+
+        Class attributes holding classes are factories that any subclass can
+        override, so a call like ``self.factory_class()`` is not guaranteed to
+        produce the resolved class.
+        """
+        from astroid.nodes import ClassDef  # pylint: disable=import-outside-toplevel
+
+        if not isinstance(callee, ClassDef) or not isinstance(self.func, Attribute):
+            return False
+        try:
+            for owner in self.func.expr.infer():
+                if isinstance(owner, util.UninferableBase):
+                    continue
+                return isinstance(owner, Instance)
+        except InferenceError:
+            pass
+        return False
 
     def _populate_context_lookup(self, context: InferenceContext | None):
         """Allows context to be saved for later for inference inside a function."""
