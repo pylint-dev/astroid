@@ -1,0 +1,3 @@
+Fix an ``IndexError`` crash when inferring a functional ``enum.Enum`` call
+whose member list contains an empty tuple, such as ``enum.Enum("E", [()])``.
+Such an invalid member now degrades to ``Uninferable`` instead of raising.
