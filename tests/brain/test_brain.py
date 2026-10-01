@@ -525,6 +525,26 @@ class TypingBrain(unittest.TestCase):
         for name, value in (("apple", "red"), ("banana", "yellow")):
             self.assertEqual(next(inferred.getattr(name)[0].infer()).value, value)
 
+    def test_namedtuple_annassign_non_name_target(self):
+        """Regression test for https://github.com/pylint-dev/astroid/issues/3257
+
+        Inference must not crash when AnnAssign target is an AssignAttr or Subscript.
+        """
+        attribute, subscript = builder.extract_node("""
+        from typing import NamedTuple
+
+        class Attribute(NamedTuple):
+            cat.color: str
+
+        class Subscript(NamedTuple):
+            basket[0]: str
+
+        Attribute()  #@
+        Subscript()  #@
+        """)
+        for node in (attribute, subscript):
+            self.assertIsInstance(next(node.infer()), astroid.Instance)
+
     def test_tuple_type(self):
         node = builder.extract_node("""
         from typing import Tuple
