@@ -7517,3 +7517,82 @@ def test_decimal_inference():
     for node in extract_node(code):
         module = node.do_import_module(node.modname)
         module.getattr(node.names[0][0])
+
+
+@pytest.mark.parametrize("base", ["object", "Exception"])
+def test_instance_subscript_all_return_values(base: str) -> None:
+    node = extract_node(f"""
+    class Container({base}):
+        def __getitem__(self, index):
+            if index == 1:
+                return 42
+            return None
+
+    Container()["abc"]
+    """)
+    assert [value.value for value in node.inferred()] == [42, None]
+
+
+@pytest.mark.parametrize("first, second", [("value", "42"), ("42", "value")])
+def test_instance_subscript_uninferable_return(first: str, second: str) -> None:
+    node = extract_node(f"""
+    def func(value):
+        class Container:
+            def __getitem__(self, index):
+                if index == 1:
+                    return {first}
+                return {second}
+
+        Container()[0]  #@
+    """)
+    inferred = node.inferred()
+    expected = [Uninferable if value == "value" else 42 for value in (first, second)]
+    assert [
+        value if value is Uninferable else value.value for value in inferred
+    ] == expected
+
+
+def test_instance_subscript_binds_index_for_each_return() -> None:
+    node = extract_node("""
+    def func(condition):
+        class Container:
+            def __getitem__(self, index):
+                if condition:
+                    return index + 42
+                return index + 24
+
+        Container()[2]  #@
+    """)
+    assert [value.value for value in node.inferred()] == [44, 26]
+
+
+def test_instance_subscript_recursive_return() -> None:
+    node = extract_node("""
+    class Container:
+        def __getitem__(self, index):
+            if index == 1:
+                return self[index]
+            return 42
+
+    Container()[0]
+    """)
+    inferred = node.inferred()
+    assert inferred[0] is Uninferable
+    assert isinstance(inferred[1], nodes.Const)
+    assert inferred[1].value == 42
+
+
+def test_instance_getitem_returns_first_value() -> None:
+    node = extract_node("""
+    class Container:
+        def __getitem__(self, index):
+            if index == 1:
+                return 42
+            return None
+
+    Container()
+    """)
+    instance = next(node.infer())
+    inferred = instance.getitem(nodes.Const(0))
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42

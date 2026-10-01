@@ -3786,7 +3786,23 @@ class Subscript(NodeNG):
                     raise InferenceError(node=self, context=context)
 
                 try:
-                    assigned = value.getitem(index_value, context)
+                    if (
+                        isinstance(value, Instance)
+                        and type(value).getitem is Instance.getitem
+                    ):
+                        assigned_values = value._infer_getitem(index_value, context)
+                    else:
+                        assigned_values = (value.getitem(index_value, context),)
+                    for assigned in assigned_values:
+                        # Prevent inferring if the inferred subscript
+                        # is the same as the original subscripted object.
+                        if self is assigned or isinstance(
+                            assigned, util.UninferableBase
+                        ):
+                            yield util.Uninferable
+                            continue
+                        yield from assigned.infer(context)
+                        found_one = True
                 except (
                     AstroidTypeError,
                     AstroidIndexError,
@@ -3795,14 +3811,6 @@ class Subscript(NodeNG):
                     AttributeError,
                 ) as exc:
                     raise InferenceError(node=self, context=context) from exc
-
-                # Prevent inferring if the inferred subscript
-                # is the same as the original subscripted object.
-                if self is assigned or isinstance(assigned, util.UninferableBase):
-                    yield util.Uninferable
-                    return None
-                yield from assigned.infer(context)
-                found_one = True
 
         if found_one:
             return InferenceErrorInfo(node=self, context=context)
