@@ -1769,6 +1769,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             ["CustomPdb", "PatchedPdb", "Pdb", "Bdb", "Cmd", "object"],
         )
 
+    def test_mro_deep_linear_chain(self) -> None:
+        """The C3 merge must stay fast on a deep single-inheritance chain.
+
+        It used to rescan every tail for each candidate, making the mro of
+        the last class of such a chain cubic in the chain's length.
+        """
+        depth = 500
+        module = builder.parse(
+            "class C0: pass\n"
+            + "\n".join(f"class C{i}(C{i - 1}): pass" for i in range(1, depth))
+        )
+        self.assertEqualMro(
+            module[f"C{depth - 1}"],
+            [f"C{i}" for i in reversed(range(depth))] + ["object"],
+        )
+
     def test_mro_with_factories(self) -> None:
         cls = builder.extract_node("""
         def MixinFactory(cls):
