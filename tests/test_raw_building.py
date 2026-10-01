@@ -14,6 +14,7 @@ import _io
 import logging
 import os
 import sys
+import threading
 import types
 import unittest
 from typing import Any
@@ -218,3 +219,90 @@ def test_build_module_getattr_catch_output(
 def test_missing__dict__():
     # This shouldn't raise an exception.
     object_build_class(DUMMY_MOD, mypy.build.ModuleNotFound)
+
+
+COMPLEX_ENUM_MODNAME = "pyo3_complex_enum"
+
+
+def _complex_enum_module() -> types.ModuleType:
+    """Build a live module shaped like a pyo3 complex enum.
+
+    pyo3 attaches every variant of a complex enum to the enum class itself, so
+    each variant also sees itself and its siblings through inheritance.
+    """
+    module = types.ModuleType(COMPLEX_ENUM_MODNAME)
+
+    class ComplexEnum:
+        """Stands in for the pyo3 enum itself."""
+
+    class FirstVariant(ComplexEnum):
+        """Stands in for a variant of the enum."""
+
+    class SecondVariant(ComplexEnum):
+        """Stands in for another variant of the enum."""
+
+    ComplexEnum.FirstVariant = FirstVariant  # type: ignore[attr-defined]
+    ComplexEnum.SecondVariant = SecondVariant  # type: ignore[attr-defined]
+    for klass in (ComplexEnum, FirstVariant, SecondVariant):
+        klass.__module__ = COMPLEX_ENUM_MODNAME
+        setattr(module, klass.__name__, klass)
+    return module
+
+
+def _build_without_hanging(module: types.ModuleType, modname: str) -> nodes.Module:
+    """Introspect ``module`` on a side thread, so a regression fails instead of hanging."""
+    outcome: list[nodes.Module | BaseException] = []
+
+    def build() -> None:
+        try:
+            outcome.append(
+                AstroidBuilder(AstroidManager()).inspect_build(module, modname=modname)
+            )
+        except BaseException as exc:
+            outcome.append(exc)
+
+    thread = threading.Thread(target=build, daemon=True)
+    thread.start()
+    thread.join(timeout=60)
+    assert outcome, "building the module did not terminate"
+    if isinstance(outcome[0], BaseException):
+        raise outcome[0]
+    return outcome[0]
+
+
+def test_class_seeing_itself_as_an_attribute() -> None:
+    """A class exposing itself as one of its own attributes must not become its own parent.
+
+    https://github.com/pylint-dev/astroid/issues/3284
+    """
+    try:
+        built = _build_without_hanging(_complex_enum_module(), COMPLEX_ENUM_MODNAME)
+    finally:
+        AstroidManager().clear_cache()
+
+    variant = built["FirstVariant"]
+    assert isinstance(variant, nodes.ClassDef)
+    # ``FirstVariant`` sees itself through ``ComplexEnum``, but that must not
+    # make it its own parent: the name is registered, the parent link is left
+    # alone.
+    assert variant["FirstVariant"] is variant
+    assert variant.parent is not variant
+    assert variant.root() is built
+
+
+def test_no_parent_cycle_between_sibling_classes() -> None:
+    """Mutually visible classes must not end up parenting each other.
+
+    https://github.com/pylint-dev/astroid/issues/3284
+    """
+    try:
+        built = _build_without_hanging(_complex_enum_module(), COMPLEX_ENUM_MODNAME)
+        for name in ("ComplexEnum", "FirstVariant", "SecondVariant"):
+            node = built[name]
+            seen = set()
+            while node is not None:
+                assert id(node) not in seen, f"parent cycle reached from {name}"
+                seen.add(id(node))
+                node = node.parent
+    finally:
+        AstroidManager().clear_cache()
