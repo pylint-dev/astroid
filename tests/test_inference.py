@@ -7517,3 +7517,59 @@ def test_decimal_inference():
     for node in extract_node(code):
         module = node.do_import_module(node.modname)
         module.getattr(node.names[0][0])
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        ("[]", "(1, 2)", "[1, 2]"),
+        ("[0]", "(1, 2)", "[0, 1, 2]"),
+        ("[0]", "()", "[0]"),
+        ("[]", "()", "[]"),
+        ("[0]", "[1, 2]", "[0, 1, 2]"),
+        ("(0,)", "(1, 2)", "(0, 1, 2)"),
+    ],
+)
+def test_augassign_list_tuple_concatenation(left, right, expected):
+    node = extract_node(f"values = {left}\nvalues += {right}\nvalues")
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert inferred[0].as_string() == expected
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "[] + (1, 2)",
+        "() + [1, 2]",
+        "values = ()\nvalues += [1, 2]\nvalues",
+        "values = []\nvalues += 1\nvalues",
+    ],
+)
+def test_augassign_list_tuple_invalid_operations(source):
+    assert list(extract_node(source).infer()) == [util.Uninferable]
+
+
+def test_augassign_list_tuple_preserves_ambiguous_elements():
+    node = extract_node("""
+        def choice(flag):
+            if flag:
+                return 1
+            return 2
+        values = [0]
+        values += (choice(True), 3)
+        values
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert len(inferred.elts) == 3
+    assert inferred.elts[0].value == 0
+    assert list(inferred.elts[1].infer()) == [util.Uninferable]
+    assert inferred.elts[2].value == 3
+
+
+def test_augassign_list_tuple_does_not_mutate_initial_value():
+    module = parse("values = [0]\nvalues += (1, 1)\nvalues")
+    inferred = next(module.body[-1].value.infer())
+    assert inferred.as_string() == "[0, 1, 1]"
+    assert module.body[0].value.as_string() == "[0]"

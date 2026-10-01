@@ -293,7 +293,12 @@ def tl_infer_binary_op(
     # For tuples and list the boundnode is no longer the tuple or list instance
     context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
-    if isinstance(other, self.__class__) and operator == "+":
+    # list.__iadd__ accepts a tuple, unlike list.__add__; tuples have no __iadd__.
+    if (isinstance(other, self.__class__) and operator == "+") or (
+        isinstance(self, nodes.List)
+        and isinstance(other, (nodes.List, nodes.Tuple))
+        and operator == "+="
+    ):
         # Don't build (and infer every element of) an overly large sequence.
         if len(self.elts) + len(other.elts) > 1e8:
             yield util.Uninferable
