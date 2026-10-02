@@ -4081,6 +4081,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(node.infer_call_result(caller=node))
         self.assertIsInstance(inferred, nodes.Const)
 
+    def test_infer_call_result_with_metaclass_function_caller(self) -> None:
+        """A function caller's ``args`` is an ``Arguments`` node, not a list.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3336
+        """
+        # ``FunctionDef.type`` infers the decorator called with its parent
+        # (``outer``) as the caller.
+        method = extract_node("""
+        def outer(meta=type):
+            def with_metaclass(meta, *bases):
+                return meta
+            class A:
+                @with_metaclass
+                def method(self):  #@
+                    pass
+        """)
+        self.assertEqual(method.type, "method")
+
     def test_context_call_for_context_managers(self) -> None:
         ast_nodes = extract_node("""
         class A:
