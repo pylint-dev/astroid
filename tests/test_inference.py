@@ -5739,15 +5739,17 @@ def test_callable_attribute_inherited_method_result() -> None:
     assert inferred.value == 84
 
 
-@pytest.mark.parametrize("arguments", ["42", "value=42", "*[42]", "**{'value': 42}"])
-def test_callable_attribute_call_arguments(arguments: str) -> None:
+@pytest.mark.parametrize(
+    "call_arguments", ["42", "value=42", "*[42]", "**{'value': 42}"]
+)
+def test_callable_attribute_call_arguments(call_arguments: str) -> None:
     node = extract_node(f"""
     class Callable:
         def __call__(self, value):
             return value
     class Holder:
         target = Callable()
-    Holder.target({arguments})
+    Holder.target({call_arguments})
     """)
     [inferred] = node.inferred()
     assert isinstance(inferred, nodes.Const)
