@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
-from astroid import context, nodes
+from collections.abc import Iterator
+
+from astroid import bases, context, nodes, util
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
 from astroid.const import PY311_PLUS
@@ -47,6 +49,33 @@ CLASS_GETITEM_TEMPLATE = """
 @classmethod
 def __class_getitem__(cls, item):
     return cls
+
+def match(self, string, pos=0, endpos=-1):
+    pass
+
+def fullmatch(self, string, pos=0, endpos=-1):
+    pass
+
+def search(self, string, pos=0, endpos=-1):
+    pass
+
+def sub(self, repl, string, count=0):
+    pass
+
+def subn(self, repl, string, count=0):
+    pass
+
+def split(self, string, maxsplit=0):
+    pass
+
+def findall(self, string, pos=0, endpos=-1):
+    pass
+
+def finditer(self, string, pos=0, endpos=-1):
+    pass
+
+def scanner(self, string, pos=0, endpos=-1):
+    pass
 """
 
 
@@ -73,7 +102,7 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
 def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None = None):
     """Infer re.Pattern and re.Match as classes.
 
-    For PY39+ add `__class_getitem__`.
+    For PY39+ add `__class_getitem__` and the regular expression methods.
     """
     class_def = nodes.ClassDef(
         name=node.parent.targets[0].name,
@@ -83,13 +112,51 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None =
         end_lineno=node.end_lineno,
         end_col_offset=node.end_col_offset,
     )
-    func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
-    class_def.locals["__class_getitem__"] = [func_to_add]
+    template_module = parse(CLASS_GETITEM_TEMPLATE)
+    for func in template_module.body:
+        class_def.locals[func.name] = [func]
     return iter([class_def])
+
+
+def _looks_like_re_compile(node: nodes.Call) -> bool:
+    """Check for a call to re.compile."""
+    if len(node.args) == 0:
+        return False
+    func = node.func
+    if isinstance(func, nodes.Attribute):
+        return (
+            func.attrname == "compile"
+            and isinstance(func.expr, nodes.Name)
+            and func.expr.name == "re"
+        )
+    if isinstance(func, nodes.Name):
+        return func.name == "compile"
+    return False
+
+
+def infer_re_compile(
+    node: nodes.Call, ctx: context.InferenceContext | None = None
+) -> Iterator[bases.Instance]:
+    """Infer the result of re.compile as an instance of re.Pattern."""
+    from astroid.manager import (
+        AstroidManager,
+    )  # pylint: disable=import-outside-toplevel
+
+    re_module = AstroidManager().ast_from_module_name("re")
+    try:
+        pattern = next(re_module.getattr("Pattern")[0].infer())
+    except (AttributeError, IndexError, StopIteration):
+        return iter([util.Uninferable])
+    if not isinstance(pattern, nodes.ClassDef):
+        return iter([util.Uninferable])
+    return iter([pattern.instantiate_class()])
 
 
 def register(manager: AstroidManager) -> None:
     register_module_extender(manager, "re", _re_transform)
     manager.register_transform(
         nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
+    )
+    manager.register_transform(
+        nodes.Call, inference_tip(infer_re_compile), _looks_like_re_compile
     )
