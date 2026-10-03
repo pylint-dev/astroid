@@ -5910,6 +5910,14 @@ def test_compare_typeerror() -> None:
     assert inferred[0] is util.Uninferable
 
 
+def test_compare_valueerror() -> None:
+    for code in ('257 in b""', '257 not in b""'):
+        node = extract_node(code)
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        assert inferred[0] is util.Uninferable
+
+
 def test_compare_multiple_possibilites() -> None:
     code = """
     from unknown import UNKNOWN
