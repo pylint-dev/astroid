@@ -1,0 +1,3 @@
+Fix ``FunctionDef.infer_call_result()`` to slice normalized call arguments instead of the ``Arguments`` node when inferring ``with_metaclass`` class bases.
+
+Closes #3336
