@@ -1,4 +1,7 @@
 Fix lost caller context in nested helper calls, including inherited
 classmethods that forward ``cls``.
 
+Keep results truncated by an exhausted inference budget out of the inference
+cache, allowing later independent inferences to recover.
+
 Refs #177
