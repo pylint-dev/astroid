@@ -461,7 +461,7 @@ def _arguments_infer_argname(
     # more
     from astroid import arguments  # pylint: disable=import-outside-toplevel
 
-    if not self.arguments:
+    if not self.arguments or name is None:
         yield util.Uninferable
         return
 

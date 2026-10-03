@@ -3043,3 +3043,56 @@ class TestFrameNodes:
 
         assert module.body[1].value.locals["x"][0].frame() == module
         assert module.body[1].value.locals["x"][0].frame() == module
+
+    @staticmethod
+    def test_instance_getitem_with_slice() -> None:
+        """Test Instance.getitem accepts Slice node."""
+        code = """
+            class C:
+                def __getitem__(self, item):
+                    return item
+            inst = C()
+            inst[1:2]  #@
+        """
+        subscript = builder.extract_node(code)
+        inst_obj = next(subscript.value.infer())
+        assert isinstance(inst_obj, Instance)
+        result = inst_obj.getitem(subscript.slice)
+        assert isinstance(result, nodes.Slice)
+
+    @staticmethod
+    def test_compute_mro_optional_context() -> None:
+        """Test ClassDef._compute_mro handles None context."""
+        code = """
+            class A: pass
+            class B(A): pass
+        """
+        module = builder.parse(code)
+        cls_b = module["B"]
+        assert [c.name for c in cls_b._compute_mro()] == ["B", "A", "object"]
+        assert [c.name for c in cls_b._compute_mro(context=None)] == ["B", "A", "object"]
+
+    @staticmethod
+    def test_class_def_instance_attrs_typing() -> None:
+        """Test ClassDef.instance_attrs stores lists of nodes."""
+        code = """
+            class C:
+                def __init__(self):
+                    self.x = 1
+        """
+        module = builder.parse(code)
+        cls_c = module["C"]
+        assert isinstance(cls_c.instance_attrs["x"], list)
+
+    @staticmethod
+    def test_arguments_infer_argname_none() -> None:
+        """Test _arguments_infer_argname yields Uninferable when name is None."""
+        from astroid.protocols import _arguments_infer_argname
+
+        code = """
+            def func(a, b=1): pass
+        """
+        module = builder.parse(code)
+        args_node = module["func"].args
+        inferred = list(_arguments_infer_argname(args_node, None, None))
+        assert inferred == [util.Uninferable]
