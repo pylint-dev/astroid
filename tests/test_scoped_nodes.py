@@ -3070,7 +3070,11 @@ class TestFrameNodes:
         module = builder.parse(code)
         cls_b = module["B"]
         assert [c.name for c in cls_b._compute_mro()] == ["B", "A", "object"]
-        assert [c.name for c in cls_b._compute_mro(context=None)] == ["B", "A", "object"]
+        assert [c.name for c in cls_b._compute_mro(context=None)] == [
+            "B",
+            "A",
+            "object",
+        ]
 
     @staticmethod
     def test_class_def_instance_attrs_typing() -> None:
