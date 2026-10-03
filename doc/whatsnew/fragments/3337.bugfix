@@ -1,0 +1,3 @@
+Align inference type annotations with supported inputs and stored values in ``Instance.getitem``, ``ClassDef._compute_mro``, ``builtin_lookup``, ``_arguments_infer_argname``, and ``ClassDef.instance_attrs``.
+
+Closes #3337

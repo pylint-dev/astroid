@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from astroid.manager import AstroidManager
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
     from astroid import nodes
 
 
-def builtin_lookup(name: str) -> tuple[nodes.Module, list[nodes.NodeNG]]:
+def builtin_lookup(name: str) -> tuple[nodes.Module, Sequence[nodes.NodeNG]]:
     """Lookup a name in the builtin module.
 
     Return the list of matching statements and the ast for the builtin module
