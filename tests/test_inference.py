@@ -5677,7 +5677,6 @@ class TestInferencePropagation:
     propagated to sub functions.
     """
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_call_context_propagation(self):
         n = extract_node("""
         def chest(a):

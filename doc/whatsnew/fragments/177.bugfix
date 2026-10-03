@@ -1,0 +1,4 @@
+Fix lost caller context in nested helper calls, including inherited
+classmethods that forward ``cls``.
+
+Refs #177
