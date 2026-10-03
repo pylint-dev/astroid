@@ -5677,7 +5677,6 @@ class TestInferencePropagation:
     propagated to sub functions.
     """
 
-    @pytest.mark.xfail(reason="Relying on path copy")
     def test_call_context_propagation(self):
         n = extract_node("""
         def chest(a):
@@ -5968,6 +5967,39 @@ def test_compare_unknown() -> None:
     inferred = list(node.infer())
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.FunctionDef)
+
+
+@pytest.mark.parametrize(
+    ("code", "expected"),
+    [("None", None), ("value = None\nvalue", None), ("1 + 2", 3)],
+)
+def test_inference_recovers_after_exhausted_budget(code: str, expected: Any) -> None:
+    node = extract_node(code)
+    context = InferenceContext()
+    context.nodes_inferred = context.max_inferred + 1
+    assert list(node.infer(context=context)) == [util.Uninferable]
+
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == expected
+
+
+def test_partial_inference_does_not_limit_later_inference() -> None:
+    node = extract_node("""
+    value = 1
+    if unknown:
+        value = 2
+    value #@
+    """)
+    context = InferenceContext()
+    context.nodes_inferred = context.max_inferred - 2
+    partial_results = list(node.infer(context=context))
+    assert util.Uninferable in partial_results
+
+    inferred = list(node.infer())
+    assert all(isinstance(result, nodes.Const) for result in inferred)
+    assert {result.value for result in inferred} == {1, 2}
 
 
 def test_limit_inference_result_amount() -> None:
