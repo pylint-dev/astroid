@@ -1,0 +1,8 @@
+Fix a crash when inferring a comparison that tests membership of an
+out-of-range byte value, such as ``257 in b""``. ``_do_compare`` only caught
+``TypeError``, letting ``ValueError: byte must be in range(0, 256)`` escape
+and crash the caller (e.g. pylint's ``safe_infer``). ``ValueError`` is now
+caught alongside ``TypeError``, so the comparison is uninferable instead,
+consistent with the existing ``123 <= "abc"`` path.
+
+Closes #3333
