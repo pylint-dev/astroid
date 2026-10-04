@@ -739,6 +739,31 @@ class ConstNodeTest(unittest.TestCase):
     def test_str(self) -> None:
         self._test("a")
 
+    def test_self_referencing_containers(self) -> None:
+        loop: list[Any] = [1]
+        loop.append(loop)
+        mapping: dict[str, Any] = {"loop": loop}
+        mapping["mapping"] = (mapping,)
+
+        node = nodes.const_factory(mapping)
+
+        assert isinstance(node, nodes.Dict)
+        (_, loop_node), (_, tuple_node) = node.items
+        assert isinstance(loop_node, nodes.List)
+        assert isinstance(loop_node.elts[0], nodes.Const)
+        assert isinstance(loop_node.elts[1], nodes.EmptyNode)
+        assert loop_node.elts[1].object is loop
+        assert isinstance(tuple_node, nodes.Tuple)
+        assert isinstance(tuple_node.elts[0], nodes.EmptyNode)
+        assert tuple_node.elts[0].object is mapping
+
+    def test_shared_container_is_not_a_cycle(self) -> None:
+        shared = [1]
+        node = nodes.const_factory([shared, shared])
+        assert isinstance(node, nodes.List)
+        assert [type(elt) for elt in node.elts] == [nodes.List, nodes.List]
+        assert [elt.elts[0].value for elt in node.elts] == [1, 1]
+
     def test_unicode(self) -> None:
         self._test("a")
 

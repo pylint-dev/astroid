@@ -5685,28 +5685,28 @@ CONST_CLS: dict[type, type[NodeNG]] = {
 
 
 def _create_basic_elements(
-    value: Iterable[Any], node: List | Set | Tuple
+    value: Iterable[Any], node: List | Set | Tuple, building: set[int]
 ) -> list[NodeNG]:
     """Create a list of nodes to function as the elements of a new node."""
     elements: list[NodeNG] = []
     for element in value:
         # NOTE: avoid accessing any attributes of element in the loop.
-        element_node = const_factory(element)
+        element_node = _const_factory(element, building)
         element_node.parent = node
         elements.append(element_node)
     return elements
 
 
 def _create_dict_items(
-    values: Mapping[Any, Any], node: Dict
+    values: Mapping[Any, Any], node: Dict, building: set[int]
 ) -> list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]:
     """Create a list of node pairs to function as the items of a new dict node."""
     elements: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = []
     for key, value in values.items():
         # NOTE: avoid accessing any attributes of both key and value in the loop.
-        key_node = const_factory(key)
+        key_node = _const_factory(key, building)
         key_node.parent = node
-        value_node = const_factory(value)
+        value_node = _const_factory(value, building)
         value_node.parent = node
         elements.append((key_node, value_node))
     return elements
@@ -5714,6 +5714,15 @@ def _create_dict_items(
 
 def const_factory(value: Any) -> ConstFactoryResult:
     """Return an astroid node for a python value."""
+    return _const_factory(value, set())
+
+
+def _const_factory(value: Any, building: set[int]) -> ConstFactoryResult:
+    """Return an astroid node for value.
+
+    ``building`` holds the ids of the containers whose elements are being
+    converted, i.e. the containers value is nested in.
+    """
     # NOTE: avoid accessing any attributes of value until it is known that value
     # is of a const type, to avoid possibly triggering code for a live object.
     # Accesses include value.__class__ and isinstance(value, ...), but not type(value).
@@ -5731,6 +5740,18 @@ def const_factory(value: Any) -> ConstFactoryResult:
 
     instance: List | Set | Tuple | Dict
     initializer_cls = CONST_CLS[value_type]
+    if initializer_cls is Const:
+        return Const(value)
+
+    # A live container can hold itself, directly or through other containers
+    # (``namespace = globals()``): converting it again would recurse forever,
+    # so the back reference becomes an EmptyNode, like a non-const object.
+    value_id = id(value)
+    if value_id in building:
+        node = EmptyNode()
+        node.object = value
+        return node
+    building.add(value_id)
     if issubclass(initializer_cls, (List, Set, Tuple)):
         instance = initializer_cls(
             lineno=None,
@@ -5739,9 +5760,9 @@ def const_factory(value: Any) -> ConstFactoryResult:
             end_lineno=None,
             end_col_offset=None,
         )
-        instance.postinit(_create_basic_elements(value, instance))
-        return instance
-    if issubclass(initializer_cls, Dict):
+        instance.postinit(_create_basic_elements(value, instance, building))
+    else:
+        assert issubclass(initializer_cls, Dict)
         instance = initializer_cls(
             lineno=None,
             col_offset=None,
@@ -5749,6 +5770,6 @@ def const_factory(value: Any) -> ConstFactoryResult:
             end_lineno=None,
             end_col_offset=None,
         )
-        instance.postinit(_create_dict_items(value, instance))
-        return instance
-    return Const(value)
+        instance.postinit(_create_dict_items(value, instance, building))
+    building.remove(value_id)
+    return instance
