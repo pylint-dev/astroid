@@ -1657,3 +1657,47 @@ def test_or_op_apply_all_previous_constraints() -> None:
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == 3
     assert inferred[1] is Uninferable
+
+
+def test_bool_op_apply_constraint_from_nested_operand() -> None:
+    """Test that a nested boolean operation constrains a later operand."""
+    node1, node2 = builder.extract_node("""
+    def f1(x = None):
+        if (x and x is None) and x:  #@
+            pass
+
+    def f2(x = None):
+        if not x and x is None or x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+
+def test_bool_op_apply_constraint_inside_nested_operand() -> None:
+    """Test that an operand of a nested boolean operation is constrained."""
+    node1, node2 = builder.extract_node("""
+    def f1(y, x = None):
+        if y or (x is not None and x):  #@
+            pass
+
+    def f2(y, x = 1):
+        if y or (x is not None and x):  #@
+            pass
+    """)
+
+    inferred = node1.test.values[1].values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[1].values[1].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+    assert inferred[1] is Uninferable
