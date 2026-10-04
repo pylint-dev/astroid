@@ -1082,6 +1082,50 @@ def test_dataclass_with_multiple_inheritance() -> None:
     assert [a.value for a in first_init.args.defaults] == [False]
 
 
+def test_dataclass_inherited_init_false_field() -> None:
+    """Regression test for inherited dataclass with field(init=False).
+
+    Reported in https://github.com/pylint-dev/pylint/issues/9518
+    """
+    pos_node, kw_node = astroid.extract_node("""
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class PosBase:
+        a: int
+        b: int
+
+    @dataclass
+    class PosIntermediate(PosBase):
+        a: int = field(init=False)
+
+    @dataclass
+    class PosExample(PosIntermediate):
+        c: int
+
+    @dataclass(kw_only=True)
+    class KwBase:
+        x: int
+        y: int
+
+    @dataclass(kw_only=True)
+    class KwIntermediate(KwBase):
+        x: int = field(init=False)
+
+    @dataclass(kw_only=True)
+    class KwExample(KwIntermediate):
+        message: str
+
+    PosExample.__init__  #@
+    KwExample.__init__  #@
+    """)
+    pos_init: bases.UnboundMethod = next(pos_node.infer())
+    assert [a.name for a in pos_init.args.args] == ["self", "b", "c"]
+
+    kw_init: bases.UnboundMethod = next(kw_node.infer())
+    assert [a.name for a in kw_init.args.kwonlyargs] == ["y", "message"]
+
+
 @pytest.mark.xfail(reason="Transforms returning Uninferable isn't supported.")
 def test_dataclass_non_default_argument_after_default() -> None:
     """Test that a non-default argument after a default argument is not allowed.
