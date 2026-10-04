@@ -1902,6 +1902,8 @@ class Compare(NodeNG):
                 expr = op_func(left, right)
             except TypeError as exc:
                 raise AstroidTypeError from exc
+            except ValueError as exc:
+                raise AstroidValueError from exc
 
             if retval is None:
                 retval = expr
@@ -1927,7 +1929,7 @@ class Compare(NodeNG):
             rhs = list(right_node.infer(context=context))
             try:
                 retval = self._do_compare(lhs, op, rhs)
-            except AstroidTypeError:
+            except (AstroidTypeError, AstroidValueError):
                 retval = util.Uninferable
                 break
             if retval is not True:
