@@ -1,8 +1,5 @@
 Fix a ``RecursionError`` when building a module from a live object that holds a
-container containing itself, such as the ``globals()`` dict that
-``scipy.special`` keeps in a module attribute: pylint crashed on
-``from scipy.special import erf`` with ``--extension-pkg-allow-list=scipy``.
-The inner reference to the container is now represented by an ``EmptyNode``.
+container containing itself.
 
 Closes pylint-dev/pylint#10459
 Refs #2974
