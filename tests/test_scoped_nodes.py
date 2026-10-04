@@ -2951,13 +2951,12 @@ class StubScopedNodeTest(unittest.TestCase):
         assert len(results) == 1
         assert results[0] is util.Uninferable
 
-    def test_nonstub_funcdef_ellipsis_infer_unchanged(self) -> None:
+    def test_nonstub_funcdef_ellipsis_infer_uninferable(self) -> None:
+        """Outside a stub module, the annotation is not used to infer the result."""
         module = builder.parse("def f() -> int: ...")
         func = module.body[0]
         results = list(func.infer_call_result(None))
-        assert len(results) == 1
-        assert isinstance(results[0], nodes.Const)
-        assert results[0].value is None
+        assert results == [util.Uninferable]
 
 
 class TestFrameNodes:

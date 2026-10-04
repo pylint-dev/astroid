@@ -4288,8 +4288,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             A().foo()  #@
         """)
         inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value is None
+        assert inferred is util.Uninferable
 
     def test_infer_method_overload(self) -> None:
         # https://github.com/PyCQA/astroid/issues/1015
@@ -4404,7 +4403,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # Test that we wrap an AttributeInferenceError
         # and reraise it as a TypeError in Class.getitem
         node = extract_node("""
-        def test(): ...
+        def test():
+            return None
         test()
         """)
         inferred = next(node.infer())
@@ -7517,3 +7517,51 @@ def test_decimal_inference():
     for node in extract_node(code):
         module = node.do_import_module(node.modname)
         module.getattr(node.names[0][0])
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "...",
+        '"""Docstring."""\n        ...',
+        "pass",
+    ],
+)
+def test_placeholder_body_call_result_is_uninferable(body: str) -> None:
+    """A body that only holds a placeholder does not mean the function returns None."""
+    node = extract_node(f"""
+    def apple() -> int:
+        {body}
+    apple()  #@
+    """)
+    assert next(node.infer()) is util.Uninferable
+
+
+def test_ellipsis_property_stub_is_uninferable() -> None:
+    """Regression test for https://github.com/pylint-dev/pylint/issues/8138."""
+    node = extract_node("""
+    from typing import TYPE_CHECKING, Type
+
+    class Banana:
+        pass
+
+    class Basket:
+        if TYPE_CHECKING:
+            @property
+            def banana(self) -> Type[Banana]: ...
+
+    Basket().banana  #@
+    """)
+    assert next(node.infer()) is util.Uninferable
+
+
+def test_ellipsis_with_other_statements_still_returns_none() -> None:
+    node = extract_node("""
+    def apple():
+        ...
+        color = "red"
+    apple()  #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value is None

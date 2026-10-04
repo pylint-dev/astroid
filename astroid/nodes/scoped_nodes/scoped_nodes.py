@@ -1652,7 +1652,11 @@ class FunctionDef(
                 return
 
             if self.body:
-                if self.is_abstract(pass_is_abstract=True, any_raise_is_abstract=True):
+                # A body that is only ``...`` is a placeholder, like ``pass``:
+                # it does not mean the function returns ``None``.
+                if self._is_stub_placeholder_body(self.body) or self.is_abstract(
+                    pass_is_abstract=True, any_raise_is_abstract=True
+                ):
                     yield util.Uninferable
                 else:
                     yield node_classes.Const(None)
