@@ -330,16 +330,14 @@ def get_constraints(
                 constraints_mapping[parent] = constraints
 
         elif isinstance(parent, nodes.BoolOp):
-            for index, value in enumerate(parent.values):
-                if value is current_node:
-                    constraints = set()
-                    for previous_value in parent.values[:index]:
-                        constraints.update(
-                            _match_constraint(
-                                expr, previous_value, invert=parent.op == "or"
-                            )
-                        )
-                    break
+            # Later operands are evaluated only if all preceding ones are
+            # truthy for "and", or all falsy for "or".
+            index = parent.values.index(current_node)
+            constraints = set()
+            for previous_value in parent.values[:index]:
+                constraints.update(
+                    _match_constraint(expr, previous_value, invert=parent.op == "or")
+                )
             if constraints:
                 constraints_mapping[parent] = constraints
         elif isinstance(parent, nodes.Comprehension):
