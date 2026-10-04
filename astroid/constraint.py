@@ -304,7 +304,7 @@ class _CompoundConstraint(Constraint):
 
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
-) -> dict[nodes.If | nodes.IfExp | nodes.BoolOp, set[Constraint]]:
+) -> dict[nodes.NodeNG, set[Constraint]]:
     """Returns the constraints for the given expression.
 
     The returned dictionary maps the node where the constraint was generated to the
@@ -315,9 +315,7 @@ def get_constraints(
     comprehension conditions and preceding operands in boolean operations.
     """
     current_node: nodes.NodeNG | None = expr
-    constraints_mapping: dict[
-        nodes.If | nodes.IfExp | nodes.BoolOp, set[Constraint]
-    ] = {}
+    constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
         constraints: set[Constraint] | None = None
