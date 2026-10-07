@@ -311,21 +311,33 @@ def get_constraints(
     corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
-    Currently this only supports constraints generated from if conditions and
-    comprehension conditions.
+    Currently this only supports constraints generated from if conditions,
+    comprehension conditions and preceding operands in boolean operations.
     """
     current_node: nodes.NodeNG | None = expr
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
+        constraints: set[Constraint] | None = None
+
         if isinstance(parent, (nodes.If, nodes.IfExp)):
             branch, _ = parent.locate_child(current_node)
-            constraints: set[Constraint] | None = None
             if branch == "body":
                 constraints = set(_match_constraint(expr, parent.test))
             elif branch == "orelse":
                 constraints = set(_match_constraint(expr, parent.test, invert=True))
+            if constraints:
+                constraints_mapping[parent] = constraints
 
+        elif isinstance(parent, nodes.BoolOp):
+            # Later operands are evaluated only if all preceding ones are
+            # truthy for "and", or all falsy for "or".
+            index = parent.values.index(current_node)
+            constraints = set()
+            for previous_value in parent.values[:index]:
+                constraints.update(
+                    _match_constraint(expr, previous_value, invert=parent.op == "or")
+                )
             if constraints:
                 constraints_mapping[parent] = constraints
         elif isinstance(parent, nodes.Comprehension):

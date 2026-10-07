@@ -173,6 +173,34 @@ class RawBuildingTC(unittest.TestCase):
         node = AstroidBuilder(AstroidManager()).inspect_build(m, "test")
         self.assertIn("pypy_text_signature_like", node.locals)
 
+    def test_module_object_with_self_referencing_containers(self) -> None:
+        # Regression test for pylint-dev/pylint#10459: ``scipy.special`` keeps
+        # ``_modattrs = globals()``, a dict that contains itself, and building
+        # the module from the live object recursed until RecursionError.
+        loop: list[Any] = []
+        loop.append(loop)
+        module = types.ModuleType("self_referencing_containers")
+        namespace = vars(module)
+        namespace["namespace"] = namespace
+        namespace["loop"] = loop
+
+        node = AstroidBuilder(AstroidManager()).inspect_build(module, "test")
+
+        namespace_node = node.locals["namespace"][0]
+        assert isinstance(namespace_node, nodes.Dict)
+        items = {key.value: value for key, value in namespace_node.items}
+        assert isinstance(items["namespace"], nodes.EmptyNode)
+        assert items["namespace"].object is namespace
+        assert isinstance(items["loop"], nodes.List)
+        loop_node = node.locals["loop"][0]
+        assert isinstance(loop_node, nodes.List)
+        [back_reference] = loop_node.elts
+        assert isinstance(back_reference, nodes.EmptyNode)
+        assert back_reference.object is loop
+        inferred = back_reference.inferred()
+        assert len(inferred) == 1
+        assert inferred[0].pytype() == "builtins.list"
+
 
 @pytest.mark.skipif(
     "posix" not in sys.builtin_module_names, reason="Platform doesn't support posix"

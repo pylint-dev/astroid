@@ -1,0 +1,3 @@
+Infer list augmented concatenation with a tuple as a list, rather than Uninferable.
+
+Closes #1865
