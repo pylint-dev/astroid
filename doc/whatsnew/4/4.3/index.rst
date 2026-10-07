@@ -4,6 +4,31 @@
 
 .. towncrier release notes start
 
+What's new in astroid 4.3.4?
+----------------------------
+Release date: 2026-10-07
+
+
+Bug Fixes
+---------
+
+- Fix a ``RecursionError`` when building a module from a live object that holds a
+  container containing itself.
+
+  Closes #2974
+  Closes pylint-dev/pylint#10459 (`#2974 <https://github.com/pylint-dev/astroid/issues/2974>`_)
+
+- Fix a ``TypeError`` crash when inferring ``random.sample()`` on a sequence whose
+  elements are inferred as ``Instance``.
+
+  Closes #3310 (`#3310 <https://github.com/pylint-dev/astroid/issues/3310>`_)
+
+- Catch ``ValueError`` during comparison inference (such as invalid byte values in bytes membership checks) and return ``Uninferable`` instead of raising an uncaught exception.
+
+  Closes #3333 (`#3333 <https://github.com/pylint-dev/astroid/issues/3333>`_)
+
+
+
 What's new in astroid 4.3.3?
 ----------------------------
 Release date: 2026-09-30

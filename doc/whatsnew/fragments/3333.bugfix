@@ -1,3 +1,0 @@
-Catch ``ValueError`` during comparison inference (such as invalid byte values in bytes membership checks) and return ``Uninferable`` instead of raising an uncaught exception.
-
-Closes #3333
