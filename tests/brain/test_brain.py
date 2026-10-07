@@ -1068,6 +1068,20 @@ class RandomSampleTest(unittest.TestCase):
         assert isinstance(inferred.elts[0], nodes.Module)
         assert inferred.elts[0].name == "gc"
 
+    def test_no_crash_on_instance_element(self) -> None:
+        """Test that random.sample does not crash when an element is not a source node.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3310
+        """
+        node = astroid.extract_node("""
+        from random import sample
+        sample(list({list(None)}) * 1, 1)  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.List)
+        assert len(inferred.elts) == 1
+        assert isinstance(inferred.elts[0], Instance)
+
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
