@@ -5,6 +5,7 @@ inferred, so pylint reported ``unsubscriptable-object``,
 ``unsupported-membership-test`` and similar errors on lazily initialized class
 attributes such as ``cache = None``.
 
+Refs #3351
 Closes pylint-dev/pylint#9250
 Closes pylint-dev/pylint#9809
 Closes pylint-dev/pylint#10082
