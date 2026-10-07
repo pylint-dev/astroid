@@ -2591,6 +2591,9 @@ class ClassDef(
 
         method = methods[0]
 
+        if isinstance(method, util.UninferableBase):
+            return util.Uninferable
+
         # Create a new callcontext for providing index as an argument.
         new_context = bind_context_to_node(context, self)
         new_context.callcontext = CallContext(args=[index], callee=method)

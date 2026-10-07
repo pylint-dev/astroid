@@ -4,6 +4,31 @@
 
 .. towncrier release notes start
 
+What's new in astroid 4.3.3?
+----------------------------
+Release date: 2026-09-30
+
+
+Bug Fixes
+---------
+
+- Preserve the length of inferred list and tuple concatenations when an element
+  has multiple possible values. An ambiguous or uninferable element is now
+  represented as unknown instead of being expanded into multiple sequence items.
+
+  Refs #3221
+  Closes pylint-dev/pylint#2621 (`#3221 <https://github.com/pylint-dev/astroid/issues/3221>`_)
+
+- Fix ``TypeError`` in ``ClassDef.getitem`` when ``__class_getitem__`` is uninferable.
+
+  Closes #3312 (`#3312 <https://github.com/pylint-dev/astroid/issues/3312>`_)
+
+- Fix ``AssertionError`` in ``NodeNG.root()`` when inferring ``Class.__bases__``, which previously returned a parentless ``Tuple``.
+
+  Closes pylint-dev/pylint#11491 (`#11491 <https://github.com/pylint-dev/astroid/issues/11491>`_)
+
+
+
 What's new in astroid 4.3.2?
 ----------------------------
 Release date: 2026-09-25
