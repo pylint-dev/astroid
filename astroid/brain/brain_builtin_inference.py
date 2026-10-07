@@ -274,12 +274,13 @@ def _is_builtin_call(node: nodes.Call) -> bool:
         if not stmts:
             # lookup() prefers the later AnnAssign, so an earlier real
             # binding such as ``len = 5`` then ``len: int`` is dropped.
-            # Walk locals that appear before this call for one.
-            for stmt in frame.locals.get(func.name, ()):
+            # Walk those locals and use the last one that appears before
+            # this call. ``str = int`` then ``from builtins import str``
+            # is the builtin; the other way around is not.
+            for stmt in reversed(frame.locals.get(func.name, ())):
                 if _is_bare_annotation(stmt):
                     continue
-                stmt_line = getattr(stmt, "fromlineno", None) or stmt.lineno or 0
-                if stmt_line > (func.lineno or 0):
+                if (stmt.fromlineno or 0) > (func.lineno or 0):
                     continue
                 return _is_from_builtins_import(stmt, func.name)
             return True

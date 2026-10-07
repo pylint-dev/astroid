@@ -486,6 +486,50 @@ class TestShadowedBuiltins:
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == "apple"
 
+    def test_import_after_assignment_then_annotation_is_builtin(self) -> None:
+        """The last binding before the call wins, not the first.
+
+        ``lookup()`` returns only the annotation, so the walk has to keep
+        going. ``from builtins import str`` is the later real binding, and
+        ``str(42)`` is the builtin.
+        """
+        node: nodes.Call = _extract_single_node("""
+        str = int
+        from builtins import str
+        str: object
+        str(42) #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "42"
+
+    def test_binding_after_the_call_does_not_hide_an_earlier_import(self) -> None:
+        """A later ``str = int`` is not in scope at the call, so it does not count."""
+        node: nodes.Call = _extract_single_node("""
+        from builtins import str
+        str: object
+        str(42) #@
+        str = int
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == "42"
+
+    def test_assignment_after_import_then_annotation_is_not_builtin(self) -> None:
+        """``str = int`` is the last real binding, so the str tip must not fire.
+
+        The annotation then hides that assignment from ``lookup()``, and the
+        call stays uninferable instead of coming back as the builtin string.
+        """
+        node: nodes.Call = _extract_single_node("""
+        from builtins import str
+        str = int
+        str: object
+        str(42) #@
+        """)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
     def test_bare_annotation_in_function_body_shadows(self) -> None:
         """A function-local ``len: int`` makes ``len`` local, so the call is not the builtin."""
         node: nodes.Call = _extract_single_node("""
