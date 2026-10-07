@@ -1,7 +1,4 @@
 Fix an infinite loop when introspecting a live class that exposes itself, or a
-sibling class, as one of its own attributes. Building such a class re-parented a
-node that was already an ancestor, closing a parent cycle that made ``root()``
-spin forever. pyo3 complex enums have exactly this shape, so linting a project
-using one would hang.
+sibling class, as one of its own attributes.
 
 Closes #3284
