@@ -2501,8 +2501,16 @@ class ClassDef(
             if len(attributes) > 1:
                 first_attr, attributes = attributes[0], attributes[1:]
                 first_scope = first_attr.parent.scope()
-                owner = first_scope if isinstance(first_scope, ClassDef) else self
-                owner_attributes = owner.locals.get(name, [])
+                owner_attributes = next(
+                    (
+                        klass.locals[name]
+                        for klass in itertools.chain(
+                            (self,), self.ancestors(recurs=True, context=context)
+                        )
+                        if first_attr in klass.locals.get(name, ())
+                    ),
+                    [],
+                )
                 attributes = [first_attr] + [
                     attr
                     for attr in attributes

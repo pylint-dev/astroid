@@ -6092,6 +6092,29 @@ def test_class_attribute_assigned_through_an_ancestor() -> None:
     assert [inferred.value for inferred in node.inferred()] == [0]
 
 
+def test_class_attribute_only_assigned_through_an_ancestor() -> None:
+    """A subclass sees all the values its ancestor binds on itself in its methods."""
+    node = extract_node("""
+    class Base:
+        @classmethod
+        def reset(cls):
+            cls.cache = None
+
+        @classmethod
+        def fill(cls):
+            cls.cache = {}
+
+    class Child(Base):
+        pass
+
+    Child.cache  #@
+    """)
+    assert [inferred.pytype() for inferred in node.inferred()] == [
+        "builtins.NoneType",
+        "builtins.dict",
+    ]
+
+
 def test_inferred_sequence_unpacking_works() -> None:
     inferred = next(extract_node("""
     def test(*args):
