@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import datetime
+import enum
 import types
 import unittest
 
@@ -12,6 +13,7 @@ import pytest
 
 import astroid
 from astroid import bases, builder, nodes, objects, util
+from astroid.brain.brain_namedtuple_enum import _is_reserved_enum_name
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 
@@ -592,6 +594,30 @@ class EnumBrainTest(unittest.TestCase):
         members_names = [const_node.value for const_node, name_obj in inferred.items]
         assert members_names == ["FOO", "BAR", "BAZ"]
 
+    def test_enum_reserved_names_are_not_members(self) -> None:
+        """``__dunder__`` and ``_sunder_`` names in the class body are not members.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/9839
+        """
+        members, slots = builder.extract_node("""
+        import enum
+
+
+        class Priority(enum.IntEnum):
+            __slots__ = ()
+            _order_ = "LOW HIGH"
+            LOW = 1
+            HIGH = 2
+        Priority.__members__ #@
+        Priority.__slots__ #@
+        """)
+        inferred = next(members.infer())
+        assert [key.value for key, _ in inferred.items] == ["LOW", "HIGH"]
+
+        inferred_slots = next(slots.infer())
+        assert isinstance(inferred_slots, nodes.Tuple)
+        assert not inferred_slots.elts
+
     def test_enum_sunder_names(self) -> None:
         """Test that both `_name_` and `_value_` sunder names exist"""
 
@@ -624,3 +650,29 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``DuplicateBasesError``.
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "__slots__",
+        "_order_",
+        "_ignore_",
+        "VALUE",
+        "_",
+        "__",
+        "___",
+        "____",
+        "_x__",
+        "__x_",
+        "__x",
+        "_x",
+        "x_",
+        "__a__b__",
+        "___x__",
+        "__x___",
+    ],
+)
+def test_is_reserved_enum_name_matches_stdlib(name: str) -> None:
+    expected = enum._is_dunder(name) or enum._is_sunder(name)  # type: ignore[attr-defined]
+    assert _is_reserved_enum_name(name) is expected
