@@ -1,0 +1,5 @@
+Fix ``TypeError`` in ``FunctionDef.infer_call_result`` for a function named
+``with_metaclass`` when the caller is a function, such as the decorator's
+parent while inferring ``FunctionDef.type``.
+
+Closes #3336

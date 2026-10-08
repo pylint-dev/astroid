@@ -1614,7 +1614,7 @@ class FunctionDef(
                 )
             metaclass = next(call_args[0].infer(context), None)
             if isinstance(metaclass, ClassDef):
-                class_bases = [_infer_last(x, context) for x in caller.args[1:]]
+                class_bases = [_infer_last(x, context) for x in call_args[1:]]
                 new_class = ClassDef(
                     name="temporary_class",
                     lineno=0,
