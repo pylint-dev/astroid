@@ -4,6 +4,49 @@
 
 .. towncrier release notes start
 
+What's new in astroid 4.3.4?
+----------------------------
+Release date: 2026-10-08
+
+
+Bug Fixes
+---------
+
+- Fix a ``RecursionError`` when building a module from a live object that holds a
+  container containing itself.
+
+  Closes #2974
+  Closes pylint-dev/pylint#10459 (`#2974 <https://github.com/pylint-dev/astroid/issues/2974>`_)
+
+- ``Arguments.default_value()`` no longer raises ``IndexError`` when a keyword-only
+  argument repeats the name of ``*args`` or ``**kwargs``, as in ``def f(x, *y, y)``.
+
+  Closes #3259 (`#3259 <https://github.com/pylint-dev/astroid/issues/3259>`_)
+
+- Fix an infinite loop when introspecting a live class that exposes itself, or a
+  sibling class, as one of its own attributes.
+
+  Closes #3284 (`#3284 <https://github.com/pylint-dev/astroid/issues/3284>`_)
+
+- Fix a ``TypeError`` crash when inferring ``random.sample()`` on a sequence whose
+  elements are inferred as ``Instance``.
+
+  Closes #3310 (`#3310 <https://github.com/pylint-dev/astroid/issues/3310>`_)
+
+- Catch ``ValueError`` during comparison inference (such as invalid byte values in bytes membership checks) and return ``Uninferable`` instead of raising an uncaught exception.
+
+  Closes #3333 (`#3333 <https://github.com/pylint-dev/astroid/issues/3333>`_)
+
+- A function whose body is only ``...`` is now inferred to return ``Uninferable``
+  instead of ``None``, the same as a function whose body is only ``pass``. This
+  is the astroid part of the fix for a false positive ``not-callable`` in pylint
+  when calling a ``...`` property stub, such as the ``sqlalchemy.func`` helpers.
+
+  Refs #3347
+  Refs pylint-dev/pylint#8138 (`#3347 <https://github.com/pylint-dev/astroid/issues/3347>`_)
+
+
+
 What's new in astroid 4.3.3?
 ----------------------------
 Release date: 2026-09-30
