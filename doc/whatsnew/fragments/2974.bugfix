@@ -1,5 +1,0 @@
-Fix a ``RecursionError`` when building a module from a live object that holds a
-container containing itself.
-
-Closes #2974
-Closes pylint-dev/pylint#10459
