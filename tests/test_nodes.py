@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import ast
 import copy
 import inspect
 import os
@@ -193,6 +194,23 @@ def function(var):
             abuilder.string_build(module.as_string()).doc_node.value,
             'a module """ docstring',
         )
+
+    def test_precedence_as_string_roundtrip(self) -> None:
+        """Operands binding looser than await/*/** must keep their parentheses."""
+        cases = (
+            "async def f():\n    return await (a + b)",
+            "async def f():\n    return await (a or b)",
+            "async def f():\n    return await (a if b else c)",
+            "x = [*(a or b)]",
+            "x = [*(a if b else c)]",
+            "x = {**(a or b)}",
+            "x = {**(a if b else c)}",
+        )
+        for code in cases:
+            rendered = abuilder.string_build(code).as_string()
+            self.assertEqual(
+                ast.dump(ast.parse(rendered)), ast.dump(ast.parse(code)), code
+            )
 
     def test_3k_annotations_and_metaclass(self) -> None:
         code = '''
