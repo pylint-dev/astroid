@@ -5056,6 +5056,9 @@ class Unknown(_base_nodes.AssignTypeNode):
     def qname(self) -> Literal["Unknown"]:
         return "Unknown"
 
+    def pytype(self) -> Literal["Unknown"]:
+        return "Unknown"
+
     def _infer(self, context: InferenceContext | None = None):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
