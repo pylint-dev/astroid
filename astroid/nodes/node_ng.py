@@ -158,7 +158,11 @@ class NodeNG:
         # exponentially exploding possible results.
         limit = AstroidManager().max_inferable_values
         for i, result in enumerate(self._infer(context=context)):
-            if i >= limit or (context.nodes_inferred > context.max_inferred):
+            if context.nodes_inferred > context.max_inferred:
+                # This inference budget must not affect later independent inferences.
+                yield util.Uninferable
+                return
+            if i >= limit:
                 results.append(util.Uninferable)
                 yield util.Uninferable
                 break
