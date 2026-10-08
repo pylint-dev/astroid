@@ -3559,7 +3559,7 @@ class Slice(NodeNG):
     >>> node
     <Subscript l.1 at 0x...>
     >>> node.slice
-    <Slice l.1 at 0x...>
+    <Slice.slice l.1 at 0x...>
     """
 
     _astroid_fields = ("lower", "upper", "step")
@@ -3609,6 +3609,16 @@ class Slice(NodeNG):
         :returns: The qualified name of the type.
         """
         return "builtins.slice"
+
+    @property
+    def name(self) -> Literal["slice"]:
+        """The name of the type that this node represents.
+
+        Inferred builtin values such as ``Const`` or ``List`` expose the name
+        of their type through ``Instance``; a ``Slice`` is not an ``Instance``,
+        so it gives the name of ``builtins.slice`` explicitly.
+        """
+        return "slice"
 
     def display_type(self) -> Literal["Slice"]:
         """A human readable type of this node.
