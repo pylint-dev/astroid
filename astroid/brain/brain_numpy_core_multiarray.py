@@ -88,8 +88,10 @@ METHODS_TO_BE_INFERRED = {
             return True""",
     "unpackbits": """def unpackbits(a, axis=None, count=None, bitorder='big'):
             return numpy.ndarray([0, 0])""",
+    # One array per dimension of ``shape``: a tuple whose length is not known
+    # statically, rather than a one-element tuple that unpacking would check.
     "unravel_index": """def unravel_index(indices, shape, order='C'):
-            return (numpy.ndarray([0, 0]),)""",
+            return tuple(numpy.ndarray([0, 0]) for _ in shape)""",
     "zeros": """def zeros(shape, dtype=float, order='C'):
             return numpy.ndarray([0, 0])""",
 }
