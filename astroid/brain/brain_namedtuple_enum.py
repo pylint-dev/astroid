@@ -417,6 +417,23 @@ INT_FLAG_ADDITION_METHODS = """
 """
 
 
+def _is_reserved_enum_name(name: str) -> bool:
+    """Return True for ``_sunder_`` and ``__dunder__`` names.
+
+    Like ``enum._is_sunder`` and ``enum._is_dunder``: these are never Enum members.
+    """
+    if name.startswith("__"):
+        return (
+            len(name) > 4 and name.endswith("__") and name[2] != "_" and name[-3] != "_"
+        )
+    return (
+        len(name) > 2
+        and name[0] == name[-1] == "_"
+        and name[1] != "_"
+        and name[-2] != "_"
+    )
+
+
 def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
     try:
@@ -432,10 +449,9 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         dunder_members = {}
         target_names = set()
         for local, values in node.locals.items():
-            if (
-                any(not isinstance(value, nodes.AssignName) for value in values)
-                or local == "_ignore_"
-            ):
+            if any(
+                not isinstance(value, nodes.AssignName) for value in values
+            ) or _is_reserved_enum_name(local):
                 continue
 
             stmt = values[0].statement()

@@ -1,0 +1,6 @@
+``__dunder__`` and ``_sunder_`` names in an ``Enum`` class body, such as
+``__slots__ = ()`` or ``_order_``, are no longer inferred as enum members. This
+fixes a false positive ``invalid-slots`` for ``__slots__ = ()`` in an ``IntEnum``.
+
+Closes pylint-dev/pylint#9839
+Refs #1730
