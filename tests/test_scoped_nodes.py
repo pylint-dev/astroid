@@ -181,6 +181,97 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         # test del statement not returned by getattr
         self.assertEqual(len(astroid.getattr("appli")), 2, astroid.getattr("appli"))
 
+    def test_module_pep562_getattr(self) -> None:
+        """A module level __getattr__ (PEP 562) can serve any name."""
+        module = builder.parse("""
+            apple = 1
+
+            def __getattr__(name):
+                return apple
+            """)
+        self.assertTrue(module.has_dynamic_getattr())
+        self.assertIs(module.dynamic_getattr(), module.locals["__getattr__"][0])
+        # 'banana' is not defined statically, __getattr__ serves it.
+        banana = module.getattr("banana")
+        self.assertEqual(len(banana), 1)
+        self.assertIsInstance(banana[0], nodes.Call)
+        self.assertEqual([node.value for node in module.igetattr("banana")], [1])
+        # The call serving a name is reused, so that inferring the same name
+        # twice does not walk a brand new node each time.
+        self.assertIs(module.getattr("banana")[0], banana[0])
+        # Statically defined names are unaffected.
+        self.assertEqual(len(module.getattr("apple")), 1)
+        self.assertIsInstance(module.getattr("apple")[0], nodes.AssignName)
+
+    def test_module_pep562_getattr_deprecation_alias(self) -> None:
+        """The name being looked up is bound, so aliases infer to their value."""
+        module = builder.parse("""
+            banana = 1
+            _DEPRECATED = {"apple": ("banana", banana)}
+
+            def __getattr__(name):
+                if name in _DEPRECATED:
+                    new_name, value = _DEPRECATED[name]
+                    warnings.warn(f"{name} is deprecated, use {new_name} instead")
+                    return value
+                raise AttributeError(f"No attribute named {name}")
+            """)
+        self.assertEqual([node.value for node in module.igetattr("apple")], [1])
+        # A name the module does not serve stays unknown rather than raising.
+        self.assertEqual(list(module.igetattr("cherry")), [util.Uninferable])
+
+    def test_module_pep562_getattr_stub(self) -> None:
+        """A __getattr__ that returns nothing says the name exists, no more."""
+        module = builder.parse("""
+            def __getattr__(name): ...
+            """)
+        self.assertTrue(module.has_dynamic_getattr())
+        # Not Const(None): the stub says nothing about the value of the name.
+        self.assertIsInstance(module.getattr("apple")[0], nodes.Unknown)
+        self.assertEqual(list(module.igetattr("apple")), [util.Uninferable])
+
+    def test_module_pep562_getattr_not_defined(self) -> None:
+        """Without a module level __getattr__ an unknown name still raises."""
+        module = builder.parse("apple = 1")
+        self.assertFalse(module.has_dynamic_getattr())
+        self.assertIsNone(module.dynamic_getattr())
+        with self.assertRaises(AttributeInferenceError):
+            module.getattr("banana")
+
+    def test_module_pep562_getattr_dunder(self) -> None:
+        """A module level __getattr__ does not make dunders exist."""
+        module = builder.parse("""
+            def __getattr__(name):
+                return 1
+            """)
+        with self.assertRaises(AttributeInferenceError):
+            module.getattr("__path__")
+
+    def test_module_pep562_getattr_import(self) -> None:
+        """Importing a dynamically served name infers instead of failing."""
+        builder.AstroidBuilder(MANAGER).string_build(
+            textwrap.dedent("""
+                banana = 1
+
+                def __getattr__(name):
+                    return banana
+                """),
+            modname="fruit",
+            path="fruit.py",
+        )
+        self.addCleanup(MANAGER.astroid_cache.pop, "fruit", None)
+        apple = extract_node("from fruit import apple\napple #@")
+        self.assertEqual([node.value for node in apple.inferred()], [1])
+        cherry = extract_node("import fruit\nfruit.cherry #@")
+        self.assertEqual([node.value for node in cherry.inferred()], [1])
+
+    def test_module_pep562_getattr_not_a_function(self) -> None:
+        """A __getattr__ that is not a function does not count."""
+        module = builder.parse("__getattr__ = 42")
+        self.assertFalse(module.has_dynamic_getattr())
+        with self.assertRaises(AttributeInferenceError):
+            module.getattr("banana")
+
     def test_relative_to_absolute_name(self) -> None:
         # package
         mod = nodes.Module("very.multi.package", package=True)
