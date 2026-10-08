@@ -1,0 +1,4 @@
+``Arguments.default_value()`` no longer raises ``IndexError`` when a keyword-only
+argument repeats the name of ``*args`` or ``**kwargs``, as in ``def f(x, *y, y)``.
+
+Closes #3259
