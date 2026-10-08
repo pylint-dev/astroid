@@ -5672,6 +5672,108 @@ def test_call_on_instance_with_inherited_dunder_call_method() -> None:
     assert val.name == "Sub"
 
 
+@pytest.mark.parametrize(
+    "expression",
+    ["Holder.target(42)", "Holder().target(42)", "Root().holder.target(42)"],
+)
+@pytest.mark.parametrize(
+    "attribute",
+    ["", "target = 99", "@property\n        def target(self):\n            return 99"],
+    ids=["missing", "constant", "property"],
+)
+def test_callable_attribute_result(expression: str, attribute: str) -> None:
+    """Calling an attribute uses the callable's return value, not a namesake."""
+    node = extract_node(f"""
+    class Callable:
+        {attribute}
+        def __call__(self, value):
+            return value
+
+    class Holder:
+        target = Callable()
+
+    class Root:
+        holder = Holder()
+
+    {expression}
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+
+@pytest.mark.parametrize("attribute", ["__call__", "__new__"])
+def test_callable_special_named_attribute_result(attribute: str) -> None:
+    """An ordinary callable stored under a special name is still called."""
+    node = extract_node(f"""
+    class Callable:
+        def __call__(self, value):
+            return value
+
+    class Holder:
+        {attribute} = Callable()
+
+    Holder.{attribute}(42)
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+
+def test_callable_attribute_inherited_method_result() -> None:
+    node = extract_node("""
+    class Base:
+        def __call__(self, value):
+            return self.factor * value
+
+    class Callable(Base):
+        factor = 2
+
+    class Holder:
+        target = Callable()
+
+    Holder().target(42)
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 84
+
+
+@pytest.mark.parametrize(
+    "call_arguments", ["42", "value=42", "*[42]", "**{'value': 42}"]
+)
+def test_callable_attribute_call_arguments(call_arguments: str) -> None:
+    node = extract_node(f"""
+    class Callable:
+        def __call__(self, value):
+            return value
+    class Holder:
+        target = Callable()
+    Holder.target({call_arguments})
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+
+def test_callable_instance_preserves_call_context() -> None:
+    node = extract_node("""
+    class Callable:
+        def __call__(self, value):
+            return value
+    Callable()
+    """)
+    [instance] = node.inferred()
+    context = InferenceContext()
+    call_context = CallContext(args=[nodes.Const(42)], callee=instance)
+    context.callcontext = call_context
+    [inferred] = list(instance.infer_call_result(None, context))
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+    assert context.callcontext is call_context
+    assert context.callcontext.callee is instance
+
+
 class TestInferencePropagation:
     """Make sure function argument values are properly
     propagated to sub functions.
