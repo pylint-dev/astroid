@@ -5,9 +5,13 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
+
+import pytest
 
 from astroid import builder, nodes, util
-from astroid.exceptions import AttributeInferenceError
+from astroid.brain.brain_namedtuple_enum import infer_named_tuple
+from astroid.exceptions import AttributeInferenceError, UseInferenceDefault
 
 
 class NamedTupleTest(unittest.TestCase):
@@ -323,3 +327,35 @@ class NamedTupleTest(unittest.TestCase):
         assert isinstance(good_node_two_inferred, nodes.ClassDef)
         bad_node_inferred = next(bad_node.infer())
         assert bad_node_inferred == util.Uninferable
+
+
+@pytest.mark.parametrize(
+    "factory", [None, util.Uninferable], ids=["none", "uninferable"]
+)
+def test_namedtuple_unresolved_factory_uses_default_inference(factory) -> None:
+    call = builder.extract_node("namedtuple('Client', 'value')")
+    with patch(
+        "astroid.brain.brain_namedtuple_enum.util.safe_infer", return_value=factory
+    ):
+        with pytest.raises(UseInferenceDefault):
+            next(infer_named_tuple(call))
+
+
+@pytest.mark.parametrize(
+    "factory", [None, util.Uninferable], ids=["none", "uninferable"]
+)
+def test_typing_namedtuple_unresolved_factory_does_not_crash(factory) -> None:
+    call = builder.extract_node("""
+    import typing
+
+    class Client(typing.NamedTuple):
+        value: int
+
+    Client(1)
+    """)
+    with patch(
+        "astroid.brain.brain_namedtuple_enum.util.safe_infer", return_value=factory
+    ):
+        inferred = next(call.func.infer())
+    assert isinstance(inferred, nodes.ClassDef)
+    assert inferred.name == "Client"
