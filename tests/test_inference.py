@@ -6032,6 +6032,89 @@ def test_attribute_mro_object_inference() -> None:
     assert inferred[0].value == 2
 
 
+def test_class_attribute_assigned_through_the_class() -> None:
+    """Values bound on a class outside its body are inferred along with the others.
+
+    https://github.com/pylint-dev/pylint/issues/3045
+    https://github.com/pylint-dev/pylint/issues/9250
+    """
+    code = """
+    class Registry:
+        entries = None
+        names = None
+
+        @classmethod
+        def get(cls):
+            if cls.entries is None:
+                cls.entries = {}
+            cls.entries  #@
+            return cls.entries
+
+        def __init__(self):
+            klass = self.__class__
+            klass.names = []
+            self.names  #@
+
+    class Child(Registry):
+        pass
+
+    Registry.version = 1
+    Registry.version = "1.0"
+
+    Child.get()  #@
+    Registry.names  #@
+    Registry.version  #@
+    """
+    entries, names, child_entries, class_names, version = (
+        [inferred.pytype() for inferred in node.inferred()]
+        for node in extract_node(code)
+    )
+    assert entries == child_entries == ["builtins.NoneType", "builtins.dict"]
+    assert names == class_names == ["builtins.NoneType", "builtins.list"]
+    assert version == ["builtins.int", "builtins.str"]
+
+
+def test_class_attribute_assigned_through_an_ancestor() -> None:
+    """A value bound on an ancestor does not leak into a class overriding it."""
+    node = extract_node("""
+    class Base:
+        flag = None
+
+        @classmethod
+        def enable(cls):
+            cls.flag = True
+
+    class Child(Base):
+        flag = 0
+
+    Child.flag  #@
+    """)
+    assert [inferred.value for inferred in node.inferred()] == [0]
+
+
+def test_class_attribute_only_assigned_through_an_ancestor() -> None:
+    """A subclass sees all the values its ancestor binds on itself in its methods."""
+    node = extract_node("""
+    class Base:
+        @classmethod
+        def reset(cls):
+            cls.cache = None
+
+        @classmethod
+        def fill(cls):
+            cls.cache = {}
+
+    class Child(Base):
+        pass
+
+    Child.cache  #@
+    """)
+    assert [inferred.pytype() for inferred in node.inferred()] == [
+        "builtins.NoneType",
+        "builtins.dict",
+    ]
+
+
 def test_inferred_sequence_unpacking_works() -> None:
     inferred = next(extract_node("""
     def test(*args):
