@@ -1519,6 +1519,7 @@ def test_unknown() -> None:
     assert isinstance(next(UNATTACHED_UNKNOWN.infer()), type(util.Uninferable))
     assert isinstance(UNATTACHED_UNKNOWN.name, str)
     assert isinstance(UNATTACHED_UNKNOWN.qname(), str)
+    assert isinstance(UNATTACHED_UNKNOWN.pytype(), str)
 
 
 def test_type_comments_with() -> None:
