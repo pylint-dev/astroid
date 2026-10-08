@@ -4,7 +4,9 @@
 
 from __future__ import annotations
 
-from astroid import context, nodes
+from collections.abc import Iterator
+
+from astroid import bases, context, nodes, util
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
 from astroid.const import PY311_PLUS
@@ -88,8 +90,50 @@ def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None =
     return iter([class_def])
 
 
+def _looks_like_re_compile(node: nodes.Call) -> bool:
+    """Check for a call to re.compile (or compile() inside the re module)."""
+    if len(node.args) == 0:
+        return False
+    func = node.func
+    if isinstance(func, nodes.Attribute):
+        return (
+            func.attrname == "compile"
+            and isinstance(func.expr, nodes.Name)
+            and func.expr.name == "re"
+        )
+    if isinstance(func, nodes.Name):
+        return func.name == "compile" and node.root().name == "re"
+    return False
+
+
+def infer_re_compile(
+    node: nodes.Call, ctx: context.InferenceContext | None = None
+) -> Iterator[bases.Instance]:
+    """Infer the result of re.compile() as an instance of re.Pattern.
+
+    re.compile's stdlib implementation has an isinstance() fast path that
+    returns its own `pattern` argument unchanged when it is already a
+    compiled pattern. astroid's inference does not narrow types on
+    isinstance() checks, so without this tip it infers both branches of
+    that fast path - including the raw (e.g. str) argument - alongside the
+    correct re.Pattern result, which is why plain `re.compile("...")` calls
+    used to infer as Uninferable/str instead of re.Pattern (see #520).
+    """
+    try:
+        re_module = AstroidManager().ast_from_module_name("re")
+        pattern = next(re_module.getattr("Pattern")[0].infer())
+    except (AttributeError, IndexError, StopIteration):
+        return iter([util.Uninferable])
+    if not isinstance(pattern, nodes.ClassDef):
+        return iter([util.Uninferable])
+    return iter([pattern.instantiate_class()])
+
+
 def register(manager: AstroidManager) -> None:
     register_module_extender(manager, "re", _re_transform)
     manager.register_transform(
         nodes.Call, inference_tip(infer_pattern_match), _looks_like_pattern_or_match
+    )
+    manager.register_transform(
+        nodes.Call, inference_tip(infer_re_compile), _looks_like_re_compile
     )
