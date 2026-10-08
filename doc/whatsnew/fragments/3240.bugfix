@@ -1,4 +1,5 @@
 Fix a crash when inferring a ``super()`` call inside a function that is decorated
 with ``@classmethod`` but is not defined inside a class.
 
+Refs #3240
 Closes pylint-dev/pylint#8755

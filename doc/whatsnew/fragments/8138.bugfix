@@ -1,6 +1,0 @@
-A function whose body is only ``...`` is now inferred to return ``Uninferable``
-instead of ``None``, the same as a function whose body is only ``pass``. This
-is the astroid part of the fix for a false positive ``not-callable`` in pylint
-when calling a ``...`` property stub, such as the ``sqlalchemy.func`` helpers.
-
-Refs pylint-dev/pylint#8138
