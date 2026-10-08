@@ -293,6 +293,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
         end_col_offset=None,
         filled_args=None,
         filled_keywords=None,
+        is_async=False,
     ):
         super().__init__(
             name,
@@ -302,6 +303,7 @@ class PartialFunction(scoped_nodes.FunctionDef):
             end_lineno=end_lineno,
             parent=parent,
         )
+        self.is_async = is_async
         if call is None:
             self.filled_args = list(filled_args or [])
             self.filled_keywords = dict(filled_keywords or {})
@@ -311,6 +313,12 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
             wrapped_function = call.positional_arguments[0]
             inferred_wrapped_function = next(wrapped_function.infer())
+            self.is_async = isinstance(
+                inferred_wrapped_function, scoped_nodes.AsyncFunctionDef
+            ) or (
+                isinstance(inferred_wrapped_function, PartialFunction)
+                and inferred_wrapped_function.is_async
+            )
             if isinstance(inferred_wrapped_function, PartialFunction):
                 self.filled_args = (
                     inferred_wrapped_function.filled_args + self.filled_args
@@ -340,6 +348,16 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
             call_context_args = context.callcontext.args or []
             context.callcontext.args = self.filled_args + call_context_args
+
+        if self.is_async and self.is_generator():
+            # A partial of an async generator function is not an
+            # ``AsyncFunctionDef``, so ``FunctionDef.infer_call_result`` would
+            # infer a synchronous generator.
+            if context is None:
+                context = InferenceContext()
+            return iter(
+                (bases.AsyncGenerator(self, generator_initial_context=context),)
+            )
 
         return super().infer_call_result(caller=caller, context=context)
 

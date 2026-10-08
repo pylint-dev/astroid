@@ -13,7 +13,7 @@ from unittest.mock import patch
 import pytest
 
 import astroid
-from astroid import MANAGER, builder, nodes, objects, test_utils, util
+from astroid import MANAGER, bases, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
 from astroid.const import PY312_PLUS, PY313_PLUS, PY315_PLUS
@@ -1740,6 +1740,54 @@ class TestFunctoolsPartial:
         inferred_result = next(result.infer())
         assert isinstance(inferred_result, nodes.Const)
         assert inferred_result.value == 1
+
+    @staticmethod
+    def test_partial_async_generator_call_is_async_generator() -> None:
+        """Calling a partial of an async generator function gives an async generator.
+
+        Reproduces https://github.com/pylint-dev/pylint/issues/9439.
+        """
+        ast_nodes = astroid.extract_node("""
+        from functools import partial
+
+        async def gen(range_, text="Text"):
+            for i in range(range_):
+                yield i, text
+
+        def sync_gen(range_, text="Text"):
+            for i in range(range_):
+                yield i, text
+
+        partial(gen, range_=10)(text="Overridden") #@
+        partial(gen, 10)() #@
+        partial(partial(gen, 10), text="Overridden")() #@
+        partial(sync_gen, range_=10)(text="Overridden") #@
+        """)
+        async_direct, async_positional, async_nested, sync = ast_nodes
+
+        for node in (async_direct, async_positional, async_nested):
+            inferred = next(node.infer())
+            assert isinstance(inferred, bases.AsyncGenerator)
+            assert inferred.pytype() == "builtins.async_generator"
+
+        inferred_sync = next(sync.infer())
+        assert isinstance(inferred_sync, bases.Generator)
+        assert not isinstance(inferred_sync, bases.AsyncGenerator)
+
+    @staticmethod
+    def test_partial_async_generator_descriptor_binding() -> None:
+        """Binding a partial of an async generator keeps it an async generator."""
+        ast_nodes = astroid.extract_node("""
+        from functools import partial
+
+        async def gen(x):
+            yield x
+
+        p = partial(gen, x=1)
+        p.__get__({})() #@
+        """)
+        inferred = next(ast_nodes.infer())
+        assert isinstance(inferred, bases.AsyncGenerator)
 
     def test_invalid_functools_partial_calls(self) -> None:
         ast_nodes = astroid.extract_node("""
