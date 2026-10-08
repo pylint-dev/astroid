@@ -1,4 +1,0 @@
-Fix an infinite loop when introspecting a live class that exposes itself, or a
-sibling class, as one of its own attributes.
-
-Closes #3284
