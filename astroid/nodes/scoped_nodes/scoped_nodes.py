@@ -1547,6 +1547,18 @@ class FunctionDef(
             elif yield_.scope() == self:
                 yield from yield_.value.infer(context=context)
 
+    @staticmethod
+    def _is_stub_placeholder_body(body: list[NodeNG]) -> bool:
+        """Check if a function body is only ``...`` or ``pass``."""
+        if len(body) != 1:
+            return False
+        statement = body[0]
+        return isinstance(statement, node_classes.Pass) or (
+            isinstance(statement, node_classes.Expr)
+            and isinstance(statement.value, node_classes.Const)
+            and statement.value.value is ...
+        )
+
     def infer_call_result(
         self,
         caller: SuccessfulInferenceResult | None,
@@ -1622,7 +1634,11 @@ class FunctionDef(
         first_return = next(returns, None)
         if not first_return:
             if self.body:
-                if self.is_abstract(pass_is_abstract=True, any_raise_is_abstract=True):
+                # A body that is only ``...`` is a placeholder, like ``pass``:
+                # it does not mean the function returns ``None``.
+                if self._is_stub_placeholder_body(self.body) or self.is_abstract(
+                    pass_is_abstract=True, any_raise_is_abstract=True
+                ):
                     yield util.Uninferable
                 else:
                     yield node_classes.Const(None)
