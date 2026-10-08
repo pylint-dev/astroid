@@ -186,7 +186,7 @@ def _find_arguments_from_base_classes(
         return pos_only_store, kw_only_store
 
     for base in reversed(mro):
-        if not base.is_dataclass:
+        if base is node or not base.is_dataclass:
             continue
         try:
             base_init = base.locals["__init__"][0]
@@ -212,6 +212,19 @@ def _find_arguments_from_base_classes(
 
         for kwarg, data in kw_only.items():
             kw_only_store[kwarg] = data
+
+        for assign_node in _get_dataclass_attributes(base, init=True):
+            value = assign_node.value
+            if (
+                isinstance(value, nodes.Call)
+                and _looks_like_dataclass_field_call(value, check_scope=False)
+                and any(
+                    keyword.arg == "init" and (keyword.value.bool_value() is False)
+                    for keyword in value.keywords
+                )
+            ):
+                pos_only_store.pop(assign_node.target.name, None)
+                kw_only_store.pop(assign_node.target.name, None)
     return pos_only_store, kw_only_store
 
 
