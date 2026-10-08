@@ -2497,6 +2497,7 @@ frozenset()  #@
 {}.keys()  #@
 {}.values()  #@
 {}.items()  #@
+slice(1, 2)  #@
 lambda: 1  #@
 function  #@
 coroutine_function  #@
@@ -2541,6 +2542,15 @@ def test_inferred_values_are_named(code: str) -> None:
         assert isinstance(inferred.name, str), source
         assert isinstance(inferred.qname(), str), source
         assert isinstance(inferred.pytype(), str), source
+
+
+def test_slice_name() -> None:
+    """An inferred ``slice`` object has the name of its type, like other builtins."""
+    node = extract_node("slice(1, 2)")
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Slice)
+    assert inferred.name == "slice"
+    assert inferred.name == inferred.pytype().rsplit(".", 1)[-1]
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
