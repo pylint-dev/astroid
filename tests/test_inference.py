@@ -36,6 +36,7 @@ from astroid.bases import (
     UnboundMethod,
     UnionType,
     _infer_stmts,
+    _is_property,
 )
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS, PY315_PLUS
@@ -6682,6 +6683,33 @@ def test_property_callable_inference() -> None:
     inferred = next(property_call.infer())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 42
+
+
+def test_class_attribute_bound_to_foreign_lambda_method() -> None:
+    """A class attribute bound to another class' lambda "method" infers to a
+    bound method instead of raising: the method reaching ``_is_property``
+    proxies a ``Lambda`` node, which has no ``decoratornames``.
+    """
+    getattr_call, attribute = extract_node("""
+    class A:
+        f = lambda self: 42
+
+    class B:
+        g = A().f
+
+    getattr(B(), "g") #@
+    B().g #@
+    """)
+    for node in (getattr_call, attribute):
+        inferred = next(node.infer())
+        assert isinstance(inferred, BoundMethod)
+
+
+def test_is_property_method_proxying_uninferable() -> None:
+    """An ``UnboundMethod`` can proxy ``Uninferable``, whose
+    ``decoratornames()`` is ``Uninferable`` rather than a set.
+    """
+    assert _is_property(UnboundMethod(Uninferable)) is False
 
 
 def test_property_docstring() -> None:
