@@ -4244,6 +4244,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """).inferred()[0]
         assert isinstance(cls, Instance) and cls.name == "Clazz"
 
+    def test_metaclass_method_inherited_from_base_metaclass(self) -> None:
+        """A method defined on a base metaclass binds the class, not an instance."""
+        cls = extract_node("""
+        class BaseMeta(type):
+            def make(cls):
+                return cls
+        class Meta(BaseMeta):
+            pass
+        class Clazz(metaclass=Meta):
+            pass
+        Clazz.make() #@
+        """).inferred()[0]
+        assert isinstance(cls, nodes.ClassDef) and cls.name == "Clazz"
+
     def test_infer_subclass_attr_outer_class(self) -> None:
         node = extract_node("""
         class Outer:
