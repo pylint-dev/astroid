@@ -336,6 +336,7 @@ class NamedTupleTest(unittest.TestCase):
         from typing import NamedTuple
         class C(NamedTuple):
             a.b: str
+            basket[0]: str
             y: int
         C #@
         """)
