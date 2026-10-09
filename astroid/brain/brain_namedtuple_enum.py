@@ -461,7 +461,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
 
             new_targets = []
             for target in targets:
-                if isinstance(target, nodes.Starred):
+                if not isinstance(target, nodes.AssignName):
+                    # ``Starred`` targets, and attribute/subscript targets from a
+                    # chained assignment such as ``x = a.b = 1``, do not name an
+                    # enum member and have no ``name`` attribute.
                     continue
                 target_names.add(target.name)
                 # Replace all the assignments with our mocked class.
@@ -577,6 +580,7 @@ def infer_typing_namedtuple_class(class_node, context: InferenceContext | None =
         annassign.target.name
         for annassign in class_node.body
         if isinstance(annassign, nodes.AnnAssign)
+        and isinstance(annassign.target, nodes.AssignName)
     ]
     code = dedent("""
     from collections import namedtuple
