@@ -1916,7 +1916,7 @@ class ClassDef(
         end_lineno: int | None,
         end_col_offset: int | None,
     ) -> None:
-        self.instance_attrs: dict[str, NodeNG] = {}
+        self.instance_attrs: dict[str, list[NodeNG]] = {}
         self.locals = {}
         """A map of the name of a local variable to the node defining it."""
 
@@ -2943,10 +2943,10 @@ class ClassDef(
 
     def _compute_mro(
         self,
-        context: InferenceContext,
+        context: InferenceContext | None = None,
         *,
         base_chain: frozenset[ClassDef] = frozenset(),
-    ):
+    ) -> list[ClassDef]:
         if self.qname() == "builtins.object":
             return [self]
 

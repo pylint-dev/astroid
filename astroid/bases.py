@@ -418,7 +418,7 @@ class Instance(BaseInstance):
         return result
 
     def getitem(
-        self, index: nodes.Const, context: InferenceContext | None = None
+        self, index: nodes.NodeNG, context: InferenceContext | None = None
     ) -> InferenceResult | None:
         new_context = bind_context_to_node(context, self)
         if not context:

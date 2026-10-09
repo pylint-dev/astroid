@@ -6,6 +6,7 @@
 
 import functools
 import unittest
+from collections.abc import Sequence
 
 from astroid import builder, nodes
 from astroid.exceptions import (
@@ -347,9 +348,12 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(path.lookup("__path__")[1]), 1)
 
     def test_builtin_lookup(self) -> None:
-        self.assertEqual(nodes.builtin_lookup("__dict__")[1], ())
+        dictstmts = nodes.builtin_lookup("__dict__")[1]
+        self.assertEqual(dictstmts, ())
+        self.assertIsInstance(dictstmts, Sequence)
         intstmts = nodes.builtin_lookup("int")[1]
         self.assertEqual(len(intstmts), 1)
+        self.assertIsInstance(intstmts, Sequence)
         self.assertIsInstance(intstmts[0], nodes.ClassDef)
         self.assertEqual(intstmts[0].name, "int")
         self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
