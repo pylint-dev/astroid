@@ -44,6 +44,7 @@ from astroid.exceptions import (
     AstroidSyntaxError,
     AstroidTypeError,
     AttributeInferenceError,
+    NameInferenceError,
     NoDefault,
     StatementMissing,
 )
@@ -2378,10 +2379,15 @@ def test_arguments_default_value_positional_shares_vararg_name() -> None:
 
 
 def test_infer_argument_sharing_vararg_name() -> None:
-    """Inferring such an argument yields ``Uninferable`` rather than crashing."""
+    """Inferring the annotation does not crash on the duplicate argument.
+
+    Annotations are evaluated outside the function, so ``x`` is not the
+    parameter. It is unbound here, same as ``def f(x, y: x)`` at runtime.
+    """
     node = extract_node("def f(x, *y, y: tuple[x]): ...")
     subscript = node.args.kwonlyargs_annotations[0]
-    assert next(subscript.slice.infer()) is Uninferable
+    with pytest.raises(NameInferenceError):
+        next(subscript.slice.infer())
 
 
 def test_arguments_annotations():
