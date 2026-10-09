@@ -70,6 +70,13 @@ POSSIBLE_PROPERTIES = {
 def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
 ) -> bool:
+    # An UnboundMethod can proxy a plain Lambda (a lambda assigned in a class
+    # body) or even Uninferable, neither of which can carry decorators.
+    target = meth
+    while isinstance(target, UnboundMethod):
+        target = target._proxied
+    if not isinstance(target, nodes.FunctionDef):
+        return False
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
