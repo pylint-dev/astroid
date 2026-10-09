@@ -703,6 +703,20 @@ class ClearCacheTest(unittest.TestCase):
                 # less equal because the "baseline" might have had multiple calls to bootstrap()
                 self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
 
+    def test_clear_cache_clears_preceding_guards_cache(self) -> None:
+        node = astroid.extract_node("""
+        def f(x = None):
+            if x is None:
+                return
+            x  #@
+        """)
+        node.inferred()
+        self.assertNotEqual(astroid.constraint._preceding_guards_cache, {})
+
+        astroid.MANAGER.clear_cache()
+
+        self.assertEqual(astroid.constraint._preceding_guards_cache, {})
+
     def test_file_cache_after_clear_cache(self) -> None:
         """Test to mimic the behavior of how pylint lints file and
         ensure clear cache clears everything stored in the cache.
