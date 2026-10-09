@@ -9,6 +9,7 @@ import unittest
 import pytest
 
 from astroid import bases, nodes, objects, util
+from astroid.brain.brain_builtin_inference import _is_from_builtins_import
 from astroid.builder import _extract_single_node, extract_node
 
 
@@ -358,6 +359,20 @@ class TestShadowedBuiltins:
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 3
 
+    def test_lambda_default_uses_enclosing_builtin(self) -> None:
+        """A lambda default is evaluated outside the lambda, same as a function."""
+        for params in ("len=len([1, 2, 3])", "*, len=len([1, 2, 3])"):
+            assign = extract_node(f"""
+                func = lambda {params}: len
+                """)
+            assert isinstance(assign, nodes.Assign)
+            lamb = assign.value
+            assert isinstance(lamb, nodes.Lambda)
+            call = next(lamb.args.nodes_of_class(nodes.Call))
+            inferred = next(call.infer())
+            assert isinstance(inferred, nodes.Const)
+            assert inferred.value == 3
+
     def test_kwonly_default_uses_enclosing_builtin(self) -> None:
         func: nodes.FunctionDef = extract_node("""
             def h(x, *, len=len([1, 2, 3])):
@@ -398,6 +413,16 @@ class TestShadowedBuiltins:
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.Const)
         assert inferred.value == 3
+
+    def test_from_builtins_import_without_that_name_is_not_the_builtin(self) -> None:
+        """``real_name`` raises when the import does not bind the called name.
+
+        Lookup only returns imports that do bind it, so this is the leftover
+        case. That import is not the builtin.
+        """
+        imported = extract_node("from builtins import int")
+        assert isinstance(imported, nodes.ImportFrom)
+        assert _is_from_builtins_import(imported, "str") is False
 
     def test_builtins_import_under_another_builtin_name(self) -> None:
         """``str`` here is really ``builtins.int``, so it must not infer as ``str``.

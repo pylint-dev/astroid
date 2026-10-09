@@ -125,6 +125,30 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
                 self.assertEqual(len(stmts), 1)
                 self.assertEqual(stmts[0].lineno, 2)
 
+    def test_name_in_lambda_default_looks_up_in_enclosing_scope(self) -> None:
+        """A name in a lambda default is evaluated in the enclosing scope.
+
+        Same rule as a function default: the parameter beside it does not
+        hide the outer binding, including when the name is nested in the
+        value or the default is keyword-only.
+        """
+        for params in ("v=v: v", "v=[v]: v", "*, v=v: v"):
+            with self.subTest(params=params):
+                module = builder.parse(f"""
+                    v = 42
+                    func = lambda {params}
+                """)
+                lamb = module.body[1].value
+                self.assertIsInstance(lamb, nodes.Lambda)
+                name = next(
+                    n
+                    for n in lamb.args.nodes_of_class(nodes.Name)
+                    if n.name == "v" and not isinstance(n, nodes.AssignName)
+                )
+                _, stmts = name.lookup("v")
+                self.assertEqual(len(stmts), 1)
+                self.assertEqual(stmts[0].lineno, 2)
+
     def test_name_in_annotation_looks_up_in_enclosing_scope(self) -> None:
         """An annotation is evaluated in the enclosing scope, like a default."""
         module = builder.parse("""
