@@ -35,6 +35,10 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (f"3 != {node}", None, 3),
             (f"isinstance({node}, int) and {node} == 3", 3, 5),
             (f"isinstance({node}, str) or {node} == 3", 3, None),
+            (f"not {node} is None", 3, None),
+            (f"not isinstance({node}, int)", None, 3),
+            (f"not (isinstance({node}, int) and {node} == 3)", None, 3),
+            (f"not not {node}", 3, None),
         ),
     )
 
