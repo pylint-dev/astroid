@@ -170,6 +170,9 @@ def _infer_stmts(
         name = None
         constraints = {}
         context = InferenceContext()
+    if constraints:
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.constraint import constraint_applies
 
     for stmt in stmts:
         if isinstance(stmt, UninferableBase):
@@ -180,7 +183,9 @@ def _infer_stmts(
         try:
             stmt_constraints: set[Constraint] = set()
             for constraint_stmt, potential_constraints in constraints.items():
-                if not constraint_stmt.parent_of(stmt):
+                # Every constraint of the mapping is generated for the same node.
+                expr = next(iter(potential_constraints)).node
+                if constraint_applies(constraint_stmt, stmt, expr):
                     stmt_constraints.update(potential_constraints)
             for inf in stmt.infer(context=context):
                 if all(

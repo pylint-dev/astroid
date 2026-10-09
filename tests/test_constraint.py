@@ -12,6 +12,7 @@ import pytest
 
 from astroid import builder, nodes
 from astroid.bases import Instance
+from astroid.constraint import constraint_applies
 from astroid.util import Uninferable
 
 
@@ -1701,3 +1702,544 @@ def test_bool_op_apply_constraint_inside_nested_operand() -> None:
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == 1
     assert inferred[1] is Uninferable
+
+
+def _assert_filtered(node: nodes.NodeNG) -> None:
+    """Assert that the default value of the parameter was filtered out."""
+    inferred = node.inferred()
+    assert len(inferred) == 1, node_info(node)
+    assert inferred[0] is Uninferable, node_info(node)
+
+
+def _assert_kept(node: nodes.NodeNG, value: object) -> None:
+    """Assert that the default value of the parameter was kept."""
+    inferred = node.inferred()
+    assert len(inferred) == 2, node_info(node)
+    assert isinstance(inferred[0], nodes.Const), node_info(node)
+    assert inferred[0].value == value, node_info(node)
+    assert inferred[1] is Uninferable, node_info(node)
+
+
+@common_params(node="x")
+@pytest.mark.parametrize(
+    "exit_stmt",
+    (
+        "return",
+        "raise ValueError",
+        "exit()",
+        "quit(1)",
+        "sys.exit(1)",
+        "os._exit(1)",
+    ),
+)
+def test_guard_exits(
+    condition: str, satisfy_val: int | None, fail_val: int | None, exit_stmt: str
+) -> None:
+    """Test that the inverted test of an exiting if constrains the code after it."""
+    node1, node2 = builder.extract_node(f"""
+    import os
+    import sys
+
+    def f1(x = {satisfy_val}):
+        if {condition}:
+            {exit_stmt}
+        x  #@
+
+    def f2(x = {fail_val}):
+        if {condition}:
+            {exit_stmt}
+        x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_kept(node2, fail_val)
+
+
+@pytest.mark.parametrize("exit_stmt", ("continue", "break"))
+def test_guard_loop_exits(exit_stmt: str) -> None:
+    """Test that continue and break exit the rest of the loop body."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(y, x = None):
+        for _ in y:
+            if x is None:
+                {exit_stmt}
+            x  #@
+
+    def f2(y, x = 1):
+        while y:
+            if x is None:
+                {exit_stmt}
+            x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_kept(node2, 1)
+
+
+@common_params(node="x")
+def test_guard_orelse_exits(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that the test of an if with an exiting else constrains the code after it."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        if {condition}:
+            pass
+        else:
+            return
+        x  #@
+
+    def f2(x = {satisfy_val}):
+        if {condition}:
+            pass
+        else:
+            return
+        x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_kept(node2, satisfy_val)
+
+
+@common_params(node="x")
+def test_assert(condition: str, satisfy_val: int | None, fail_val: int | None) -> None:
+    """Test that an assert constrains the code after it."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        assert {condition}
+        x  #@
+
+    def f2(x = {satisfy_val}):
+        assert {condition}
+        x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_kept(node2, satisfy_val)
+
+
+def test_guard_elif_chain() -> None:
+    """Test that every exiting branch of an elif chain constrains the code after it."""
+    node1, node2, node3 = builder.extract_node("""
+    def f1(x = None):
+        if x == 3:
+            return
+        elif x is None:
+            return
+        x  #@
+
+    def f2(x = 3):
+        if x is None:
+            return
+        elif x == 3:
+            return
+        x  #@
+
+    def f3(x = 5):
+        if x is None:
+            return
+        elif x == 3:
+            return
+        x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_filtered(node2)
+    _assert_kept(node3, 5)
+
+
+def test_guard_elif_chain_body_not_exiting() -> None:
+    """Test that an elif does not constrain the code after it if a previous branch
+    falls through.
+    """
+    node = builder.extract_node("""
+    def f(x = None):
+        if x == 3:
+            pass
+        elif x is None:
+            return
+        x  #@
+    """)
+
+    _assert_kept(node, None)
+
+
+def test_guard_elif_orelse_exits() -> None:
+    """Test that the test of an elif with an exiting else constrains the code
+    after the chain.
+    """
+    node1, node2 = builder.extract_node("""
+    def f1(x = None):
+        if x == 3:
+            return
+        elif x is not None:
+            pass
+        else:
+            return
+        x  #@
+
+    def f2(x = 5):
+        if x == 3:
+            return
+        elif x is not None:
+            pass
+        else:
+            return
+        x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_kept(node2, 5)
+
+
+def test_guard_nested_if_exits() -> None:
+    """Test that an if body ending with an if whose branches all exit is exiting."""
+    node1, node2 = builder.extract_node("""
+    def f1(y, x = None):
+        if x is None:
+            if y:
+                return
+            else:
+                raise ValueError
+        x  #@
+
+    def f2(y, x = None):
+        if x is None:
+            if y:
+                return
+        x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_kept(node2, None)
+
+
+@pytest.mark.parametrize(
+    "body",
+    (
+        "pass",
+        "return\n            print()",
+        "try:\n                return\n            finally:\n                pass",
+        "with open('file'):\n                return",
+        "print()",
+        "print",
+        "sys.stdout.write('')",
+        "y.exit()",
+    ),
+)
+def test_guard_body_not_exiting(body: str) -> None:
+    """Test that an if whose body may fall through does not constrain the code after
+    it.
+    """
+    node = builder.extract_node(f"""
+    import sys
+
+    def f(y, x = None):
+        if x is None:
+            {body}
+        x  #@
+    """)
+
+    _assert_kept(node, None)
+
+
+def test_guard_shadowed_exit() -> None:
+    """Exit calls are matched by name, so a shadowed exit still counts as exiting."""
+    node = builder.extract_node("""
+    exit = print
+
+    def f(x = None):
+        if x is None:
+            exit()
+        x  #@
+    """)
+
+    _assert_filtered(node)
+
+
+def test_guard_enclosing_block() -> None:
+    """Test that a guard constrains the code nested in the statements after it."""
+    node1, node2, node3 = builder.extract_node("""
+    def f(y, x = None):
+        if x is None:
+            return
+        for _ in y:
+            with y:
+                if y:
+                    x  #@
+        try:
+            pass
+        except ValueError:
+            x  #@
+        [x for _ in y]  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_filtered(node2)
+    _assert_filtered(node3.elt)
+
+
+def test_guard_after_use() -> None:
+    """Test that a guard does not constrain the code before it."""
+    node = builder.extract_node("""
+    def f(x = None):
+        x  #@
+        if x is None:
+            return
+    """)
+
+    _assert_kept(node, None)
+
+
+def test_guard_in_previous_block() -> None:
+    """Test that a guard inside a previous compound statement does not constrain
+    the code after that statement.
+    """
+    node = builder.extract_node("""
+    def f(y, x = None):
+        if y:
+            if x is None:
+                return
+        x  #@
+    """)
+
+    _assert_kept(node, None)
+
+
+def test_guard_does_not_cross_scope() -> None:
+    """Test that a guard does not constrain a function, lambda or class defined after
+    it, which may run after a reassignment.
+    """
+    node1, node2, node3 = builder.extract_node("""
+    def f(x = None):
+        if x is None:
+            return
+        def g():
+            return x  #@
+        lambda: x  #@
+        class A:
+            y = x  #@
+    """)
+
+    _assert_kept(node1.value, None)
+    _assert_kept(node2.body, None)
+    _assert_kept(node3.value, None)
+
+
+def test_guard_inside_nested_scope() -> None:
+    """Test that a guard constrains the code after it inside a nested function."""
+    node = builder.extract_node("""
+    def f(x = None):
+        def g():
+            if x is None:
+                return
+            return x  #@
+    """)
+
+    _assert_filtered(node.value)
+
+
+def test_guard_reassignment_after_guard() -> None:
+    """Test that a value assigned between a guard and the use is not constrained."""
+    node1, node2 = builder.extract_node("""
+    def f1(x = 1):
+        if x is None:
+            return
+        x = None
+        x  #@
+
+    def f2(y, x = None):
+        if x is None:
+            return
+        if y:
+            x = None
+        x  #@
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+
+    # The parameter default is filtered out, the reassignment is kept.
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert inferred[0] is Uninferable
+    assert isinstance(inferred[1], nodes.Const)
+    assert inferred[1].value is None
+
+
+def test_guard_loop_carried_assignment() -> None:
+    """Test that a value assigned after the use in a loop is constrained: it has
+    passed the guard on the next iteration.
+    """
+    node = builder.extract_node("""
+    def f(y, x = 1):
+        while y:
+            if x is None:
+                break
+            x  #@
+            x = None
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+    assert inferred[1] is Uninferable
+
+
+@pytest.mark.parametrize("loop", ("for _ in y:", "while y:"))
+def test_guard_outside_loop_assignment_after_use(loop: str) -> None:
+    """Test that a value assigned after the use in a loop is not constrained by a
+    guard before the loop: it reaches the use on the next iteration.
+    """
+    node = builder.extract_node(f"""
+    class A:
+        def __init__(self, x = 1):
+            self.x = x
+
+        def method(self, y):
+            if self.x is None:
+                return
+            {loop}
+                self.x  #@
+                self.x = None
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 3
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+    assert inferred[1] is Uninferable
+    assert isinstance(inferred[2], nodes.Const)
+    assert inferred[2].value is None
+
+
+def test_if_in_loop_assignment_after_use() -> None:
+    """Test that a value assigned after the use in a loop is constrained by the if
+    containing the use.
+    """
+    node = builder.extract_node("""
+    def f(y, x = None):
+        for _ in y:
+            if x is not None:
+                x  #@
+            x = None
+    """)
+
+    _assert_filtered(node)
+
+
+def test_constraint_applies_without_end_position() -> None:
+    """Test that a constraint applies to an assignment when the loop around the use
+    has no end position, such as one built by a brain.
+    """
+    guard, use, stmt = builder.extract_node("""
+    def f(y, x = 1):
+        if x is None:  #@
+            return
+        for _ in y:
+            x  #@
+            x = None  #@
+    """)
+    loop = use.parent.parent
+    loop.end_lineno = loop.end_col_offset = None
+
+    assert constraint_applies(guard, stmt.targets[0], use)
+
+
+def test_guard_all_values_filtered() -> None:
+    """Test that a name is uninferable if a guard filters out all its values."""
+    node = builder.extract_node("""
+    x = None
+    assert x is not None
+    x  #@
+    """)
+
+    _assert_filtered(node)
+
+
+@common_params(node="self.x")
+def test_guard_instance_attr(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that a guard constrains an instance attribute after it."""
+    node1, node2 = builder.extract_node(f"""
+    class A1:
+        def __init__(self, x = {satisfy_val}):
+            self.x = x
+
+        def method(self):
+            if {condition}:
+                return
+            self.x  #@
+
+    class A2:
+        def __init__(self, x = {fail_val}):
+            self.x = x
+
+        def method(self):
+            if {condition}:
+                return
+            self.x  #@
+    """)
+
+    _assert_filtered(node1)
+    _assert_kept(node2, fail_val)
+
+
+def test_guard_instance_attr_reassignment_after_guard() -> None:
+    """Test that an instance attribute assigned between a guard and the use is not
+    constrained.
+    """
+    node = builder.extract_node("""
+    class A:
+        def __init__(self, x = 1):
+            self.x = x
+
+        def method(self):
+            if self.x is None:
+                return
+            self.x = None
+            self.x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 3
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+    assert inferred[1] is Uninferable
+    assert isinstance(inferred[2], nodes.Const)
+    assert inferred[2].value is None
+
+
+def test_guard_instance_attr_varname_collision() -> None:
+    """Test that a guard on a name does not constrain an attribute of the same name."""
+    node = builder.extract_node("""
+    class A:
+        def __init__(self, x = None):
+            self.x = x
+
+        def method(self, x = None):
+            if x is None:
+                return
+            self.x  #@
+    """)
+
+    _assert_kept(node, None)
+
+
+def test_constraint_applies_without_position() -> None:
+    """Test that a constraint applies to an assignment without a position, such as
+    one built by a brain.
+    """
+    guard, use = builder.extract_node("""
+    def f(x = None):
+        if x is None:  #@
+            return
+        x  #@
+    """)
+    stmt = nodes.Const(None)
+
+    assert constraint_applies(guard, stmt, use)

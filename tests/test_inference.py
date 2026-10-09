@@ -682,7 +682,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         func, retval = extract_node(code, __name__)
         self.assertEqual([i.value for i in func.ilookup("something")], [1.0, 1.0j])
-        self.assertEqual([i.value for i in retval.infer()], [1.0, 1.0j])
+        # The float returned early by the isinstance guard.
+        self.assertEqual([i.value for i in retval.infer()], [1.0j])
 
     def test_lookup_cond_branches(self) -> None:
         code = '''
