@@ -66,6 +66,23 @@ POSSIBLE_PROPERTIES = {
     "DynamicClassAttribute",
 }
 
+# The in-place operators of the builtin mutable types. They are implemented in C,
+# so there is no body to infer their result from, but each one updates the
+# instance and returns it whenever it accepts the right operand.
+BUILTIN_INPLACE_METHODS = frozenset(
+    (
+        "builtins.bytearray.__iadd__",
+        "builtins.bytearray.__imul__",
+        "builtins.dict.__ior__",
+        "builtins.list.__iadd__",
+        "builtins.list.__imul__",
+        "builtins.set.__iand__",
+        "builtins.set.__ior__",
+        "builtins.set.__isub__",
+        "builtins.set.__ixor__",
+    )
+)
+
 
 def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
@@ -368,6 +385,19 @@ class Instance(BaseInstance):
         context: InferenceContext,
         method: SuccessfulInferenceResult,
     ) -> Generator[InferenceResult]:
+        if (
+            not isinstance(self, nodes.NodeNG)
+            and isinstance(method, nodes.FunctionDef)
+            and method.qname() in BUILTIN_INPLACE_METHODS
+            and isinstance(
+                other, (nodes.Const, nodes.List, nodes.Tuple, nodes.Set, nodes.Dict)
+            )
+        ):
+            # Any other right operand could take over the operation through its
+            # reflected method (e.g. ``__ror__``) when the builtin method rejects
+            # it. Literal containers on the left are excluded because returning
+            # them would expose their contents from before the update.
+            return iter((self,))
         return method.infer_call_result(self, context)
 
     def __repr__(self) -> str:
