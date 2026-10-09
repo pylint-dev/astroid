@@ -1,0 +1,8 @@
+Infer an augmented assignment that uses an in-place operator of a builtin mutable
+type (``list.__iadd__``, ``set.__ior__``, ``dict.__ior__``, ...) on an instance as
+that instance, when the right operand is a literal. Previously the assignment was
+uninferable, so attributes assigned on ``self`` afterwards were not recorded and
+pylint reported ``no-member`` for them.
+
+Refs #3372
+Closes pylint-dev/pylint#10031
