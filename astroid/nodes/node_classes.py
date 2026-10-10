@@ -3610,6 +3610,16 @@ class Slice(NodeNG):
         """
         return "builtins.slice"
 
+    @property
+    def name(self) -> Literal["slice"]:
+        """The name of the type that this node represents.
+
+        Inferred builtin values such as ``Const`` or ``List`` expose the name
+        of their type through ``Instance``; a ``Slice`` is not an ``Instance``,
+        so it gives the name of ``builtins.slice`` explicitly.
+        """
+        return "slice"
+
     def display_type(self) -> Literal["Slice"]:
         """A human readable type of this node.
 
@@ -5044,6 +5054,9 @@ class Unknown(_base_nodes.AssignTypeNode):
         )
 
     def qname(self) -> Literal["Unknown"]:
+        return "Unknown"
+
+    def pytype(self) -> Literal["Unknown"]:
         return "Unknown"
 
     def _infer(self, context: InferenceContext | None = None):

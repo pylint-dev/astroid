@@ -1,0 +1,9 @@
+Add a ``name`` to ``Slice`` nodes, giving ``"slice"`` like other inferred builtin
+values (``Const``, ``List``, ``Dict``...) give the name of their type. A ``slice``
+object used as a class base, metaclass, exception or ``super()`` argument no longer
+crashes code that reads the name of an inferred value.
+
+``Unknown`` nodes now have a ``pytype()`` too, like their ``name`` and ``qname()``,
+so every value inference returns can be asked for its name, qualified name and type.
+
+Refs pylint-dev/pylint#11609

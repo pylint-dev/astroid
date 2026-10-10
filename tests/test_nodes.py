@@ -49,6 +49,7 @@ from astroid.exceptions import (
 )
 from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
 from astroid.nodes.scoped_nodes import SYNTHETIC_ROOT
+from astroid.typing import SuccessfulInferenceResult
 from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
@@ -1518,6 +1519,7 @@ def test_unknown() -> None:
     assert isinstance(next(UNATTACHED_UNKNOWN.infer()), type(util.Uninferable))
     assert isinstance(UNATTACHED_UNKNOWN.name, str)
     assert isinstance(UNATTACHED_UNKNOWN.qname(), str)
+    assert isinstance(UNATTACHED_UNKNOWN.pytype(), str)
 
 
 def test_type_comments_with() -> None:
@@ -2460,6 +2462,96 @@ def test_slice_qname() -> None:
     assert isinstance(node, nodes.Subscript)
     assert isinstance(node.slice, nodes.Slice)
     assert node.slice.qname() == "builtins.slice"
+
+
+INFERRED_VALUES = """
+import collections
+import functools
+import abc
+
+def function(): ...
+async def coroutine_function(): ...
+def generator_function():
+    yield
+async def async_generator_function():
+    yield
+
+class Class:
+    def method(self): ...
+    @classmethod
+    def class_method(cls): ...
+    @property
+    def prop(self): ...
+    def __init__(self):
+        super()  #@
+
+1  #@
+"text"  #@
+b"bytes"  #@
+...  #@
+None  #@
+[1]  #@
+(1,)  #@
+{1}  #@
+frozenset()  #@
+{1: 2}  #@
+{}.keys()  #@
+{}.values()  #@
+{}.items()  #@
+slice(1, 2)  #@
+lambda: 1  #@
+function  #@
+coroutine_function  #@
+generator_function()  #@
+async_generator_function()  #@
+Class  #@
+Class()  #@
+Class().method  #@
+Class.method  #@
+Class.class_method  #@
+Class.prop  #@
+collections  #@
+functools.partial(function)  #@
+ValueError()  #@
+int | str  #@
+abc.ABCMeta  #@
+"""
+
+
+def _inferred_values(code: str) -> list[tuple[str, SuccessfulInferenceResult]]:
+    return [
+        (node.as_string(), inferred)
+        for node in extract_node(code)
+        for inferred in node.infer()
+        if not isinstance(inferred, util.UninferableBase)
+    ]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        pytest.param(INFERRED_VALUES, id="values"),
+    ],
+)
+def test_inferred_values_are_named(code: str) -> None:
+    """Every value inference returns has a name, a qualified name and a type,
+    so that code reading them on an inferred value does not need to guard.
+    """
+    inferred_values = _inferred_values(code)
+    assert len({source for source, _ in inferred_values}) == code.count("#@")
+    for source, inferred in inferred_values:
+        assert isinstance(inferred.name, str), source
+        assert isinstance(inferred.qname(), str), source
+        assert isinstance(inferred.pytype(), str), source
+
+
+def test_slice_name() -> None:
+    """An inferred ``slice`` object has the name of its type, like other builtins."""
+    node = extract_node("slice(1, 2)")
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Slice)
+    assert inferred.name == "slice"
+    assert inferred.name == inferred.pytype().rsplit(".", 1)[-1]
 
 
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
