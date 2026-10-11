@@ -5,6 +5,8 @@
 import pytest
 
 from astroid import bases, builder, nodes
+from astroid.const import PY312_PLUS
+from astroid.exceptions import AttributeInferenceError
 
 
 def test_infer_typevar() -> None:
@@ -34,6 +36,33 @@ def test_infer_typevar_name_injection() -> None:
     # The name is kept verbatim instead of parsed, so no base is injected.
     assert inferred.name == "T(EvilBase): #"
     assert inferred.bases == []
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="The type statement was added in 3.12")
+def test_type_alias_name_is_typealiastype() -> None:
+    """The name bound by a ``type`` statement is a ``TypeAliasType``, not the value.
+
+    Regression test for: https://github.com/pylint-dev/pylint/issues/10091
+    """
+    nodes_ = builder.extract_node("""
+    type Alias = str
+    type Pair[T] = tuple[T, T]
+    Alias #@
+    Pair[int] #@
+    Alias | None #@
+    None | Alias #@
+    """)
+    for node in nodes_:
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], bases.Instance)
+        assert inferred[0].qname() == "typing.TypeAliasType"
+
+    instance = nodes_[0].inferred()[0]
+    for attr in ("__value__", "__type_params__", "__name__", "__module__"):
+        assert instance.getattr(attr)
+    with pytest.raises(AttributeInferenceError):
+        instance.getattr("upper")
 
 
 class TestTypingAlias:

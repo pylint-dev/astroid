@@ -4164,7 +4164,7 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
             ],
             Generator[NodeNG],
         ]
-    ] = protocols.assign_assigned_stmts
+    ] = protocols.type_alias_assigned_stmts
 
 
 class TypeVar(_base_nodes.AssignTypeNode):

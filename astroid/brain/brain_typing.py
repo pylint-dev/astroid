@@ -448,6 +448,14 @@ def _typing_transform():
     class ParamSpecArgs: ...
     class ParamSpecKwargs: ...
     class TypeAlias: ...
+    class TypeAliasType:
+        def __init__(self, name, value, *, type_params=()):
+            self.__name__ = name
+            self.__value__ = value
+            self.__type_params__ = type_params
+        def __getitem__(self, item): return self
+        def __or__(self, other): return self
+        def __ror__(self, other): return self
     class Type:
         @classmethod
         def __class_getitem__(cls, item):  return cls
