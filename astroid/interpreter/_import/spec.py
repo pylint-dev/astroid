@@ -168,13 +168,19 @@ class ImportlibFinder(Finder):
 
         # If the module name matches a stdlib module name, check whether this is a frozen
         # module. Ask FrozenImporter directly: `importlib.util.find_spec` would import
-        # the parent packages of a dotted name.
+        # the parent packages of a dotted name. Fall back to sys.modules for aliases
+        # of frozen modules, e.g. collections.abc on Python >= 3.13.
         if (modname in sys.stdlib_module_names and not processed) or (
             processed and processed[0] in sys.stdlib_module_names
         ):
-            spec = importlib.machinery.FrozenImporter.find_spec(
-                ".".join((*processed, modname))
-            )
+            dotted_name = ".".join((*processed, modname))
+            spec = importlib.machinery.FrozenImporter.find_spec(dotted_name)
+            if spec is None:
+                spec = getattr(sys.modules.get(dotted_name), "__spec__", None)
+                if spec is not None and (
+                    spec.loader is not importlib.machinery.FrozenImporter
+                ):
+                    spec = None
             if spec:
                 return ModuleSpec(
                     name=modname,
