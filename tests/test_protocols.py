@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import importlib.util
 import unittest
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -19,6 +20,8 @@ from astroid.context import InferenceContext
 from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
+
+HAS_TYPING_EXTENSIONS = importlib.util.find_spec("typing_extensions") is not None
 
 
 @contextlib.contextmanager
@@ -681,6 +684,9 @@ class StubAnnotationInferenceTest(unittest.TestCase):
         assert isinstance(inferred[0], Instance)
         assert inferred[0].name == "int"
 
+    @pytest.mark.skipif(
+        not HAS_TYPING_EXTENSIONS, reason="Requires the typing_extensions library"
+    )
     def test_stub_typing_extensions_annotated_unwrapped(self) -> None:
         module = builder.parse(
             """
