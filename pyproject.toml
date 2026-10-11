@@ -9,7 +9,7 @@ readme = "README.rst"
 keywords = [ "abstract syntax tree", "python", "static code analysis" ]
 license = "LGPL-2.1-OR-later"
 license-files = [ "LICENSE", "CONTRIBUTORS.txt" ]
-requires-python = ">=3.10.0"
+requires-python = ">=3.11.0"
 classifiers = [
   "Development Status :: 6 - Mature",
   "Environment :: Console",
@@ -17,7 +17,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -29,9 +28,6 @@ classifiers = [
   "Topic :: Software Development :: Testing",
 ]
 dynamic = [ "version" ]
-dependencies = [
-  "typing-extensions>=4; python_version<'3.11'",
-]
 urls."Bug tracker" = "https://github.com/pylint-dev/astroid/issues"
 urls."Discord server" = "https://discord.gg/Egy6P8AMB5"
 urls.Docs = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
@@ -43,7 +39,7 @@ package-dir."" = "."
 packages.find.include = [ "astroid*" ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 # ruff is less lenient than pylint and does not make any exceptions
 # (for docstrings, strings and comments in particular).
 line-length = 110
@@ -107,7 +103,7 @@ report.exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 files = [
   "astroid/_ast.py",
   "astroid/astroid_manager.py",
@@ -147,7 +143,6 @@ files = [
   "astroid/nodes/utils.py",
 ]
 always_false = [
-  "PY311_PLUS",
   "PY312_PLUS",
   "PY313_PLUS",
 ]

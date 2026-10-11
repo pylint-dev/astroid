@@ -31,7 +31,6 @@ from astroid import (
 )
 from astroid.const import (
     IS_PYPY,
-    PY311_PLUS,
     PY312_PLUS,
     PY313_PLUS,
     PY314_PLUS,
@@ -1063,7 +1062,6 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_py311(self) -> None:
         # Test to make sure the Python-provided property decorators
         # are properly interpreted as properties
@@ -1193,7 +1191,6 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_subclass_py311(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties

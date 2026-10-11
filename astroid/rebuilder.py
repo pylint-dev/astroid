@@ -381,12 +381,8 @@ class TreeRebuilder:
         @overload
         def visit(self, node: ast.Try, parent: nodes.NodeNG) -> nodes.Try: ...
 
-        if sys.version_info >= (3, 11):
-
-            @overload
-            def visit(
-                self, node: ast.TryStar, parent: nodes.NodeNG
-            ) -> nodes.TryStar: ...
+        @overload
+        def visit(self, node: ast.TryStar, parent: nodes.NodeNG) -> nodes.TryStar: ...
 
         @overload
         def visit(self, node: ast.Tuple, parent: nodes.NodeNG) -> nodes.Tuple: ...

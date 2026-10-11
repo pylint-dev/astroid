@@ -6,8 +6,7 @@
 
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Self, overload
 
 from astroid.exceptions import ParentMissingError
 from astroid.filter_statements import _filter_stmts
@@ -15,10 +14,6 @@ from astroid.nodes import _base_nodes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 if TYPE_CHECKING:
     from astroid import nodes
 

@@ -5,7 +5,7 @@
 import doctest
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -45,7 +45,7 @@ root_doc = "index"
 
 # General information about the project.
 project = "Astroid"
-current_year = datetime.now(timezone.utc).year
+current_year = datetime.now(UTC).year
 contributors = "Logilab, and astroid contributors"
 copyright = f"2003-{current_year}, {contributors}"
 

@@ -6,20 +6,14 @@
 
 from __future__ import annotations
 
-import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from astroid import helpers, nodes, util
 from astroid.context import InferenceContext
 from astroid.exceptions import AstroidTypeError, InferenceError, MroError
 from astroid.typing import InferenceResult
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from astroid import bases

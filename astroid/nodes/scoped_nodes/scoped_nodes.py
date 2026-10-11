@@ -13,10 +13,9 @@ from __future__ import annotations
 import io
 import itertools
 import os
-import sys
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from functools import cached_property, lru_cache
-from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn
+from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn, Self
 
 from astroid import bases, protocols, util
 from astroid.context import (
@@ -50,11 +49,6 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from astroid import nodes, objects
