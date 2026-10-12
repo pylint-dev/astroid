@@ -1067,6 +1067,39 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(raw), 1)
         self.assertEqual(raw[0].name, "os")
 
+    def test_truncated_inference_is_not_cached(self) -> None:
+        """A result truncated by the inference budget must not be cached.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/11582.
+        ``NodeNG.infer`` appends an ``Uninferable`` placeholder once the
+        per-inference budget (``InferenceContext.max_inferred``) runs out, and
+        used to cache that truncated tuple in the process-wide inference cache.
+        Because the cache is shared by every module, a later inference of the
+        same node with a fresh budget then wrongly returned ``Uninferable``,
+        which made the outcome depend on the order the files were analysed in.
+        """
+        module = parse(
+            textwrap.dedent(
+                """
+                a = 1 + 1
+                b = a + a
+                """
+            )
+        )
+        b_node = module.body[1].value
+
+        # Exhaust the budget before it can resolve ``b`` at all.
+        with patch.object(InferenceContext, "max_inferred", -1):
+            assert list(b_node.infer(InferenceContext())) == [Uninferable]
+
+        # With the normal budget restored, ``b`` must resolve to 4. Before the
+        # fix the truncated ``Uninferable`` was cached above, so this returned
+        # ``Uninferable`` instead.
+        inferred = list(b_node.infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 4
+
     def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
