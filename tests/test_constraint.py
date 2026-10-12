@@ -2101,3 +2101,137 @@ def test_constraint_applies_without_position() -> None:
     stmt = nodes.Const(None)
 
     assert constraint_applies(guard, stmt, use)
+
+
+def _values(node: nodes.NodeNG) -> list[object]:
+    """Return the inferred values of node, with constants as their Python value."""
+    return [
+        value.value if isinstance(value, nodes.Const) else value
+        for value in node.inferred()
+    ]
+
+
+@pytest.mark.parametrize(
+    "condition, assignment",
+    (
+        ("x is None", "x = 1"),
+        ("not x", "x = 1"),
+        ("x is None", "x: int = 1"),
+        ("x is None", "y = x = 1"),
+        ("x is None", "x = 1\n            print()"),
+    ),
+)
+def test_guard_assignment(condition: str, assignment: str) -> None:
+    """Test that an if whose body assigns the name constrains the values assigned
+    before it.
+    """
+    node = builder.extract_node(f"""
+    def f(x = None):
+        if {condition}:
+            {assignment}
+        x  #@
+    """)
+
+    assert _values(node) == [Uninferable, 1]
+
+
+def test_guard_assignment_with_orelse() -> None:
+    """Test that a value assigned before the if reaches the code after it through
+    the else branch only.
+    """
+    node = builder.extract_node("""
+    def f(y, x = None):
+        if x is not None:
+            x = 1
+        else:
+            print(y)
+        x  #@
+    """)
+
+    assert _values(node) == [None, Uninferable, 1]
+
+
+def test_guard_assignment_test_not_satisfied() -> None:
+    """Test that a value failing the test of the if is kept."""
+    node = builder.extract_node("""
+    def f(x = 2):
+        if x is None:
+            x = 1
+        x  #@
+    """)
+
+    assert _values(node) == [2, Uninferable, 1]
+
+
+@pytest.mark.parametrize(
+    "body",
+    (
+        "x: int",
+        "y = 1",
+        "x, y = 1, 2",
+        "x[0] = 1",
+        "x.y = 1",
+        "if y:\n                x = 1",
+    ),
+)
+def test_guard_body_not_assigning(body: str) -> None:
+    """Test that an if whose body may not assign the name does not constrain the
+    code after it.
+    """
+    node = builder.extract_node(f"""
+    def f(y, x = None):
+        if x is None:
+            {body}
+        x  #@
+    """)
+
+    assert _values(node)[:2] == [None, Uninferable]
+
+
+def test_guard_assignment_instance_attr() -> None:
+    """Test that an if whose body assigns an attribute constrains the values
+    assigned before it.
+    """
+    node = builder.extract_node("""
+    class A:
+        def __init__(self):
+            self.x = None
+
+        def method(self):
+            if self.x is None:
+                self.x = 1
+            self.x  #@
+    """)
+
+    assert _values(node) == [1]
+
+
+@pytest.mark.parametrize("body", ("other.x = 1", "x = 1", "self.y = 1"))
+def test_guard_assignment_other_attr(body: str) -> None:
+    """Test that assigning another attribute, or a name, does not constrain an
+    attribute.
+    """
+    node = builder.extract_node(f"""
+    class A:
+        def __init__(self):
+            self.x = None
+
+        def method(self, other):
+            if self.x is None:
+                {body}
+            self.x  #@
+    """)
+
+    assert _values(node) == [None]
+
+
+def test_guard_assignment_name_vs_attr() -> None:
+    """Test that assigning an attribute does not constrain a name."""
+    node = builder.extract_node("""
+    def f(self, x = None):
+        if x is None:
+            self.x = 1
+        x  #@
+    """)
+
+    assert _values(node) == [None, Uninferable]
