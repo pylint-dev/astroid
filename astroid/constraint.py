@@ -450,11 +450,18 @@ def _unconstrained_range_end(
     return (end.end_lineno, end.end_col_offset)
 
 
-_preceding_guards_cache: dict[
-    nodes.NodeNG, tuple[tuple[nodes.If | nodes.Assert, nodes.NodeNG, bool], ...]
-] = {}
-"""The guard statements preceding each statement in its block, with their test and
-whether it holds inverted after them.
+_Guard = tuple[
+    nodes.If | nodes.Assert,
+    nodes.NodeNG,
+    bool,
+    tuple[nodes.AssignName | nodes.AssignAttr, ...] | None,
+]
+"""A guard statement, its test, whether the test holds inverted after it, and the
+targets its body always assigns, or None if it constrains every name.
+"""
+
+_preceding_guards_cache: dict[nodes.NodeNG, tuple[_Guard, ...]] = {}
+"""The guard statements preceding each statement in its block.
 
 They do not depend on the constrained name, so they are computed once per block.
 """
@@ -471,17 +478,22 @@ def _add_guards_constraints(
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]],
 ) -> None:
     """Add the constraints of the guard statements preceding stmt in its block."""
-    for guard, test, invert in _preceding_guards(stmt):
+    for guard, test, invert, targets in _preceding_guards(stmt):
+        if targets is not None and not any(
+            _same_target(target, expr) for target in targets
+        ):
+            continue
         constraints = set(_match_constraint(expr, test, invert))
         if constraints:
             constraints_mapping[guard] = constraints
 
 
-def _preceding_guards(
-    stmt: nodes.NodeNG,
-) -> tuple[tuple[nodes.If | nodes.Assert, nodes.NodeNG, bool], ...]:
-    """Return the guard statements preceding stmt in its block: asserts, and ifs
-    whose body ends with a return, raise, continue or break.
+def _preceding_guards(stmt: nodes.NodeNG) -> tuple[_Guard, ...]:
+    """Return the guard statements preceding stmt in its block.
+
+    They are asserts, ifs whose body ends with a return, raise, continue or break,
+    and ifs whose body always assigns a name: a value assigned to that name before
+    the if only reaches the code after it when the test is false.
     """
     try:
         return _preceding_guards_cache[stmt]
@@ -493,16 +505,50 @@ def _preceding_guards(
         # A type comment annotation is not a child of its parent.
         stmts = [stmt]
     # Fill the cache for the whole block at once.
-    guards: tuple[tuple[nodes.If | nodes.Assert, nodes.NodeNG, bool], ...] = ()
+    guards: tuple[_Guard, ...] = ()
     for sibling in stmts:
         _preceding_guards_cache[sibling] = guards
         if isinstance(sibling, nodes.Assert):
-            guards = (*guards, (sibling, sibling.test, False))
-        elif isinstance(sibling, nodes.If) and isinstance(
-            sibling.body[-1], (nodes.Return, nodes.Raise, nodes.Continue, nodes.Break)
-        ):
-            guards = (*guards, (sibling, sibling.test, True))
+            guards = (*guards, (sibling, sibling.test, False, None))
+        elif isinstance(sibling, nodes.If):
+            if isinstance(
+                sibling.body[-1],
+                (nodes.Return, nodes.Raise, nodes.Continue, nodes.Break),
+            ):
+                guards = (*guards, (sibling, sibling.test, True, None))
+            elif targets := _assigned_targets(sibling.body):
+                guards = (*guards, (sibling, sibling.test, True, targets))
     return _preceding_guards_cache[stmt]
+
+
+def _assigned_targets(
+    body: list[nodes.NodeNG],
+) -> tuple[nodes.AssignName | nodes.AssignAttr, ...]:
+    """Return the names and attributes that the statements of body assign."""
+    targets: list[nodes.NodeNG] = []
+    for stmt in body:
+        if isinstance(stmt, nodes.Assign):
+            targets.extend(stmt.targets)
+        elif isinstance(stmt, nodes.AnnAssign) and stmt.value is not None:
+            targets.append(stmt.target)
+    return tuple(
+        target
+        for target in targets
+        if isinstance(target, (nodes.AssignName, nodes.AssignAttr))
+    )
+
+
+def _same_target(target: nodes.AssignName | nodes.AssignAttr, expr: _NameNodes) -> bool:
+    """Return True if target assigns the name or attribute of expr."""
+    if isinstance(target, nodes.AssignName):
+        return isinstance(expr, (nodes.Name, nodes.AssignName)) and (
+            target.name == expr.name
+        )
+    return (
+        isinstance(expr, (nodes.Attribute, nodes.AssignAttr))
+        and target.attrname == expr.attrname
+        and _matches(target.expr, expr.expr)
+    )
 
 
 def _add_ifs_constraints(
