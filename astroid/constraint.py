@@ -98,22 +98,12 @@ class BooleanConstraint(Constraint):
     def match(
         cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Self | None:
-        """Return a new constraint for node if expr matches one of these patterns:
+        """Return a new constraint for node if expr is node, else return None.
 
-        - direct match (expr == node): use given negate value
-        - negated match (expr == `not node`): flip negate value
-
-        Return None if no pattern matches.
+        ``not x`` is matched by ``_match_constraint``, which flips negate.
         """
         if _matches(expr, node):
             return cls(node=node, negate=negate)
-
-        if (
-            isinstance(expr, nodes.UnaryOp)
-            and expr.op == "not"
-            and _matches(expr.operand, node)
-        ):
-            return cls(node=node, negate=not negate)
 
         return None
 
@@ -383,7 +373,8 @@ _CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]
     nodes.Call: (TypeConstraint,),
     nodes.Compare: (NoneConstraint, EqualityConstraint),
     nodes.Name: (BooleanConstraint,),
-    nodes.UnaryOp: (BooleanConstraint,),
+    # No nodes.UnaryOp entry: _match_constraint handles ``not`` itself, by matching
+    # the operand with the inversion flipped, so that any constraint can be negated.
 }
 """Constraint types that can match each expression node type."""
 
@@ -404,6 +395,9 @@ def _match_constraint(
     node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
 ) -> Iterator[Constraint]:
     """Yields all constraint patterns for node that match."""
+    if isinstance(expr, nodes.UnaryOp) and expr.op == "not":
+        yield from _match_constraint(node, expr.operand, not invert)
+        return
     for constraint_cls in _CONSTRAINTS_BY_NODE_TYPE.get(type(expr), ()):
         constraint = constraint_cls.match(node, expr, invert)
         if constraint:
