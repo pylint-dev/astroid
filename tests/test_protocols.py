@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import contextlib
-import importlib.util
 import unittest
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -21,7 +20,12 @@ from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
 
-HAS_TYPING_EXTENSIONS = importlib.util.find_spec("typing_extensions") is not None
+try:
+    import typing_extensions  # pylint: disable=unused-import
+
+    HAS_TYPING_EXTENSIONS = True
+except ImportError:
+    HAS_TYPING_EXTENSIONS = False
 
 
 @contextlib.contextmanager
