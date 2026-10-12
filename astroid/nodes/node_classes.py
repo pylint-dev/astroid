@@ -2429,8 +2429,8 @@ class Dict(NodeNG, Instance):
         :raises AstroidIndexError: If the given index does not exist in the
             dictionary.
         """
-        for key, value in self.items:
-            # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
+        # Later entries override earlier ones, including dictionary unpacking.
+        for key, value in reversed(self.items):
             if isinstance(key, DictUnpack):
                 inferred_value = util.safe_infer(value, context)
                 if not isinstance(inferred_value, Dict):
