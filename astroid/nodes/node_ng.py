@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
     TYPE_CHECKING,
     ClassVar,
+    Self,
     TypeVar,
     cast,
     overload,
@@ -30,12 +30,6 @@ from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
 from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
 
 if TYPE_CHECKING:
     from astroid.nodes import _base_nodes

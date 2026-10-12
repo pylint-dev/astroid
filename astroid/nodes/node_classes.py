@@ -10,12 +10,11 @@ import abc
 import ast
 import itertools
 import operator
-import sys
 import typing
 import warnings
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, Union
 
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
@@ -46,11 +45,6 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from astroid import nodes
