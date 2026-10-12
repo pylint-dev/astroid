@@ -1078,14 +1078,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         same node with a fresh budget then wrongly returned ``Uninferable``,
         which made the outcome depend on the order the files were analysed in.
         """
-        module = parse(
-            textwrap.dedent(
-                """
+        module = parse(textwrap.dedent("""
                 a = 1 + 1
                 b = a + a
-                """
-            )
-        )
+                """))
         b_node = module.body[1].value
 
         # Exhaust the budget before it can resolve ``b`` at all.
