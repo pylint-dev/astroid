@@ -1,0 +1,5 @@
+Fix an uncaught ``TypeError`` when inferring a starred name nested in a
+``for`` target, such as ``for a, (b, *c) in ...``, over an element the
+inference cannot see into.
+
+Closes #3378

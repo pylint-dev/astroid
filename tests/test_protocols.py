@@ -144,6 +144,41 @@ class ProtocolTests(unittest.TestCase):
         assert isinstance(assigned, nodes.List)
         assert assigned.as_string() == "[2, 3]"
 
+    def test_assigned_stmts_starred_for_opaque_inner_element(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/3378.
+
+        The lookup loop used to break out leaving a single intermediate node
+        in the inferred List's ``elts``, crashing consumers with ``TypeError``.
+        """
+        for code in (
+            # the inner element has no itered(): Call, Name
+            """
+            for a, (b, *c) in [[1, object()]]: #@
+                pass
+            """,
+            """
+            x = 5
+            for a, (b, *c) in [[1, x]]: #@
+                pass
+            """,
+            # an intermediate index lookup raises IndexError
+            """
+            for (a, (b, *c)), in [[[1]]]: #@
+                pass
+            """,
+        ):
+            assign_stmts = extract_node(code)
+            starred = next(assign_stmts.nodes_of_class(nodes.Starred))
+            self.assertIs(next(starred.assigned_stmts()), Uninferable)
+
+    def test_inference_starred_for_opaque_inner_element(self) -> None:
+        """Inferring the starred name itself must not raise ``TypeError``."""
+        name_node = extract_node("""
+        for a, (b, *c) in [[1, object()]]:
+            c #@
+        """)
+        self.assertEqual(name_node.inferred(), [Uninferable])
+
     def _get_starred_stmts(self, code: str) -> list | UninferableBase:
         assign_stmt = extract_node(f"{code} #@")
         starred = next(assign_stmt.nodes_of_class(nodes.Starred))
