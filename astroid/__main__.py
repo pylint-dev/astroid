@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import utils.session
 import sys
 from argparse import ArgumentParser, Namespace
 from collections.abc import Callable, Sequence

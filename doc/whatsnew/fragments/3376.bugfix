@@ -1,0 +1,3 @@
+Fix binary and augmented operations between an ``int`` and a ``bool`` constant being inferred with the operands swapped, e.g. ``100 - True`` was inferred as ``-99``.
+
+Closes #3376
