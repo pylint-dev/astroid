@@ -295,7 +295,7 @@ def get_constraints(
     corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
-    Currently this only supports constraints generated from if conditions,
+    Currently this only supports constraints generated from if and while conditions,
     comprehension conditions and preceding operands in boolean operations.
     """
     current_node: nodes.NodeNG | None = expr
@@ -304,7 +304,7 @@ def get_constraints(
         parent = current_node.parent
         constraints: set[Constraint] | None = None
 
-        if isinstance(parent, (nodes.If, nodes.IfExp)):
+        if isinstance(parent, (nodes.If, nodes.IfExp, nodes.While)):
             branch, _ = parent.locate_child(current_node)
             if branch == "body":
                 constraints = set(_match_constraint(expr, parent.test))
