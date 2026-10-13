@@ -326,7 +326,8 @@ class LengthConstraint(Constraint):
     def satisfied_by(
         self, inferred: InferenceResult, context: InferenceContext
     ) -> bool:
-        """Return True for values of unknown length, or depending on negate flag:
+        """Return True for values of unknown length, False for constants without
+        a length, or depending on negate flag:
 
         - negate=False: satisfied when the length of inferred passes the comparison.
         - negate=True: satisfied when the length of inferred fails the comparison.
@@ -335,9 +336,10 @@ class LengthConstraint(Constraint):
         if not (isinstance(length, nodes.Const) and isinstance(length.value, int)):
             return True
 
-        if isinstance(inferred, nodes.Const) and isinstance(
-            inferred.value, (str, bytes)
-        ):
+        if isinstance(inferred, nodes.Const):
+            if not isinstance(inferred.value, (str, bytes)):
+                # len() raises a TypeError, so neither branch is reached.
+                return False
             inferred_length = len(inferred.value)
         elif isinstance(inferred, (nodes.List, nodes.Tuple, nodes.Set)):
             inferred_length = len(inferred.elts)

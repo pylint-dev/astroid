@@ -1849,7 +1849,7 @@ def test_length(condition: str, satisfy_val: str, fail_val: str) -> None:
 
 @pytest.mark.parametrize(
     "value",
-    ("range(3)", "1", "None", "object()"),
+    ("range(3)", "object()"),
 )
 def test_length_unknown(value: str) -> None:
     """Test that values of unknown length are not filtered out."""
@@ -1908,6 +1908,43 @@ def test_length_attribute() -> None:
                 return (
                     self.data  #@
                 )
+    """)
+
+    assert node.inferred() == [Uninferable]
+
+
+@pytest.mark.parametrize("value", ("None", "1", "1.5"))
+def test_length_without_len(value: str) -> None:
+    """Test that a constant without a length is filtered out of both branches,
+    since len() raises a TypeError for it.
+    """
+    node1, node2 = builder.extract_node(f"""
+    def f(x = {value}):
+        if len(x) > 0:
+            return (
+                x  #@
+            )
+        else:
+            return (
+                x  #@
+            )
+    """)
+
+    assert node1.inferred() == [Uninferable]
+    assert node2.inferred() == [Uninferable]
+
+
+def test_length_without_len_and_stale_literal() -> None:
+    """Test that None is not the only value left when a list literal is filtered
+    out, as in ``x = None if flag else []`` followed by ``x.append(...)``.
+    """
+    node = builder.extract_node("""
+    def f(flag):
+        x = None if flag else []
+        if len(x) > 0:
+            return (
+                x  #@
+            )
     """)
 
     assert node.inferred() == [Uninferable]
