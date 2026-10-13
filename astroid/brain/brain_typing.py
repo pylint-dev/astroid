@@ -329,7 +329,12 @@ def infer_typing_alias(
         class_def.postinit(bases=[res], body=[], decorators=None)
 
     maybe_type_var = node.args[1]
-    if isinstance(maybe_type_var, nodes.Const) and maybe_type_var.value > 0:
+    if (
+        isinstance(maybe_type_var, nodes.Const)
+        and isinstance(maybe_type_var.value, int)
+        and not isinstance(maybe_type_var.value, bool)
+        and maybe_type_var.value > 0
+    ):
         # If typing alias is subscriptable, add `__class_getitem__` to ClassDef
         func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
         class_def.locals["__class_getitem__"] = [func_to_add]
