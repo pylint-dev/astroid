@@ -3,5 +3,5 @@ After ``if self.x:``, ``self.x`` no longer infers the ``None`` that the ``x``
 property can return, and after ``if not self.x:`` it no longer loses the
 values of the property.
 
-Refs #9999
+Refs #3388
 Refs pylint-dev/pylint#10471
