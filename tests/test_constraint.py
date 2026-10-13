@@ -1807,3 +1807,125 @@ def test_compound_constraint_only_matches_bool_op() -> None:
     """Test that only boolean operations make a compound constraint."""
     node = builder.extract_node("x")
     assert _CompoundConstraint.match(node, node) is None
+
+
+@common_params(node="x")
+def test_while_body(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test constraint for a variable that is used in a while body."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        while {condition}:  # Filters out default value
+            return (
+                x  #@
+            )
+
+    def f2(x = {satisfy_val}):
+        while {condition}:  # Does not filter out default value
+            return (
+                x  #@
+            )
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_while_else(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that the else branch of a while loop applies the inverted condition."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {satisfy_val}):
+        while {condition}:
+            break
+        else:  # Filters out default value
+            return (
+                x  #@
+            )
+
+    def f2(x = {fail_val}):
+        while {condition}:
+            break
+        else:  # Does not filter out default value
+            return (
+                x  #@
+            )
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == fail_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_while_reassignment_in_body(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that the condition of a while loop does not apply to a value assigned
+    in the loop body.
+    """
+    node = builder.extract_node(f"""
+    def f(y):
+        x = {satisfy_val}
+        while {condition}:
+            if y:
+                x = {fail_val}
+            x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert isinstance(inferred[1], nodes.Const)
+    assert inferred[1].value == fail_val
+
+
+def test_while_instance_attr() -> None:
+    """Test constraint for an instance attribute in a while body."""
+    node = builder.extract_node("""
+    class A:
+        def __init__(self):
+            self.b = None
+
+        def get(self):
+            while self.b is not None:
+                return (
+                    self.b  #@
+                )
+    """)
+
+    assert node.inferred() == [Uninferable]
+
+
+def test_while_condition_not_constrained() -> None:
+    """Test that the condition of a while loop does not constrain itself."""
+    node = builder.extract_node("""
+    def f(x = None):
+        while (
+            x  #@
+        ) is not None:
+            pass
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+    assert inferred[1] is Uninferable
