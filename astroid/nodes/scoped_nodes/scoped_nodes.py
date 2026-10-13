@@ -2449,7 +2449,9 @@ class ClassDef(
 
         :returns: The inferred possible values.
         """
-        from astroid import objects  # pylint: disable=import-outside-toplevel
+        # pylint: disable=import-outside-toplevel
+        from astroid import objects
+        from astroid.constraint import filter_by_constraints
 
         # set lookup name since this is necessary to infer on import nodes for
         # instance
@@ -2509,8 +2511,10 @@ class ClassDef(
                                 args=function.args.arguments, callee=function
                             )
                         # Through an instance so we can solve the property
-                        yield from function.infer_call_result(
-                            caller=self, context=context
+                        yield from filter_by_constraints(
+                            function.infer_call_result(caller=self, context=context),
+                            name,
+                            context,
                         )
                     # If we're in a class context, we need to determine if the property
                     # was defined in the metaclass (a derived class must be a subclass of

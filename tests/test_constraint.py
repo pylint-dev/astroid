@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import builder, nodes
+from astroid import builder, nodes, objects
 from astroid.bases import Instance
 from astroid.constraint import _CompoundConstraint
 from astroid.util import Uninferable
@@ -1807,3 +1807,94 @@ def test_compound_constraint_only_matches_bool_op() -> None:
     """Test that only boolean operations make a compound constraint."""
     node = builder.extract_node("x")
     assert _CompoundConstraint.match(node, node) is None
+
+
+@pytest.mark.parametrize(
+    "condition, value, expected",
+    (
+        ("self.x", None, []),
+        ("self.x", 1, [1]),
+        ("not self.x", None, [None]),
+        ("not self.x", 1, []),
+        ("self.x is not None", None, []),
+        ("self.x is None", None, [None]),
+    ),
+)
+def test_property_result(condition: str, value: int | None, expected: list) -> None:
+    """Test that a constraint on a property applies to the value it returns."""
+    node = builder.extract_node(f"""
+    class A:
+        def __init__(self, x = {value}):
+            self._x = x
+
+        @property
+        def x(self):
+            return self._x
+
+        def method(self):
+            if {condition}:
+                self.x  #@
+    """)
+
+    inferred = node.inferred()
+    assert [value.value for value in inferred[:-1]] == expected
+    assert inferred[-1] is Uninferable
+
+
+def test_property_result_without_constraint() -> None:
+    """Test that a property without constraint keeps all the values it returns."""
+    node = builder.extract_node("""
+    class A:
+        def __init__(self, x = None):
+            self._x = x
+
+        @property
+        def x(self):
+            return self._x
+
+        def method(self):
+            self.x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+    assert inferred[1] is Uninferable
+
+
+def test_property_all_results_filtered() -> None:
+    """Test that a property whose values all fail the constraint is uninferable."""
+    node = builder.extract_node("""
+    class A:
+        @property
+        def x(self):
+            return None
+
+        def method(self):
+            if self.x:
+                self.x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+
+def test_property_through_class() -> None:
+    """Test that a property accessed through its class is not filtered out by a
+    constraint on its value.
+    """
+    node = builder.extract_node("""
+    class A:
+        @property
+        def x(self):
+            return None
+
+    if not A.x:
+        A.x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], objects.Property)
