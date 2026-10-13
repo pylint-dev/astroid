@@ -8,15 +8,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
-from astroid import helpers, nodes, util
+from astroid import bases, helpers, nodes, util
 from astroid.context import InferenceContext
 from astroid.exceptions import AstroidTypeError, InferenceError, MroError
 from astroid.typing import InferenceResult
-
-if TYPE_CHECKING:
-    from astroid import bases
 
 _NameNodes = nodes.AssignAttr | nodes.Attribute | nodes.AssignName | nodes.Name
 
@@ -171,6 +168,48 @@ class TypeConstraint(Constraint):
             return self.negate ^ matches_checked_types
         except (InferenceError, AstroidTypeError, MroError):
             return True
+
+
+class CallableConstraint(Constraint):
+    """Represents a "callable(x)" constraint."""
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches the "callable(x)"
+        pattern. Else, return None.
+        """
+        is_callable_call = (
+            isinstance(expr, nodes.Call)
+            and isinstance(expr.func, nodes.Name)
+            and expr.func.name == "callable"
+            and not expr.keywords
+            and len(expr.args) == 1
+        )
+        if is_callable_call and _matches(expr.args[0], node):
+            return cls(node=node, negate=negate)
+
+        return None
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for uninferable results, or depending on negate flag:
+
+        - negate=False: satisfied when inferred is callable.
+        - negate=True: satisfied when inferred is not callable.
+        """
+        if inferred is util.Uninferable:
+            return True
+
+        # A base class that cannot be inferred may define __call__.
+        if isinstance(inferred, bases.Instance) and not helpers.has_known_bases(
+            inferred._proxied, context
+        ):
+            return True
+
+        return self.negate ^ inferred.callable()
 
 
 class EqualityConstraint(Constraint):
@@ -364,7 +403,7 @@ def _add_ifs_constraints(
 _CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]] = {
     nodes.Attribute: (BooleanConstraint,),
     nodes.BoolOp: (_CompoundConstraint,),
-    nodes.Call: (TypeConstraint,),
+    nodes.Call: (TypeConstraint, CallableConstraint),
     nodes.Compare: (NoneConstraint, EqualityConstraint),
     nodes.Name: (BooleanConstraint,),
     # No nodes.UnaryOp entry: _match_constraint handles ``not`` itself, by matching
