@@ -1,0 +1,7 @@
+Inference now narrows the values of a property with the conditions guarding it.
+After ``if self.x:``, ``self.x`` no longer infers the ``None`` that the ``x``
+property can return, and after ``if not self.x:`` it no longer loses the
+values of the property.
+
+Refs #9999
+Refs pylint-dev/pylint#10471
