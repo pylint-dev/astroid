@@ -7647,3 +7647,147 @@ def test_augassign_list_tuple_does_not_mutate_initial_value():
     inferred = next(module.body[-1].value.infer())
     assert inferred.as_string() == "[0, 1, 1]"
     assert module.body[0].value.as_string() == "[0]"
+
+
+@pytest.mark.parametrize(
+    ("base", "statement"),
+    [
+        ("list", "self += [1]"),
+        ("list", "self *= 2"),
+        ("set", "self |= {1}"),
+        ("set", "self &= {1}"),
+        ("set", "self -= {1}"),
+        ("set", "self ^= {1}"),
+        ("dict", "self |= {1: 1}"),
+        ("bytearray", "self += b'1'"),
+        ("bytearray", "self *= 2"),
+    ],
+)
+def test_augassign_builtin_inplace_operator_returns_instance(base, statement):
+    """The in-place operators of the builtin mutable types update the instance and
+    return it, so the target of the augmented assignment is still that instance.
+
+    Refs pylint-dev/pylint#10031
+    """
+    node = extract_node(f"""
+    class Container({base}):
+        def update(self):
+            {statement}
+            self  #@
+    """)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], Instance)
+    assert inferred[0].name == "Container"
+
+
+def test_augassign_builtin_inplace_operator_keeps_instance_attributes():
+    """Attributes assigned on ``self`` after an in-place operator are recorded.
+
+    Refs pylint-dev/pylint#10031
+    """
+    klass = extract_node("""
+    class Ints(set[int]):
+        def __init__(self):
+            self |= {0}
+            self.member = True
+    """)
+    assert "member" in klass.instance_attrs
+
+
+def test_augassign_builtin_inplace_operator_on_name():
+    node = extract_node("""
+    class Container(list):
+        pass
+    values = Container()
+    values += [1]
+    values  #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "Container"
+
+
+def test_augassign_python_inplace_operator_is_inferred_from_body():
+    node = extract_node("""
+    class Container(set):
+        def __ior__(self, other):
+            return 42
+    values = Container()
+    values |= {1}
+    values  #@
+    """)
+    assert [inferred.value for inferred in node.infer()] == [42]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # The right operand is not a literal: its reflected method could produce
+        # the result instead of the builtin in-place operator.
+        """
+        class Other:
+            def __ror__(self, other):
+                return 42
+        class Container(set):
+            pass
+        values = Container()
+        values |= Other()
+        values  #@
+        """,
+        # frozenset has no in-place operator: ``|=`` falls back to ``__or__``,
+        # which returns a new object rather than the instance.
+        """
+        class Frozen(frozenset):
+            pass
+        values = Frozen()
+        values |= {1}
+        values  #@
+        """,
+        # A plain binary operator is not an in-place update.
+        """
+        class Container(set):
+            pass
+        Container() | {1}  #@
+        """,
+        # A builtin function bound to an in-place operator name is not one of
+        # the builtin in-place operators.
+        """
+        class Container(list):
+            __iadd__ = list.extend
+        values = Container()
+        values += [1]
+        values  #@
+        """,
+        # Nor is the in-place operator of another object, which updates and
+        # returns that object.
+        """
+        class Container(set):
+            __ior__ = set().__ior__
+        values = Container()
+        values |= {1}
+        values  #@
+        """,
+        # Neither is a non-function value.
+        """
+        class Container(list):
+            __iadd__ = 42
+        values = Container()
+        values += [1]
+        values  #@
+        """,
+        # Literal containers on the left are not updated in place by inference.
+        """
+        values = {1}
+        values |= {2}
+        values  #@
+        """,
+        """
+        values = {1: 1}
+        values |= {2: 2}
+        values  #@
+        """,
+    ],
+)
+def test_augassign_builtin_inplace_operator_does_not_apply(code):
+    assert list(extract_node(code).infer()) == [util.Uninferable]
