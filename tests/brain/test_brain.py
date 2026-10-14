@@ -1643,6 +1643,74 @@ def test_infer_dict_from_keys() -> None:
         assert sorted(actual_values) == ["a", "b", "c"]
 
 
+@pytest.mark.parametrize(
+    "constructor, sequence, container_type",
+    [
+        ("tuple", "[1, param, 3]", nodes.Tuple),
+        ("list", "(1, param, 3)", nodes.List),
+        ("set", "[1, param, 3]", nodes.Set),
+        ("frozenset", "[1, param, 3]", objects.FrozenSet),
+    ],
+)
+def test_container_transform_preserves_unknown_elements(
+    constructor, sequence, container_type
+) -> None:
+    node = astroid.extract_node(
+        f"def f(param):\n    return {constructor}({sequence}) #@"
+    )
+    inferred = next(node.value.infer())
+    assert isinstance(inferred, container_type)
+    values = [list(element.infer()) for element in inferred.elts]
+    assert len(values) == 3
+    assert sum(value == [util.Uninferable] for value in values) == 1
+    assert {value[0].value for value in values if value != [util.Uninferable]} == {1, 3}
+
+
+@pytest.mark.parametrize("constructor", ["tuple", "list"])
+@pytest.mark.parametrize("position", [0, 1, 2])
+def test_container_transform_preserves_unknown_positions(constructor, position) -> None:
+    elements = ["1", "3"]
+    elements.insert(position, "param")
+    sequence = (
+        f"[{', '.join(elements)}]"
+        if constructor == "tuple"
+        else f"({', '.join(elements)})"
+    )
+    for index, element in enumerate(elements):
+        node = astroid.extract_node(
+            f"def f(param):\n    return {constructor}({sequence})[{index}] #@"
+        )
+        inferred = list(node.value.infer())
+        if element == "param":
+            assert inferred == [util.Uninferable]
+        else:
+            assert len(inferred) == 1
+            assert isinstance(inferred[0], nodes.Const)
+            assert inferred[0].value == int(element)
+
+
+@pytest.mark.parametrize(
+    "constructor, sequence", [("tuple", "[1, param, 3]"), ("list", "(1, param, 3)")]
+)
+def test_container_transform_preserves_ambiguous_elements(
+    constructor, sequence
+) -> None:
+    node = astroid.extract_node(
+        f"param = 2 if input() else 4\n{constructor}({sequence})[1] #@"
+    )
+    assert list(node.infer()) == [util.Uninferable]
+
+
+@pytest.mark.parametrize(
+    "constructor, sequence", [("tuple", "[1, param, 3]"), ("list", "(1, param, 3)")]
+)
+def test_container_transform_preserves_call_context(constructor, sequence) -> None:
+    nodes_to_infer = astroid.extract_node(
+        f"def f(param):\n    return {constructor}({sequence})[1]\nf(2) #@\nf(4) #@"
+    )
+    assert [next(node.infer()).value for node in nodes_to_infer] == [2, 4]
+
+
 def test_container_transform_oversized_str_declines() -> None:
     """list/set/tuple/frozenset must not build one Const per character for a
     str/bytes constant longer than the cap."""
