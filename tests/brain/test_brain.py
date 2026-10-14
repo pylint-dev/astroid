@@ -1990,3 +1990,56 @@ def test_no_attributeerror_on_self_referential_length_check() -> None:
         """)
         assert isinstance(node, nodes.NodeNG)
         node.inferred()
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("len({1, 1, 2})", 2),
+        ("len({1, True, 1.0})", 1),
+        ("len({'a': 1, 'a': 2})", 1),
+        ("len({1: 'a', True: 'b', 1.0: 'c'})", 1),
+        ("len({(1, 2), (1, 2)})", 1),
+        ("len({(), ()})", 1),
+        ("len({frozenset(), frozenset()})", 1),
+        ("len({(1, (2, 3)): 'a', (1.0, (2, 3)): 'b'})", 1),
+        ("len({frozenset([1, 2]), frozenset([2, 1])})", 1),
+        ("len(frozenset([(1, 2), (1, 2)]))", 1),
+        ("len(dict([('a', 1), ('a', 2)]))", 1),
+        ("len(dict({'a': 1}, a=2))", 1),
+        ("len({'a': 1, **{'a': 2}})", 1),
+        ("value = 1\nlen({value, 1})", 1),
+        ("len({'a', b'a', None, False, 0, 1j})", 5),
+        ("len({1, 2, 3})", 3),
+        ("len({'a': 1, 'b': 2})", 2),
+        ("len([1, 1, 2])", 3),
+        ("len((1, 1, 2))", 3),
+        ("len(set())", 0),
+        ("len({})", 0),
+        ("len(set('aab'))", 2),
+        ("len(frozenset('aab'))", 2),
+    ],
+)
+def test_len_collection_literal_cardinality(source: str, expected: int) -> None:
+    result = next(astroid.extract_node(source).infer())
+    assert isinstance(result, nodes.Const)
+    assert result.value == expected
+
+
+@pytest.mark.parametrize("collection", ["{value, 1}", "{value: 1, 'a': 2}"])
+def test_len_collection_unknown_cardinality(collection: str) -> None:
+    module = astroid.parse(f"def size(value):\n    return len({collection})")
+    call = module.body[0].body[0].value
+    with pytest.raises(InferenceError):
+        astroid.helpers.object_len(call.args[0])
+
+
+def test_len_collection_does_not_call_custom_hash() -> None:
+    class CustomInt(int):
+        def __hash__(self) -> int:
+            raise AssertionError("Inference must not execute a custom hash")
+
+    literal = nodes.Set.from_elements([CustomInt(1)])
+    literal.parent = astroid.parse("pass")
+    with pytest.raises(InferenceError):
+        astroid.helpers.object_len(literal)
