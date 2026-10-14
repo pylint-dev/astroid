@@ -63,6 +63,7 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_numpy_ma,
         brain_numpy_ndarray,
         brain_numpy_random_mtrand,
+        brain_orjson,
         brain_pathlib,
         brain_pkg_resources,
         brain_pytest,
@@ -116,6 +117,7 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_numpy_ma.register(manager)
     brain_numpy_ndarray.register(manager)
     brain_numpy_core_numeric.register(manager)
+    brain_orjson.register(manager)
     brain_pathlib.register(manager)
     brain_pkg_resources.register(manager)
     brain_pytest.register(manager)
