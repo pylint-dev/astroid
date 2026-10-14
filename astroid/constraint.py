@@ -6,8 +6,9 @@
 
 from __future__ import annotations
 
+import operator
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import TYPE_CHECKING, Self
 
 from astroid import helpers, nodes, util
@@ -231,6 +232,86 @@ class EqualityConstraint(Constraint):
         return True
 
 
+_COMPARISONS: dict[str, Callable[[int, int], bool]] = {
+    "==": operator.eq,
+    "!=": operator.ne,
+    "<": operator.lt,
+    "<=": operator.le,
+    ">": operator.gt,
+    ">=": operator.ge,
+}
+"""Comparison operators supported in a length constraint."""
+
+_REVERSED_COMPARISONS = {
+    "==": "==",
+    "!=": "!=",
+    "<": ">",
+    "<=": ">=",
+    ">": "<",
+    ">=": "<=",
+}
+"""The operator to use when the operands are swapped, as in ``2 < len(x)``."""
+
+
+class LengthConstraint(Constraint):
+    """Represents a "len(x) == n" constraint, or one with another comparison."""
+
+    def __init__(
+        self, node: nodes.NodeNG, op: str, length: nodes.NodeNG, negate: bool
+    ) -> None:
+        super().__init__(node=node, negate=negate)
+        self.op = op
+        self.length = length
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches "len(node) op length"
+        or "length op len(node)". Else, return None.
+        """
+        if not (isinstance(expr, nodes.Compare) and len(expr.ops) == 1):
+            return None
+        left = expr.left
+        op, right = expr.ops[0]
+        if op not in _COMPARISONS:
+            return None
+        if _is_len_call(left, node):
+            return cls(node=node, op=op, length=right, negate=negate)
+        if _is_len_call(right, node):
+            return cls(
+                node=node, op=_REVERSED_COMPARISONS[op], length=left, negate=negate
+            )
+        return None
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for values of unknown length, False for constants without
+        a length, or depending on negate flag:
+
+        - negate=False: satisfied when the length of inferred passes the comparison.
+        - negate=True: satisfied when the length of inferred fails the comparison.
+        """
+        length = util.safe_infer(self.length, context)
+        if not (isinstance(length, nodes.Const) and isinstance(length.value, int)):
+            return True
+
+        if isinstance(inferred, nodes.Const):
+            if not isinstance(inferred.value, (str, bytes)):
+                # len() raises a TypeError, so neither branch is reached.
+                return False
+            inferred_length = len(inferred.value)
+        elif isinstance(inferred, (nodes.List, nodes.Tuple, nodes.Set)):
+            inferred_length = len(inferred.elts)
+        elif isinstance(inferred, nodes.Dict):
+            inferred_length = len(inferred.items)
+        else:
+            return True
+
+        return self.negate ^ _COMPARISONS[self.op](inferred_length, length.value)
+
+
 class _CompoundConstraint(Constraint):
     """Represents an "x and y" or "x or y" constraint."""
 
@@ -365,7 +446,7 @@ _CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]
     nodes.Attribute: (BooleanConstraint,),
     nodes.BoolOp: (_CompoundConstraint,),
     nodes.Call: (TypeConstraint,),
-    nodes.Compare: (NoneConstraint, EqualityConstraint),
+    nodes.Compare: (NoneConstraint, EqualityConstraint, LengthConstraint),
     nodes.Name: (BooleanConstraint,),
     # No nodes.UnaryOp entry: _match_constraint handles ``not`` itself, by matching
     # the operand with the inversion flipped, so that any constraint can be negated.
@@ -383,6 +464,18 @@ def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
         return node1.value == node2.value
 
     return False
+
+
+def _is_len_call(expr: nodes.NodeNG, node: _NameNodes) -> bool:
+    """Return True if expr is "len(node)"."""
+    return (
+        isinstance(expr, nodes.Call)
+        and isinstance(expr.func, nodes.Name)
+        and expr.func.name == "len"
+        and not expr.keywords
+        and len(expr.args) == 1
+        and _matches(expr.args[0], node)
+    )
 
 
 def _match_constraint(
