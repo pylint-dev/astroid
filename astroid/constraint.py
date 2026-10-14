@@ -12,7 +12,12 @@ from typing import TYPE_CHECKING, Self
 
 from astroid import helpers, nodes, util
 from astroid.context import InferenceContext
-from astroid.exceptions import AstroidTypeError, InferenceError, MroError
+from astroid.exceptions import (
+    AstroidError,
+    AstroidTypeError,
+    InferenceError,
+    MroError,
+)
 from astroid.typing import InferenceResult
 
 if TYPE_CHECKING:
@@ -296,13 +301,23 @@ def get_constraints(
 
     Constraints are computed statically by analysing the code surrounding expr.
     Currently this only supports constraints generated from if conditions,
-    comprehension conditions and preceding operands in boolean operations.
+    comprehension conditions, preceding operands in boolean operations, and
+    preceding guard statements: asserts, and ifs whose body ends with a return,
+    raise, continue or break.
     """
     current_node: nodes.NodeNG | None = expr
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
+    # Guards before a function, lambda or class do not constrain its body: it may
+    # run later, after a reassignment.
+    collect_guards = True
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
         constraints: set[Constraint] | None = None
+
+        if isinstance(current_node, (nodes.FunctionDef, nodes.Lambda, nodes.ClassDef)):
+            collect_guards = False
+        elif collect_guards and current_node.is_statement:
+            _add_guards_constraints(expr, current_node, constraints_mapping)
 
         if isinstance(parent, (nodes.If, nodes.IfExp)):
             branch, _ = parent.locate_child(current_node)
@@ -347,6 +362,154 @@ def get_constraints(
         current_node = parent
 
     return constraints_mapping
+
+
+def constraint_applies(
+    constraint_stmt: nodes.NodeNG, stmt: InferenceResult, expr: _NameNodes
+) -> bool:
+    """Return True if the constraints generated at constraint_stmt for expr apply
+    to the values assigned by stmt.
+
+    They do not apply to an assignment inside constraint_stmt, nor to one that can
+    run between constraint_stmt and expr, as in ``if x is None: return``, then
+    ``x = None``.
+    """
+    if constraint_stmt.parent_of(stmt):
+        return False
+    start = (constraint_stmt.end_lineno, constraint_stmt.end_col_offset)
+    position = (stmt.lineno, stmt.col_offset)
+    if None in start or None in position or position < start:
+        return True
+    end = _unconstrained_range_end(constraint_stmt, expr)
+    # Skipping a constraint is always safe, so an assignment of another module
+    # in the range is not constrained either.
+    return None in end or position > end
+
+
+def _unconstrained_range_end(
+    constraint_stmt: nodes.NodeNG, expr: _NameNodes
+) -> tuple[int | None, int | None]:
+    """Return the position up to which an assignment after constraint_stmt can
+    reach expr without running constraint_stmt again.
+
+    That is expr itself, or the end of the outermost loop containing expr but not
+    constraint_stmt: an assignment after expr in that loop reaches expr on the next
+    iteration.
+    """
+    end: nodes.NodeNG | None = None
+    node = expr.parent
+    while (
+        node is not None
+        and node is not constraint_stmt
+        and not node.parent_of(constraint_stmt)
+    ):
+        if isinstance(node, (nodes.For, nodes.While)):
+            end = node
+        node = node.parent
+    if end is None:
+        return (expr.lineno, expr.col_offset)
+    return (end.end_lineno, end.end_col_offset)
+
+
+_Guard = tuple[
+    nodes.If | nodes.Assert,
+    nodes.NodeNG,
+    bool,
+    tuple[nodes.AssignName | nodes.AssignAttr, ...] | None,
+]
+"""A guard statement, its test, whether the test holds inverted after it, and the
+targets its body always assigns, or None if it constrains every name.
+"""
+
+_preceding_guards_cache: dict[nodes.NodeNG, tuple[_Guard, ...]] = {}
+"""The guard statements preceding each statement in its block.
+
+They do not depend on the constrained name, so they are computed once per block.
+"""
+
+
+def clear_preceding_guards_cache() -> None:
+    """Clear the cache of the guard statements preceding each statement."""
+    _preceding_guards_cache.clear()
+
+
+def _add_guards_constraints(
+    expr: _NameNodes,
+    stmt: nodes.NodeNG,
+    constraints_mapping: dict[nodes.NodeNG, set[Constraint]],
+) -> None:
+    """Add the constraints of the guard statements preceding stmt in its block."""
+    for guard, test, invert, targets in _preceding_guards(stmt):
+        if targets is not None and not any(
+            _same_target(target, expr) for target in targets
+        ):
+            continue
+        constraints = set(_match_constraint(expr, test, invert))
+        if constraints:
+            constraints_mapping[guard] = constraints
+
+
+def _preceding_guards(stmt: nodes.NodeNG) -> tuple[_Guard, ...]:
+    """Return the guard statements preceding stmt in its block.
+
+    They are asserts, ifs whose body ends with a return, raise, continue or break,
+    and ifs whose body always assigns a name: a value assigned to that name before
+    the if only reaches the code after it when the test is false.
+    """
+    try:
+        return _preceding_guards_cache[stmt]
+    except KeyError:
+        pass
+    try:
+        stmts = stmt.parent.child_sequence(stmt)
+    except AstroidError:
+        # A type comment annotation is not a child of its parent.
+        stmts = [stmt]
+    # Fill the cache for the whole block at once.
+    guards: tuple[_Guard, ...] = ()
+    for sibling in stmts:
+        _preceding_guards_cache[sibling] = guards
+        if isinstance(sibling, nodes.Assert):
+            guards = (*guards, (sibling, sibling.test, False, None))
+        elif isinstance(sibling, nodes.If):
+            if isinstance(
+                sibling.body[-1],
+                (nodes.Return, nodes.Raise, nodes.Continue, nodes.Break),
+            ):
+                guards = (*guards, (sibling, sibling.test, True, None))
+            elif targets := _assigned_targets(sibling.body):
+                guards = (*guards, (sibling, sibling.test, True, targets))
+    return _preceding_guards_cache[stmt]
+
+
+def _assigned_targets(
+    body: list[nodes.NodeNG],
+) -> tuple[nodes.AssignName | nodes.AssignAttr, ...]:
+    """Return the names and attributes that the statements of body assign."""
+    targets: list[nodes.NodeNG] = []
+    for stmt in body:
+        if isinstance(stmt, nodes.Assign):
+            targets.extend(stmt.targets)
+        elif isinstance(stmt, nodes.AnnAssign) and stmt.value is not None:
+            targets.append(stmt.target)
+    return tuple(
+        target
+        for target in targets
+        if isinstance(target, (nodes.AssignName, nodes.AssignAttr))
+    )
+
+
+def _same_target(target: nodes.AssignName | nodes.AssignAttr, expr: _NameNodes) -> bool:
+    """Return True if target assigns the name or attribute of expr."""
+    if isinstance(target, nodes.AssignName):
+        return isinstance(expr, (nodes.Name, nodes.AssignName)) and (
+            target.name == expr.name
+        )
+    return (
+        isinstance(expr, (nodes.Attribute, nodes.AssignAttr))
+        and target.attrname == expr.attrname
+        and _matches(target.expr, expr.expr)
+    )
 
 
 def _add_ifs_constraints(
