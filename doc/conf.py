@@ -2,10 +2,13 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import builtins
 import doctest
 import os
 import sys
 from datetime import UTC, datetime
+
+from sphinx.domains.python import PythonDomain
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -142,3 +145,33 @@ linkcheck_ignore = [
     # entries point at repositories that went with it.
     r"https://bitbucket\.org/.*",
 ]
+
+
+# -- Sphinx 9 builtin cross-references -----------------------------------------
+
+
+class _PythonDomain(PythonDomain):
+    """Link builtins in annotations to the Python docs, as Sphinx 8 did.
+
+    Since Sphinx 9, a ``py:class`` reference that matches no class is retried
+    against every documented attribute whose name ends the same way. So the
+    ``type`` in ``cls: type`` matches ``ClassDef.type``, ``Lambda.type`` and
+    three others, which fails the build, and ``str`` silently links to
+    ``Interpolation.str``. Skip that retry for builtins, so intersphinx can
+    link them. Remove this once a release has the upstream fix:
+    https://github.com/sphinx-doc/sphinx/issues/14223
+    """
+
+    def resolve_xref(self, env, fromdocname, builder, typ, target, node, contnode):
+        if typ == "class" and hasattr(builtins, target):
+            searchmode = 1 if node.hasattr("refspecific") else 0
+            modname, clsname = node.get("py:module"), node.get("py:class")
+            if not self.find_obj(env, modname, clsname, target, typ, searchmode):
+                return None
+        return super().resolve_xref(
+            env, fromdocname, builder, typ, target, node, contnode
+        )
+
+
+def setup(app):
+    app.add_domain(_PythonDomain, override=True)
