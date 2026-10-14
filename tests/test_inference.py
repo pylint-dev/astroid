@@ -7647,3 +7647,76 @@ def test_augassign_list_tuple_does_not_mutate_initial_value():
     inferred = next(module.body[-1].value.infer())
     assert inferred.as_string() == "[0, 1, 1]"
     assert module.body[0].value.as_string() == "[0]"
+
+
+@pytest.mark.parametrize(
+    "keys",
+    [["a", "a", "b"], ("a", "a", "b"), "aab", b"aab", {"a": 1, "b": 2}, []],
+)
+@pytest.mark.parametrize("default", [None, False, 0, 42, "sentinel"])
+def test_dict_fromkeys_explicit_default(keys: Any, default: Any) -> None:
+    result = next(extract_node(f"dict.fromkeys({keys!r}, {default!r})").infer())
+    assert isinstance(result, nodes.Dict)
+    assert [key.value for key, _ in result.items] == list(dict.fromkeys(keys))
+    for _, value in result.items:
+        inferred = next(value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == default
+        assert type(inferred.value) is type(default)
+    if result.items:
+        assert all(value is result.items[0][1] for _, value in result.items)
+
+
+@pytest.mark.parametrize(
+    "keys", [["a", "a", "b"], ("a", "b"), "aab", b"aab", {"a": 1}, []]
+)
+def test_dict_fromkeys_omitted_default(keys: Any) -> None:
+    result = next(extract_node(f"dict.fromkeys({keys!r})").infer())
+    assert isinstance(result, nodes.Dict)
+    assert [key.value for key, _ in result.items] == list(dict.fromkeys(keys))
+    for _, value in result.items:
+        inferred = next(value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value is None
+
+
+@pytest.mark.parametrize(
+    ("default", "expected_type"), [("[]", nodes.List), ("{}", nodes.Dict)]
+)
+def test_dict_fromkeys_shares_mutable_default(
+    default: str, expected_type: type
+) -> None:
+    result = next(extract_node(f"dict.fromkeys(['a', 'b'], {default})").infer())
+    assert isinstance(result, nodes.Dict)
+    first = result.items[0][1]
+    second = result.items[1][1]
+    assert first is second
+    assert isinstance(next(first.infer()), expected_type)
+    assert isinstance(next(second.infer()), expected_type)
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("default = 37\ndict.fromkeys(['a'], default)['a']", 37),
+        ("def build():\n    return False\ndict.fromkeys(['a'], build())['a']", False),
+    ],
+)
+def test_dict_fromkeys_infers_default_expression(source: str, expected: Any) -> None:
+    result = next(extract_node(source).infer())
+    assert isinstance(result, nodes.Const)
+    assert result.value == expected
+    assert type(result.value) is type(expected)
+
+
+def test_dict_fromkeys_preserves_default_alternatives() -> None:
+    source = """
+    if flag:
+        default = 1
+    else:
+        default = 2
+    dict.fromkeys(['a'], default)['a']
+    """
+    results = list(extract_node(source).infer())
+    assert all(isinstance(result, nodes.Const) for result in results)
+    assert {result.value for result in results} == {1, 2}

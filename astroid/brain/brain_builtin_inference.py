@@ -1012,7 +1012,10 @@ def infer_dict_fromkeys(node, context: InferenceContext | None = None):
             "TypeError: Needs between 1 and 2 positional arguments"
         )
 
-    default = nodes.Const(None)
+    if len(call.positional_arguments) == 2:
+        default = call.positional_arguments[1]
+    else:
+        default = nodes.Const(None)
     values = call.positional_arguments[0]
     try:
         inferred_values = next(values.infer(context=context))
