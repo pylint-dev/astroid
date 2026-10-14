@@ -5,6 +5,8 @@
 import pytest
 
 from astroid import bases, builder, nodes
+from astroid.const import PY312_PLUS, PY314_PLUS
+from astroid.exceptions import AttributeInferenceError
 
 
 def test_infer_typevar() -> None:
@@ -34,6 +36,94 @@ def test_infer_typevar_name_injection() -> None:
     # The name is kept verbatim instead of parsed, so no base is injected.
     assert inferred.name == "T(EvilBase): #"
     assert inferred.bases == []
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="The type statement was added in 3.12")
+def test_type_alias_name_is_typealiastype() -> None:
+    """The name bound by a ``type`` statement is a ``TypeAliasType``, not the value.
+
+    Regression test for: https://github.com/pylint-dev/pylint/issues/10091
+    """
+    nodes_ = builder.extract_node("""
+    type Alias = str
+    type Pair[T] = tuple[T, T]
+    Alias #@
+    Pair[int] #@
+    Alias | None #@
+    None | Alias #@
+    """)
+    for node in nodes_:
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], bases.Instance)
+        assert inferred[0].qname() == "typing.TypeAliasType"
+
+    instance = nodes_[0].inferred()[0]
+    for attr in ("__value__", "__type_params__", "__name__", "__module__"):
+        assert instance.getattr(attr)
+    with pytest.raises(AttributeInferenceError):
+        instance.getattr("upper")
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="The type statement was added in 3.12")
+@pytest.mark.parametrize(
+    "subscript, expected_name",
+    [
+        ("Container[Alias]", "Container"),
+        ("list[Alias]", "list"),
+        ("dict[str, Alias]", "dict"),
+    ],
+)
+def test_class_subscripted_with_type_alias(subscript: str, expected_name: str) -> None:
+    node = builder.extract_node(f"""
+    from typing import Generic, TypeVar
+    T = TypeVar("T")
+    class Container(Generic[T]): ...
+    type Alias = str
+    {subscript} #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.ClassDef)
+    assert inferred[0].name == expected_name
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="The type statement was added in 3.12")
+def test_instantiate_class_subscripted_with_type_alias() -> None:
+    node = builder.extract_node("""
+    from typing import Generic, TypeVar
+    T = TypeVar("T")
+    class Container(Generic[T]): ...
+    type Alias = str
+    Container[Alias]() #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].qname() == ".Container"
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="The type statement was added in 3.12")
+def test_type_alias_parameters() -> None:
+    node = builder.extract_node("""
+    type Pair[T] = tuple[T, T]
+    Pair #@
+    """)
+    assert node.inferred()[0].getattr("__parameters__")
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="The type statement was added in 3.12")
+def test_type_alias_evaluate_value() -> None:
+    node = builder.extract_node("""
+    type Alias = str
+    Alias #@
+    """)
+    instance = node.inferred()[0]
+    if PY314_PLUS:
+        assert instance.getattr("evaluate_value")
+    else:
+        with pytest.raises(AttributeInferenceError):
+            instance.getattr("evaluate_value")
 
 
 class TestTypingAlias:
