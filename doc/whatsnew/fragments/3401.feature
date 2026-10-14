@@ -3,4 +3,4 @@ After ``if (x := f()) is not None:``, ``x`` no longer infers ``None``, and the
 same goes for the other supported conditions, like ``if x := f():``,
 ``isinstance(x := f(), int)`` or the later operands of ``(x := f()) and x``.
 
-Refs #9999
+Refs #3401
