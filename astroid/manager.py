@@ -461,6 +461,7 @@ class AstroidManager:
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
         from astroid.brain.helpers import register_all_brains
+        from astroid.constraint import clear_preceding_guards_cache
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter._import.spec import (
             _find_spec,
@@ -471,6 +472,7 @@ class AstroidManager:
         from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()
+        clear_preceding_guards_cache()
         _invalidate_cache()  # inference context cache
 
         self.astroid_cache.clear()
