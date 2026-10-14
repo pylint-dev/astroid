@@ -40,9 +40,11 @@ def path_wrapper(func):
         yielded = set()
 
         for res in _func(node, context):
-            # unproxy only true instance, not const, tuple, dict...
+            # unproxy only true instance, not const, tuple, dict... An instance
+            # is keyed apart from its class, so that a name bound to both
+            # (``class A: ...`` then ``A = A()``) infers to both.
             if res.__class__.__name__ == "Instance":
-                ares = res._proxied
+                ares = ("instance", res._proxied)
             else:
                 ares = res
             if ares not in yielded:
