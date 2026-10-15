@@ -15,6 +15,7 @@ import tempfile
 import textwrap
 import unittest
 import unittest.mock
+from io import TextIOWrapper
 
 import pytest
 
@@ -836,6 +837,85 @@ class FileBuildTest(unittest.TestCase):
     def test_unknown_encoding(self) -> None:
         with self.assertRaises(AstroidSyntaxError):
             resources.build_file("data/invalid_encoding.py")
+
+
+@pytest.mark.parametrize("invalid_encoding", [False, True], ids=["valid", "invalid"])
+def test_file_build_closes_source_stream(
+    tmp_path: pathlib.Path, invalid_encoding: bool
+) -> None:
+    source = tmp_path / "source_stream.py"
+    content = b"# coding: utf-8\n\nvalue = "
+    content += b"'\xff'\n" if invalid_encoding else b"42\n"
+    source.write_bytes(content)
+    astroid_builder = builder.AstroidBuilder(AstroidManager())
+    streams = []
+
+    def track_open(*args, **kwargs):
+        stream = open(*args, **kwargs)
+        streams.append(stream)
+        return stream
+
+    try:
+        with unittest.mock.patch("astroid.builder.open", side_effect=track_open):
+            if invalid_encoding:
+                with pytest.raises(AstroidBuildingError) as exc_info:
+                    astroid_builder.file_build(str(source), "source_stream")
+                assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
+            else:
+                module = astroid_builder.file_build(str(source), "source_stream")
+                assert module.name == "source_stream"
+                assert module.file_encoding == "utf-8"
+                value = next(module["value"].infer())
+                assert isinstance(value, nodes.Const)
+                assert value.value == 42
+        assert len(streams) == 2
+        assert isinstance(streams[1], TextIOWrapper)
+        assert all(stream.closed for stream in streams)
+    finally:
+        for stream in streams:
+            stream.close()
+
+
+def test_open_source_file_returns_open_stream(tmp_path: pathlib.Path) -> None:
+    source = tmp_path / "source.py"
+    source.write_bytes(b"# coding: utf-8\r\nvalue = '\xc3\xa9'\r\n")
+
+    stream, encoding, data = builder.open_source_file(str(source))
+    try:
+        assert isinstance(stream, TextIOWrapper)
+        assert not stream.closed
+        assert encoding == "utf-8"
+        assert data == "# coding: utf-8\nvalue = 'é'\n"
+    finally:
+        stream.close()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [OSError("read failed"), KeyboardInterrupt()],
+    ids=["oserror", "interrupted"],
+)
+def test_open_source_file_closes_stream_on_read_error(
+    tmp_path: pathlib.Path, error: BaseException
+) -> None:
+    source = tmp_path / "source.py"
+    source.write_text("# coding: utf-8\nvalue = 42\n", encoding="utf-8")
+    byte_stream = open(source, "rb")
+    stream = open(source, encoding="utf-8")
+    try:
+        with (
+            unittest.mock.patch(
+                "astroid.builder.open", side_effect=[byte_stream, stream]
+            ),
+            unittest.mock.patch.object(stream, "read", side_effect=error),
+        ):
+            with pytest.raises(type(error)) as exc_info:
+                builder.open_source_file(str(source))
+        assert exc_info.value is error
+        assert stream.closed
+    finally:
+        byte_stream.close()
+        stream.close()
 
 
 def test_module_build_dunder_file() -> None:
