@@ -1,0 +1,10 @@
+``ClassDef.bool_value`` and the inference of ``bool(cls)`` now honor a metaclass
+that defines ``__bool__`` or ``__len__``. Previously a class was always inferred
+as truthy, so a metaclass whose ``__len__`` returned ``0`` (or whose ``__bool__``
+returned ``False``) was silently ignored — mismatching Python's own semantics,
+where ``bool(cls)`` is ``type(cls).__bool__(cls)`` with a fallback to
+``__len__``. When the metaclass override cannot be inferred, ``bool_value`` now
+yields ``Uninferable``. A class whose metaclass is ``type`` itself (or which
+defines neither dunder) keeps the historical always-truthy behavior.
+
+Closes #183
