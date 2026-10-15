@@ -851,6 +851,8 @@ def test_file_build_closes_source_stream(
     streams = []
 
     def track_open(*args, **kwargs):
+        # Forward the builder's arguments and stream ownership unchanged.
+        # pylint: disable-next=consider-using-with,unspecified-encoding
         stream = open(*args, **kwargs)
         streams.append(stream)
         return stream
@@ -900,9 +902,10 @@ def test_open_source_file_closes_stream_on_read_error(
 ) -> None:
     source = tmp_path / "source.py"
     source.write_text("# coding: utf-8\nvalue = 42\n", encoding="utf-8")
-    byte_stream = open(source, "rb")
-    stream = open(source, encoding="utf-8")
-    try:
+    with (
+        open(source, "rb") as byte_stream,
+        open(source, encoding="utf-8") as stream,
+    ):
         with (
             unittest.mock.patch(
                 "astroid.builder.open", side_effect=[byte_stream, stream]
@@ -912,10 +915,8 @@ def test_open_source_file_closes_stream_on_read_error(
             with pytest.raises(type(error)) as exc_info:
                 builder.open_source_file(str(source))
         assert exc_info.value is error
+        # Check before the test's context managers perform fallback cleanup.
         assert stream.closed
-    finally:
-        byte_stream.close()
-        stream.close()
 
 
 def test_module_build_dunder_file() -> None:
