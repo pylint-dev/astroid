@@ -1,0 +1,3 @@
+Source files are now closed when reading fails during module building.
+
+Closes #3404
