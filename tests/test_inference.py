@@ -6115,6 +6115,61 @@ def test_class_attribute_only_assigned_through_an_ancestor() -> None:
     ]
 
 
+def test_class_attribute_assigned_through_a_sibling_class() -> None:
+    """A value bound on an ancestor does not leak through a shared scope."""
+    node = extract_node("""
+    class Base:
+        pass
+
+    class Child(Base):
+        pass
+
+    Base.attr = 1
+    Child.attr = "a"
+    Child.attr  #@
+    """)
+    assert [inferred.value for inferred in node.inferred()] == ["a"]
+
+
+def test_class_attribute_assigned_from_another_module() -> None:
+    """A value bound on a class from another module is ignored.
+
+    Otherwise the inferred values would depend on which module was built first.
+    """
+    module = parse(
+        """
+    class Klass:
+        attr = None
+        attr = 0
+    """,
+        module_name="class_attribute_owner",
+    )
+    parse(
+        """
+    import class_attribute_owner
+    class_attribute_owner.Klass.attr = {}
+    """,
+        module_name="class_attribute_patcher",
+    )
+    inferred = module["Klass"].igetattr("attr")
+    assert [value.value for value in inferred] == [None, 0]
+
+
+def test_class_attribute_only_set_by_the_metaclass() -> None:
+    """The values of a metaclass attribute are kept when no class defines it."""
+    node = extract_node("""
+    class Meta(type):
+        attr = 1
+        attr = 2
+
+    class Klass(metaclass=Meta):
+        pass
+
+    Klass.attr  #@
+    """)
+    assert sorted(inferred.value for inferred in node.inferred()) == [1, 2]
+
+
 def test_inferred_sequence_unpacking_works() -> None:
     inferred = next(extract_node("""
     def test(*args):
