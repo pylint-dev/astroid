@@ -540,6 +540,25 @@ class OperatorNode(NodeNG):
         return type1.qname() == type2.qname()
 
     @staticmethod
+    def _reflected_is_inherited(
+        left: InferenceResult, right: InferenceResult, op: str
+    ) -> bool:
+        """Check whether the right operand only inherits the reflected method of the left one.
+
+        Python tries ``right.__rop__(left)`` first when the right operand is an instance
+        of a subclass of the left operand's type, but only if the subclass overrides
+        that method. ``True`` is an ``int`` that does not override ``__rsub__``, so
+        ``100 - True`` is evaluated as ``100 - True`` and not as ``True - 100``.
+        """
+        if not (isinstance(left, nodes.Const) and isinstance(right, nodes.Const)):
+            return False
+        name = REFLECTED_BIN_OP_METHOD[op]
+        right_method = getattr(type(right.value), name, None)
+        return right_method is not None and right_method is getattr(
+            type(left.value), name, None
+        )
+
+    @staticmethod
     def _get_aug_flow(
         left: InferenceResult,
         left_type: InferenceResult | None,
@@ -578,12 +597,19 @@ class OperatorNode(NodeNG):
                 OperatorNode._aug_op(left, aug_opnode, aug_op, right, context),
                 OperatorNode._bin_op(left, aug_opnode, bin_op, right, context),
             ]
-        elif helpers.is_supertype(left_type, right_type):
+        elif helpers.is_supertype(
+            left_type, right_type
+        ) and not OperatorNode._reflected_is_inherited(left, right, bin_op):
             methods = [
                 OperatorNode._aug_op(left, aug_opnode, aug_op, right, context),
                 OperatorNode._bin_op(
                     right, aug_opnode, bin_op, left, reverse_context, reverse=True
                 ),
+                OperatorNode._bin_op(left, aug_opnode, bin_op, right, context),
+            ]
+        elif helpers.is_supertype(left_type, right_type):
+            methods = [
+                OperatorNode._aug_op(left, aug_opnode, aug_op, right, context),
                 OperatorNode._bin_op(left, aug_opnode, bin_op, right, context),
             ]
         else:
@@ -627,13 +653,17 @@ class OperatorNode(NodeNG):
             methods = [OperatorNode._bin_op(left, binary_opnode, op, right, context)]
         elif helpers.is_subtype(left_type, right_type):
             methods = [OperatorNode._bin_op(left, binary_opnode, op, right, context)]
-        elif helpers.is_supertype(left_type, right_type):
+        elif helpers.is_supertype(
+            left_type, right_type
+        ) and not OperatorNode._reflected_is_inherited(left, right, op):
             methods = [
                 OperatorNode._bin_op(
                     right, binary_opnode, op, left, reverse_context, reverse=True
                 ),
                 OperatorNode._bin_op(left, binary_opnode, op, right, context),
             ]
+        elif helpers.is_supertype(left_type, right_type):
+            methods = [OperatorNode._bin_op(left, binary_opnode, op, right, context)]
         else:
             methods = [
                 OperatorNode._bin_op(left, binary_opnode, op, right, context),
