@@ -1,0 +1,7 @@
+Infer an ``enum`` member whose integer value is past the int-to-str conversion
+limit, such as ``A = 0xff...`` (a large hex literal the tokenizer accepts).
+Rendering the value back in decimal for the mocked member class previously made
+``infer_enum_class`` raise an uncaught ``ValueError`` while building the module;
+the value is now rendered as a hex literal instead.
+
+Refs #3256
