@@ -1,0 +1,8 @@
+Fix a crash when inferring an attribute that resolves to a method proxying
+something other than a function. A class attribute bound to another class'
+``lambda`` method raised ``AttributeError`` (``Lambda`` has no
+``decoratornames``), and a method proxying ``Uninferable`` raised ``TypeError``,
+while ``_is_property`` inspected the method's decorators.
+
+Refs #3370
+Refs pylint-dev/pylint#10345
