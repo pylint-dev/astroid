@@ -616,6 +616,25 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
+    def test_func_getattr_does_not_modify_instance_attrs(self) -> None:
+        """Looking up an attribute that is also a special attribute must not
+        add the special attribute to instance_attrs.
+        """
+        func = builder.extract_node("""
+            def func():
+                pass
+
+            func.__name__ = "name"
+            func #@
+        """).inferred()[0]
+        self.assertIsInstance(func, nodes.FunctionDef)
+        lambda_func = builder.extract_node("lambda: None")
+        lambda_func.instance_attrs["__name__"] = [nodes.Const("name")]
+        for node in (func, lambda_func):
+            self.assertEqual(len(node.getattr("__name__")), 2)
+            self.assertEqual(len(node.getattr("__name__")), 2)
+            self.assertEqual(len(node.instance_attrs["__name__"]), 1)
+
     def test_func_is_bound(self) -> None:
         data = """
         class MyClass:
@@ -2761,6 +2780,11 @@ def test_slots_duplicate_bases_issue_1089() -> None:
         """)
     with pytest.raises(NotImplementedError):
         astroid["First"].slots()
+
+
+def test_classdef_repr_tree_ast_state() -> None:
+    node = builder.extract_node("class A: pass")
+    assert "locals=" in node.repr_tree(ast_state=True)
 
 
 def test_import_with_global() -> None:
