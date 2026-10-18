@@ -77,6 +77,10 @@ jobs:
         run: |
           . venv/bin/activate
           pre-commit run --hook-stage manual pylint-ci --all-files
+      - name: Run pyright
+        run: |
+          . venv/bin/activate
+          pre-commit run pyright --all-files
 
   tests-linux:
     name: tests / run / ${{ matrix.python-version }} / Linux
