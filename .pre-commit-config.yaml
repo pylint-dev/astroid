@@ -1,5 +1,5 @@
 ci:
-  skip: [pylint]
+  skip: [pylint, pyright]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -82,6 +82,12 @@ repos:
         pass_filenames: false
         require_serial: true
         additional_dependencies: ["types-typed-ast"]
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.414
+    hooks:
+      - id: pyright
+        pass_filenames: false
+
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: v3.9.10
     hooks:

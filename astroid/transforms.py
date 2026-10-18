@@ -27,7 +27,9 @@ _Vistables = Union[
 _VisitReturns = (
     SuccessfulInferenceResult
     | list[SuccessfulInferenceResult]
+    | list["nodes.NodeNG"]
     | tuple[SuccessfulInferenceResult, ...]
+    | tuple["nodes.NodeNG", ...]
     | str
     | None
 )
