@@ -84,13 +84,12 @@ class InferFn(Protocol, Generic[_SuccessfulInferenceResultT_contra]):
     def __call__(
         self,
         node: _SuccessfulInferenceResultT_contra,
-        context: InferenceContext | None = None,
+        context: InferenceContext | None,
+        /,
     ) -> Iterator[InferenceResult]: ...  # pragma: no cover
 
 
 class TransformFn(Protocol, Generic[_SuccessfulInferenceResultT]):
     def __call__(
-        self,
-        node: _SuccessfulInferenceResultT,
-        infer_function: InferFn[_SuccessfulInferenceResultT] = ...,
+        self, node: _SuccessfulInferenceResultT, /
     ) -> _SuccessfulInferenceResultT | None: ...  # pragma: no cover
