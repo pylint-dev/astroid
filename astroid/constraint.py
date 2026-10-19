@@ -346,6 +346,11 @@ def get_constraints(
     """
     current_node: nodes.NodeNG | None = expr
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
+    name = (
+        expr.attrname
+        if isinstance(expr, (nodes.Attribute, nodes.AssignAttr))
+        else expr.name
+    )
     # Guards before a function, lambda or class do not constrain its body: it may
     # run later, after a reassignment.
     collect_guards = True
@@ -356,7 +361,8 @@ def get_constraints(
         if isinstance(current_node, (nodes.FunctionDef, nodes.Lambda, nodes.ClassDef)):
             collect_guards = False
         elif collect_guards and current_node.is_statement:
-            _add_guards_constraints(expr, current_node, constraints_mapping)
+            if guards := _preceding_guards(current_node).get(name):
+                _add_guards_constraints(expr, guards, constraints_mapping)
 
         if isinstance(parent, (nodes.If, nodes.IfExp)):
             branch, _ = parent.locate_child(current_node)
@@ -460,8 +466,9 @@ _Guard = tuple[
 targets its body always assigns, or None if it constrains every name.
 """
 
-_preceding_guards_cache: dict[nodes.NodeNG, tuple[_Guard, ...]] = {}
-"""The guard statements preceding each statement in its block.
+_preceding_guards_cache: dict[nodes.NodeNG, dict[str, tuple[_Guard, ...]]] = {}
+"""The guard statements preceding each statement in its block, by the names and
+attribute names their test reads.
 
 They do not depend on the constrained name, so they are computed once per block.
 """
@@ -474,11 +481,11 @@ def clear_preceding_guards_cache() -> None:
 
 def _add_guards_constraints(
     expr: _NameNodes,
-    stmt: nodes.NodeNG,
+    guards: tuple[_Guard, ...],
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]],
 ) -> None:
-    """Add the constraints of the guard statements preceding stmt in its block."""
-    for guard, test, invert, targets in _preceding_guards(stmt):
+    """Add the constraints of guards for expr."""
+    for guard, test, invert, targets in guards:
         if targets is not None and not any(
             _same_target(target, expr) for target in targets
         ):
@@ -488,37 +495,51 @@ def _add_guards_constraints(
             constraints_mapping[guard] = constraints
 
 
-def _preceding_guards(stmt: nodes.NodeNG) -> tuple[_Guard, ...]:
-    """Return the guard statements preceding stmt in its block.
+def _preceding_guards(stmt: nodes.NodeNG) -> dict[str, tuple[_Guard, ...]]:
+    """Return the guard statements preceding stmt in its block, by the names and
+    attribute names their test reads: a test that does not read a name cannot
+    constrain it.
 
     They are asserts, ifs whose body ends with a return, raise, continue or break,
     and ifs whose body always assigns a name: a value assigned to that name before
     the if only reaches the code after it when the test is false.
     """
-    try:
-        return _preceding_guards_cache[stmt]
-    except KeyError:
-        pass
+    if (cached := _preceding_guards_cache.get(stmt)) is not None:
+        return cached
     try:
         stmts = stmt.parent.child_sequence(stmt)
     except AstroidError:
         # A type comment annotation is not a child of its parent.
         stmts = [stmt]
-    # Fill the cache for the whole block at once.
-    guards: tuple[_Guard, ...] = ()
+    # Fill the cache for the whole block at once. Statements between two guards
+    # share the same mapping.
+    guards: dict[str, tuple[_Guard, ...]] = {}
     for sibling in stmts:
         _preceding_guards_cache[sibling] = guards
+        guard: _Guard | None = None
         if isinstance(sibling, nodes.Assert):
-            guards = (*guards, (sibling, sibling.test, False, None))
+            guard = (sibling, sibling.test, False, None)
         elif isinstance(sibling, nodes.If):
             if isinstance(
                 sibling.body[-1],
                 (nodes.Return, nodes.Raise, nodes.Continue, nodes.Break),
             ):
-                guards = (*guards, (sibling, sibling.test, True, None))
+                guard = (sibling, sibling.test, True, None)
             elif targets := _assigned_targets(sibling.body):
-                guards = (*guards, (sibling, sibling.test, True, targets))
+                guard = (sibling, sibling.test, True, targets)
+        if guard is not None:
+            guards = guards.copy()
+            for name in _read_names(sibling.test):
+                guards[name] = (*guards.get(name, ()), guard)
     return _preceding_guards_cache[stmt]
+
+
+def _read_names(test: nodes.NodeNG) -> set[str]:
+    """Return the names and attribute names that test reads."""
+    return {
+        node.name if isinstance(node, nodes.Name) else node.attrname
+        for node in test.nodes_of_class((nodes.Name, nodes.Attribute))
+    }
 
 
 def _assigned_targets(
