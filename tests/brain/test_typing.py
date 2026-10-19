@@ -4,7 +4,8 @@
 
 import pytest
 
-from astroid import bases, builder, nodes
+from astroid import MANAGER, bases, builder, nodes
+from astroid.const import PY312_PLUS
 
 
 def test_infer_typevar() -> None:
@@ -97,3 +98,34 @@ class TestSpecialAlias:
         # Should not raise IndexError
         module = builder.parse(code)
         assert isinstance(module, nodes.Module)
+
+
+@pytest.mark.skipif(not PY312_PLUS, reason="Requires PEP 695 syntax")
+def test_pep695_generic_ancestors_with_function_transform() -> None:
+    """A transform that returns the FunctionDef it gets doesn't lose the
+    ancestors of a subclass of a PEP 695 generic class.
+
+    Regression test for: https://github.com/pylint-dev/pylint/issues/10352
+    """
+
+    def transform_function(node: nodes.FunctionDef) -> nodes.FunctionDef:
+        return node
+
+    MANAGER.register_transform(nodes.FunctionDef, transform_function)
+    try:
+        child = builder.extract_node("""
+        class Base[T]:
+            pass
+
+        class Middle[T](Base[T]):
+            pass
+
+        class Child(Middle[int]):  #@
+            pass
+        """)
+        child.root()["Middle"].bases[0].inferred()
+        ancestors = [ancestor.name for ancestor in child.ancestors()]
+    finally:
+        MANAGER.unregister_transform(nodes.FunctionDef, transform_function)
+
+    assert ancestors == ["Middle", "Base", "object"]
