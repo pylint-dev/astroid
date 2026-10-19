@@ -171,6 +171,7 @@ files = [
   "astroid/brain/brain_numpy_core_umath.py",
   "astroid/brain/brain_numpy_ma.py",
   "astroid/brain/brain_numpy_random_mtrand.py",
+  "astroid/brain/brain_pathlib.py",
   "astroid/brain/brain_pkg_resources.py",
   "astroid/brain/brain_pytest.py",
   "astroid/brain/brain_responses.py",
