@@ -1818,8 +1818,6 @@ def test_compound_constraint_only_matches_bool_op() -> None:
         ("len(x) <= 2", "{1: 2}", "{1: 2, 3: 4, 5: 6}"),
         ("len(x) > 2", "'abc'", "'ab'"),
         ("len(x) >= 2", "b'ab'", "b'a'"),
-        ("2 == len(x)", "[1, 2]", "[1]"),
-        ("2 > len(x)", "[1]", "[1, 2]"),
         ("not len(x) == 2", "[1]", "[1, 2]"),
     ),
 )
@@ -1870,6 +1868,7 @@ def test_length_unknown(value: str) -> None:
     "condition",
     (
         "len(x) == y",
+        "2 == len(x)",
         "len(x) == '2'",
         "len(x) is 2",
         "len(x) in (2,)",

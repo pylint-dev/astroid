@@ -6,14 +6,14 @@
 
 from __future__ import annotations
 
-import operator
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from typing import Self
 
 from astroid import bases, helpers, nodes, util
 from astroid.context import InferenceContext
 from astroid.exceptions import AstroidTypeError, InferenceError, MroError
+from astroid.nodes.node_classes import COMPARE_OPS
 from astroid.typing import InferenceResult
 
 _NameNodes = nodes.AssignAttr | nodes.Attribute | nodes.AssignName | nodes.Name
@@ -271,27 +271,6 @@ class EqualityConstraint(Constraint):
         return True
 
 
-_COMPARISONS: dict[str, Callable[[int, int], bool]] = {
-    "==": operator.eq,
-    "!=": operator.ne,
-    "<": operator.lt,
-    "<=": operator.le,
-    ">": operator.gt,
-    ">=": operator.ge,
-}
-"""Comparison operators supported in a length constraint."""
-
-_REVERSED_COMPARISONS = {
-    "==": "==",
-    "!=": "!=",
-    "<": ">",
-    "<=": ">=",
-    ">": "<",
-    ">=": "<=",
-}
-"""The operator to use when the operands are swapped, as in ``2 < len(x)``."""
-
-
 class LengthConstraint(Constraint):
     """Represents a "len(x) == n" constraint, or one with another comparison."""
 
@@ -306,21 +285,16 @@ class LengthConstraint(Constraint):
     def match(
         cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Self | None:
-        """Return a new constraint for node if expr matches "len(node) op length"
-        or "length op len(node)". Else, return None.
+        """Return a new constraint for node if expr matches "len(node) op length".
+        Else, return None.
         """
         if not (isinstance(expr, nodes.Compare) and len(expr.ops) == 1):
             return None
-        left = expr.left
         op, right = expr.ops[0]
-        if op not in _COMPARISONS:
+        if op in {"in", "not in"} or op not in COMPARE_OPS:
             return None
-        if _is_len_call(left, node):
+        if _is_len_call(expr.left, node):
             return cls(node=node, op=op, length=right, negate=negate)
-        if _is_len_call(right, node):
-            return cls(
-                node=node, op=_REVERSED_COMPARISONS[op], length=left, negate=negate
-            )
         return None
 
     def satisfied_by(
@@ -348,7 +322,7 @@ class LengthConstraint(Constraint):
         else:
             return True
 
-        return self.negate ^ _COMPARISONS[self.op](inferred_length, length.value)
+        return self.negate ^ COMPARE_OPS[self.op](inferred_length, length.value)
 
 
 class _CompoundConstraint(Constraint):
