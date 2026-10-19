@@ -13,7 +13,7 @@ FileIO = "FileIO"
 BufferedWriter = "BufferedWriter"
 
 
-def _generic_io_transform(node, name, cls):
+def _generic_io_transform(node: ClassDef, name: str, cls: str) -> None:
     """Transform the given name, by adding the given *class* as a member of the
     node.
     """
@@ -24,7 +24,7 @@ def _generic_io_transform(node, name, cls):
     node.locals[name] = [instance]
 
 
-def _transform_text_io_wrapper(node):
+def _transform_text_io_wrapper(node: ClassDef) -> None:
     # This is not always correct, since it can vary with the type of the descriptor,
     # being stdout, stderr or stdin. But we cannot get access to the name of the
     # stream, which is why we are using the BufferedWriter class as a default
@@ -32,7 +32,7 @@ def _transform_text_io_wrapper(node):
     return _generic_io_transform(node, name="buffer", cls=BufferedWriter)
 
 
-def _transform_buffered(node):
+def _transform_buffered(node: ClassDef) -> None:
     return _generic_io_transform(node, name="raw", cls=FileIO)
 
 
