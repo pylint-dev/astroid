@@ -366,6 +366,9 @@ class Property(scoped_nodes.FunctionDef):
     def pytype(self) -> Literal["builtins.property"]:
         return "builtins.property"
 
+    def callable(self) -> Literal[False]:
+        return False
+
     def infer_call_result(
         self,
         caller: SuccessfulInferenceResult | None,

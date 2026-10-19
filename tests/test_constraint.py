@@ -1733,12 +1733,16 @@ def test_callable(value: str) -> None:
     assert node2.inferred() == [Uninferable]
 
 
-@pytest.mark.parametrize("value", ("None", "1", "[]", "NotCallable()"))
+@pytest.mark.parametrize(
+    "value", ("None", "1", "[]", "NotCallable()", "NotCallable.color")
+)
 def test_not_callable(value: str) -> None:
     """Test that callable(x) removes values that are not callable."""
     node1, node2 = builder.extract_node(f"""
     class NotCallable:
-        pass
+        @property
+        def color(self):
+            return "red"
 
     def f(x={value}):
         if callable(x):
