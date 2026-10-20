@@ -38,8 +38,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=base-venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_dev.txt',
-          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $GITHUB_OUTPUT
       - &cache-python
         name: Restore Python virtual environment
         id: cache-venv
@@ -55,7 +54,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip
-          pip install -U -r requirements_full.txt
+          pip install -U -e . --group test --group lint --group dev
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
         run: >-
@@ -105,8 +104,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_dev.txt',
-          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $GITHUB_OUTPUT
       - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
@@ -114,8 +112,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip wheel
-          pip install -U -r requirements_full.txt
-          pip install -e .
+          pip install -U -e . --group test
       - name: Run pytest
         run: |
           . venv/bin/activate
@@ -154,8 +151,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_dev.txt',
-          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $env:GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $env:GITHUB_OUTPUT
       - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
@@ -163,8 +159,7 @@ jobs:
           python -m venv venv
           . venv\\Scripts\\activate
           python -m pip install -U pip
-          pip install -U -r requirements_full.txt
-          pip install -e .
+          pip install -U -e . --group test
       - name: Run pytest
         run: |
           . venv\\Scripts\\activate
@@ -192,8 +187,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_minimal.txt')
-          }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $GITHUB_OUTPUT
       - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
@@ -201,8 +195,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip
-          pip install -U -r requirements_minimal.txt
-          pip install -e .
+          pip install -U -e . --group test-min
       - name: Run pytest
         run: |
           . venv/bin/activate
@@ -223,7 +216,9 @@ jobs:
       - *checkout
       - *setup-python-default
       - name: Install dependencies
-        run: pip install -U -r requirements_minimal.txt
+        run: |
+          python -m pip install -U pip
+          pip install -U --group test-min
       - name: Download all coverage artifacts
         uses: actions/download-artifact@v8.0.2
       - name: Combine Linux coverage results

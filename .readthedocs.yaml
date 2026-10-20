@@ -15,11 +15,11 @@ build:
   tools:
     python: "3.14"
   jobs:
+    install:
+      # ``--group`` needs pip 25.1 or newer
+      - python -m pip install --upgrade pip
+      - python -m pip install -e . --group docs
     post_build:
       # Run the `>>>` examples too, so the same required check covers both a
       # reference that does not resolve and an example that is no longer true.
       - python -m sphinx -E -W -b doctest doc doc/build/doctest
-
-python:
-  install:
-    - requirements: doc/requirements.txt
