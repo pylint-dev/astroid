@@ -1966,10 +1966,10 @@ def test_guard_in_previous_block() -> None:
 
 
 def test_guard_does_not_cross_scope() -> None:
-    """Test that a guard does not constrain a function, lambda or class defined after
-    it, which may run after a reassignment.
+    """Test that a guard does not constrain a function, lambda, class or generator
+    expression defined after it, which may run after a reassignment.
     """
-    node1, node2, node3 = builder.extract_node("""
+    node1, node2, node3, node4 = builder.extract_node("""
     def f(x = None):
         if x is None:
             return
@@ -1978,11 +1978,13 @@ def test_guard_does_not_cross_scope() -> None:
         lambda: x  #@
         class A:
             y = x  #@
+        (x for _ in range(3))  #@
     """)
 
     _assert_kept(node1.value, None)
     _assert_kept(node2.body, None)
     _assert_kept(node3.value, None)
+    _assert_kept(node4.elt, None)
 
 
 def test_guard_inside_nested_scope() -> None:
@@ -2336,3 +2338,53 @@ def test_guard_assignment_name_vs_attr() -> None:
     """)
 
     assert _values(node) == [None, Uninferable]
+
+
+@pytest.mark.parametrize(
+    "value, condition",
+    (("[]", "not x"), ("{}", "not x"), ("{1}", "x")),
+)
+def test_guard_assignment_mutable_container(value: str, condition: str) -> None:
+    """Test that a container literal is kept: it may have changed before the if."""
+    node = builder.extract_node(f"""
+    def f():
+        x = {value}
+        x.clear()
+        if {condition}:
+            x = None
+        x  #@
+    """)
+
+    assert [value.as_string() for value in node.inferred()] == [
+        builder.extract_node(value).as_string(),
+        "None",
+    ]
+
+
+def test_guard_assignment_attr_from_other_module() -> None:
+    """Test that the values assigned in another module are constrained, whatever
+    their position.
+    """
+    builder.parse(
+        """
+        class Base:
+            def __init__(self):
+                pass
+
+            def reset(self):
+                # The assignment is between the if and the use in the other module.
+                self.x = None
+        """,
+        "guard_assignment_base",
+    )
+    node = builder.extract_node("""
+    from guard_assignment_base import Base
+
+    class A(Base):
+        def method(self):
+            if self.x is None:
+                self.x = 1
+            self.x  #@
+    """)
+
+    assert _values(node) == [1]

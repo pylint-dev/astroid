@@ -111,6 +111,9 @@ class BooleanConstraint(Constraint):
         - negate=False: satisfied if boolean value is True
         - negate=True: satisfied if boolean value is False
         """
+        # A container literal may have been mutated since it was built.
+        if isinstance(inferred, (nodes.List, nodes.Dict, nodes.Set)):
+            return True
         inferred_booleaness = inferred.bool_value()
         if inferred is util.Uninferable or inferred_booleaness is util.Uninferable:
             return True
@@ -341,8 +344,8 @@ def get_constraints(
     Constraints are computed statically by analysing the code surrounding expr.
     Currently this only supports constraints generated from if conditions,
     comprehension conditions, preceding operands in boolean operations, and
-    preceding guard statements: asserts, and ifs whose body ends with a return,
-    raise, continue or break.
+    preceding guard statements: asserts, ifs whose body ends with a return, raise,
+    continue or break, and ifs whose body assigns expr.
     """
     current_node: nodes.NodeNG | None = expr
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
@@ -351,14 +354,17 @@ def get_constraints(
         if isinstance(expr, (nodes.Attribute, nodes.AssignAttr))
         else expr.name
     )
-    # Guards before a function, lambda or class do not constrain its body: it may
-    # run later, after a reassignment.
+    # Guards before a function, lambda, class or generator expression do not
+    # constrain its body: it may run later, after a reassignment.
     collect_guards = True
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
         constraints: set[Constraint] | None = None
 
-        if isinstance(current_node, (nodes.FunctionDef, nodes.Lambda, nodes.ClassDef)):
+        if isinstance(
+            current_node,
+            (nodes.FunctionDef, nodes.Lambda, nodes.ClassDef, nodes.GeneratorExp),
+        ):
             collect_guards = False
         elif collect_guards and current_node.is_statement:
             if guards := _preceding_guards(current_node).get(name):
@@ -425,9 +431,10 @@ def constraint_applies(
     position = (stmt.lineno, stmt.col_offset)
     if None in start or None in position or position < start:
         return True
+    # A position in another module says nothing about when the assignment runs.
+    if stmt.root() is not constraint_stmt.root():
+        return True
     end = _unconstrained_range_end(constraint_stmt, expr)
-    # Skipping a constraint is always safe, so an assignment of another module
-    # in the range is not constrained either.
     return None in end or position > end
 
 
