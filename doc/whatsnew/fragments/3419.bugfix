@@ -1,0 +1,6 @@
+Fix ``__doc__`` and ``__annotations__`` of a lambda in the object model.
+Getting them raised ``AttributeError`` because the lambda has no docstring
+node and no return annotation. They are now ``None`` and an empty dict, as
+at runtime.
+
+Refs #3419
