@@ -181,13 +181,9 @@ def infer_func_form(
     return class_node, name, attributes
 
 
-def _has_namedtuple_base(node):
-    """Predicate for class inference tip.
-
-    :type node: ClassDef
-    :rtype: bool
-    """
-    return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
+def _has_namedtuple_base(node: nodes.ClassDef) -> bool:
+    """Predicate for class inference tip."""
+    return bool(set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES)
 
 
 def _looks_like(node, name) -> bool:
