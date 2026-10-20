@@ -33,6 +33,48 @@ urls."Discord server" = "https://discord.gg/Egy6P8AMB5"
 urls.Docs = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
 urls."Source Code" = "https://github.com/pylint-dev/astroid"
 
+[dependency-groups]
+dev = [
+  # Tools used when releasing
+  "contributors-txt>=1.1.3",
+  "tbump~=6.11",
+  "towncrier>=26.9",
+]
+test = [
+  # Packages used to run additional tests
+  "attrs",
+  "numpy>=2.2.6,<3; python_version<'3.12'",
+  "pyqt6",
+  "python-dateutil",
+  "regex",
+  # ``tests/testdata/python3/data/path_pkg_resources_1`` declares its
+  # namespace via ``pkg_resources``; pin setuptools to versions that still
+  # ship it (removed in 82.0.0). Applies on every supported Python.
+  "setuptools<82",
+  "six",
+  "typing-extensions>=4.4",
+  "urllib3>1,<2",
+  { include-group = "test-min" },
+]
+docs = [
+  "furo==2025.12.19",
+  "sphinx~=8.1",
+]
+lint = [
+  # Tools used during development, prefer running these with pre-commit
+  "black",
+  "pre-commit",
+  "pylint>=4.1.3",
+  "ruff",
+]
+test-min = [
+  # Tools used to run tests
+  "coverage[toml]~=7.16",
+  "mypy; platform_python_implementation!='PyPy'",
+  "pytest",
+  "pytest-cov~=7.1",
+]
+
 [tool.setuptools]
 dynamic.version = { attr = "astroid.__pkginfo__.__version__" }
 package-dir."" = "."
