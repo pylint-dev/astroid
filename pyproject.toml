@@ -43,7 +43,7 @@ dev = [
 test = [
   # Packages used to run additional tests
   "attrs",
-  "numpy>=2.2.6,<3; python_version<'3.12'",
+  "numpy>=2.4.6,<3; python_version<'3.12'",
   "pyqt6",
   "python-dateutil",
   "regex",
@@ -52,8 +52,8 @@ test = [
   # ship it (removed in 82.0.0). Applies on every supported Python.
   "setuptools<82",
   "six",
-  "typing-extensions>=4.4",
-  "urllib3>1,<2",
+  "typing-extensions>=4.16",
+  "urllib3>=1.26.20,<2",
   { include-group = "test-min" },
 ]
 docs = [
