@@ -407,13 +407,13 @@ class Module(LocalsDictNodeNG):
     def previous_sibling(self) -> None:
         """The previous sibling statement.
 
-        :returns: The previous sibling statement node.
+        A :class:`Module` has no sibling, so this is always ``None``.
         """
 
     def next_sibling(self) -> None:
         """The next sibling statement node.
 
-        :returns: The next sibling statement node.
+        A :class:`Module` has no sibling, so this is always ``None``.
         """
 
     _absolute_import_activated = True
