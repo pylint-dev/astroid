@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator, Iterator
+from collections.abc import Generator, Iterator, Sequence
 from functools import cached_property
 from functools import singledispatch as _singledispatch
 from typing import (
@@ -29,7 +29,12 @@ from astroid.manager import AstroidManager
 from astroid.nodes.as_string import AsStringVisitor
 from astroid.nodes.const import OP_PRECEDENCE
 from astroid.nodes.utils import Position
-from astroid.typing import InferenceErrorInfo, InferenceResult, InferFn
+from astroid.typing import (
+    InferenceErrorInfo,
+    InferenceResult,
+    InferFn,
+    SuccessfulInferenceResult,
+)
 
 if TYPE_CHECKING:
     from astroid.nodes import _base_nodes
@@ -122,7 +127,6 @@ class NodeNG:
         called instead of the default interface.
 
         :returns: The inferred values.
-        :rtype: Iterator
         """
         if context is None:
             context = InferenceContext()
@@ -258,11 +262,10 @@ class NodeNG:
             yield parent
             parent = parent.parent
 
-    def parent_of(self, node) -> bool:
+    def parent_of(self, node: SuccessfulInferenceResult) -> bool:
         """Check if this node is the parent of the given node.
 
         :param node: The node to check if it is the child.
-        :type node: NodeNG
 
         :returns: Whether this node is the parent of the given node.
         """
@@ -317,14 +320,12 @@ class NodeNG:
         assert isinstance(parent, nodes.Module)
         return parent
 
-    def child_sequence(self, child):
+    def child_sequence(self, child: NodeNG) -> Sequence[NodeNG]:
         """Search for the sequence that contains this child.
 
         :param child: The child node to search sequences for.
-        :type child: NodeNG
 
         :returns: The sequence containing the given child node.
-        :rtype: Iterator[NodeNG]
 
         :raises AstroidError: If no sequence could be found that contains
             the given child.
@@ -343,15 +344,13 @@ class NodeNG:
         msg = "Could not find %s in %s's children"
         raise AstroidError(msg % (repr(child), repr(self)))
 
-    def locate_child(self, child):
+    def locate_child(self, child: NodeNG) -> tuple[str, NodeNG | Sequence[NodeNG]]:
         """Find the field of this node that contains the given child.
 
         :param child: The child node to search fields for.
-        :type child: NodeNG
 
         :returns: A tuple of the name of the field that contains the child,
             and the sequence or node that contains the child node.
-        :rtype: tuple[str, Iterator[NodeNG] or NodeNG]
 
         :raises AstroidError: If no field could be found that contains
             the given child.
@@ -372,19 +371,17 @@ class NodeNG:
     # FIXME : should we merge child_sequence and locate_child ? locate_child
     # is only used in are_exclusive, child_sequence one time in pylint.
 
-    def next_sibling(self):
+    def next_sibling(self) -> NodeNG | None:
         """The next sibling statement node.
 
         :returns: The next sibling statement node.
-        :rtype: NodeNG or None
         """
         return self.parent.next_sibling()
 
-    def previous_sibling(self):
+    def previous_sibling(self) -> NodeNG | None:
         """The previous sibling statement.
 
         :returns: The previous sibling statement node.
-        :rtype: NodeNG or None
         """
         return self.parent.previous_sibling()
 
@@ -552,17 +549,16 @@ class NodeNG:
             "No inference function for {node!r}.", node=self, context=context
         )
 
-    def inferred(self):
+    def inferred(self) -> list[InferenceResult]:
         """Get a list of the inferred values.
 
         .. seealso:: :ref:`inference`
 
         :returns: The inferred values.
-        :rtype: list
         """
         return list(self.infer())
 
-    def instantiate_class(self):
+    def instantiate_class(self) -> SuccessfulInferenceResult:
         """Instantiate an instance of the defined class.
 
         .. note::
@@ -570,16 +566,14 @@ class NodeNG:
             On anything other than a :class:`ClassDef` this will return self.
 
         :returns: An instance of the defined class.
-        :rtype: object
         """
         return self
 
-    def has_base(self, node) -> bool:
+    def has_base(self, node: NodeNG) -> bool:
         """Check if this node inherits from the given type.
 
         :param node: The node defining the base to look for.
             Usually this is a :class:`Name` node.
-        :type node: NodeNG
         """
         return False
 
@@ -599,40 +593,33 @@ class NodeNG:
 
     def repr_tree(
         self,
-        ids=False,
-        include_linenos=False,
-        ast_state=False,
-        indent="   ",
-        max_depth=0,
-        max_width=80,
+        ids: bool = False,
+        include_linenos: bool = False,
+        ast_state: bool = False,
+        indent: str = "   ",
+        max_depth: int = 0,
+        max_width: int = 80,
     ) -> str:
         """Get a string representation of the AST from this node.
 
         :param ids: If true, includes the ids with the node type names.
-        :type ids: bool
 
         :param include_linenos: If true, includes the line numbers and
             column offsets.
-        :type include_linenos: bool
 
         :param ast_state: If true, includes information derived from
             the whole AST like local and global variables.
-        :type ast_state: bool
 
         :param indent: A string to use to indent the output string.
-        :type indent: str
 
         :param max_depth: If set to a positive integer, won't return
             nodes deeper than max_depth in the string.
-        :type max_depth: int
 
         :param max_width: Attempt to format the output string to stay
             within this number of characters, but can exceed it under some
             circumstances. Only positive integer values are valid, the default is 80.
-        :type max_width: int
 
         :returns: The string representation of the AST.
-        :rtype: str
         """
 
         # pylint: disable = too-many-statements
@@ -738,7 +725,9 @@ class NodeNG:
         _repr_tree(self, result, set())
         return "".join(result)
 
-    def bool_value(self, context: InferenceContext | None = None):
+    def bool_value(
+        self, context: InferenceContext | None = None
+    ) -> bool | util.UninferableBase:
         """Determine the boolean value of this node.
 
         The boolean value of a node can have three
@@ -754,7 +743,6 @@ class NodeNG:
               node's value.
 
         :returns: The boolean value of this node.
-        :rtype: bool or Uninferable
         """
         return util.Uninferable
 
