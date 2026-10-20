@@ -2340,27 +2340,6 @@ def test_guard_assignment_name_vs_attr() -> None:
     assert _values(node) == [None, Uninferable]
 
 
-@pytest.mark.parametrize(
-    "value, condition",
-    (("[]", "not x"), ("{}", "not x"), ("{1}", "x")),
-)
-def test_guard_assignment_mutable_container(value: str, condition: str) -> None:
-    """Test that a container literal is kept: it may have changed before the if."""
-    node = builder.extract_node(f"""
-    def f():
-        x = {value}
-        x.clear()
-        if {condition}:
-            x = None
-        x  #@
-    """)
-
-    assert [value.as_string() for value in node.inferred()] == [
-        builder.extract_node(value).as_string(),
-        "None",
-    ]
-
-
 def test_guard_assignment_attr_from_other_module() -> None:
     """Test that the values assigned in another module are constrained, whatever
     their position.

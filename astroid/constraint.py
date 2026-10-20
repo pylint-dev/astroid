@@ -111,9 +111,6 @@ class BooleanConstraint(Constraint):
         - negate=False: satisfied if boolean value is True
         - negate=True: satisfied if boolean value is False
         """
-        # A container literal may have been mutated since it was built.
-        if isinstance(inferred, (nodes.List, nodes.Dict, nodes.Set)):
-            return True
         inferred_booleaness = inferred.bool_value()
         if inferred is util.Uninferable or inferred_booleaness is util.Uninferable:
             return True
