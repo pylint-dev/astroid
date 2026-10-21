@@ -1587,6 +1587,8 @@ def test_infer_dict_from_keys() -> None:
     dict.fromkeys(some_other_value) #@
     dict.fromkeys([Unknown(), Unknown()]) #@
     dict.fromkeys([Unknown(), Unknown()]) #@
+    dict.fromkeys({(1, 2): 3}) #@
+    dict.fromkeys(1) #@
     """)
     for node in good_nodes:
         inferred = next(node.infer())

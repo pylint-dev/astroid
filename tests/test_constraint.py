@@ -12,6 +12,7 @@ import pytest
 
 from astroid import builder, nodes
 from astroid.bases import Instance
+from astroid.constraint import _CompoundConstraint
 from astroid.util import Uninferable
 
 
@@ -1800,3 +1801,9 @@ def test_callable_unsupported_pattern(condition: str) -> None:
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value is None
     assert inferred[1] is Uninferable
+
+
+def test_compound_constraint_only_matches_bool_op() -> None:
+    """Test that only boolean operations make a compound constraint."""
+    node = builder.extract_node("x")
+    assert _CompoundConstraint.match(node, node) is None
