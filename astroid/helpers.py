@@ -19,7 +19,7 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 from astroid.util import safe_infer
 
 
@@ -282,10 +282,11 @@ def _literal_hashable_value(
     raise InferenceError(node=node)
 
 
-def object_len(node, context: InferenceContext | None = None):
+def object_len(
+    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+) -> int:
     """Infer length of given node object.
 
-    :param Union[nodes.ClassDef, nodes.Instance] node:
     :param node: Node to infer length of
 
     :raises AstroidTypeError: If an invalid node is returned
@@ -293,7 +294,7 @@ def object_len(node, context: InferenceContext | None = None):
     :raises InferenceError: If the given node cannot be inferred
         or if multiple nodes are inferred or if the code executed in python
         would result in a infinite recursive check for length
-    :rtype int: Integer length of node
+    :returns: Integer length of node
     """
     # pylint: disable=import-outside-toplevel; circular import
     from astroid.objects import FrozenSet

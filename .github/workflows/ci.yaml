@@ -38,8 +38,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=base-venv-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_dev.txt',
-          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $GITHUB_OUTPUT
       - &cache-python
         name: Restore Python virtual environment
         id: cache-venv
@@ -55,7 +54,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip
-          pip install -U -r requirements_full.txt
+          pip install -U -e . --group test --group lint --group dev
       - name: Generate pre-commit restore key
         id: generate-pre-commit-key
         run: >-
@@ -77,6 +76,10 @@ jobs:
         run: |
           . venv/bin/activate
           pre-commit run --hook-stage manual pylint-ci --all-files
+      - name: Run pyright
+        run: |
+          . venv/bin/activate
+          pre-commit run pyright --all-files
 
   tests-linux:
     name: tests / run / ${{ matrix.python-version }} / Linux
@@ -85,8 +88,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version:
-          &matrix-python-version ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15-dev"]
+        python-version: &matrix-python-version ["3.11", "3.12", "3.13", "3.14", "3.15"]
     outputs:
       python-key: ${{ steps.generate-python-key.outputs.key }}
     steps:
@@ -98,17 +100,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
           check-latest: true
-      - name: Install Qt
-        if: ${{ matrix.python-version == '3.10' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install build-essential libgl1-mesa-dev
       - name: Generate partial Python venv restore key
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_dev.txt',
-          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $GITHUB_OUTPUT
       - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
@@ -116,14 +112,13 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip wheel
-          pip install -U -r requirements_full.txt
-          pip install -e .
+          pip install -U -e . --group test
       - name: Run pytest
         run: |
           . venv/bin/activate
           pytest --cov
       - name: Upload coverage artifact
-        uses: &actions-upload-artifact actions/upload-artifact@v7.0.1
+        uses: &actions-upload-artifact actions/upload-artifact@v7.0.2
         with:
           name: coverage-linux-${{ matrix.python-version }}
           path: .coverage
@@ -137,7 +132,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15-dev"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
     steps:
       - name: Set temp directory
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
@@ -156,8 +151,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_dev.txt',
-          'requirements_full.txt', 'requirements_minimal.txt') }}" >> $env:GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $env:GITHUB_OUTPUT
       - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
@@ -165,8 +159,7 @@ jobs:
           python -m venv venv
           . venv\\Scripts\\activate
           python -m pip install -U pip
-          pip install -U -r requirements_full.txt
-          pip install -e .
+          pip install -U -e . --group test
       - name: Run pytest
         run: |
           . venv\\Scripts\\activate
@@ -186,7 +179,7 @@ jobs:
       fail-fast: false
       matrix:
         # We only test on the lowest and highest supported PyPy versions
-        python-version: ["pypy3.10"]
+        python-version: ["pypy3.11"]
     steps:
       - *checkout
       - *setup-python-matrix
@@ -194,8 +187,7 @@ jobs:
         id: generate-python-key
         run: >-
           echo "key=${{ env.KEY_PREFIX }}-${{ env.CACHE_VERSION }}-${{
-            hashFiles('pyproject.toml', 'requirements_minimal.txt')
-          }}" >> $GITHUB_OUTPUT
+            hashFiles('pyproject.toml') }}" >> $GITHUB_OUTPUT
       - *cache-python
       - name: Create Python virtual environment
         if: steps.cache-venv.outputs.cache-hit != 'true'
@@ -203,8 +195,7 @@ jobs:
           python -m venv venv
           . venv/bin/activate
           python -m pip install -U pip
-          pip install -U -r requirements_minimal.txt
-          pip install -e .
+          pip install -U -e . --group test-min
       - name: Run pytest
         run: |
           . venv/bin/activate
@@ -225,9 +216,11 @@ jobs:
       - *checkout
       - *setup-python-default
       - name: Install dependencies
-        run: pip install -U -r requirements_minimal.txt
+        run: |
+          python -m pip install -U pip
+          pip install -U --group test-min
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v8.0.1
+        uses: actions/download-artifact@v8.0.2
       - name: Combine Linux coverage results
         run: |
           coverage combine coverage-linux*/.coverage

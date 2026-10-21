@@ -545,16 +545,7 @@ class EnumBrainTest(unittest.TestCase):
         another user-defined enum class.
         """
         enum_class_node, enum_member_value_node = astroid.extract_node("""
-        import sys
-
-        from enum import Enum
-
-        if sys.version_info >= (3, 11):
-            from enum import StrEnum
-        else:
-            class StrEnum(str, Enum):
-                pass
-
+        from enum import StrEnum
 
         class Color(StrEnum): #@
             RED = "red"

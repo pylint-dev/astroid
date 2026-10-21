@@ -9,7 +9,7 @@ readme = "README.rst"
 keywords = [ "abstract syntax tree", "python", "static code analysis" ]
 license = "LGPL-2.1-OR-later"
 license-files = [ "LICENSE", "CONTRIBUTORS.txt" ]
-requires-python = ">=3.10.0"
+requires-python = ">=3.11.0"
 classifiers = [
   "Development Status :: 6 - Mature",
   "Environment :: Console",
@@ -17,7 +17,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -29,13 +28,52 @@ classifiers = [
   "Topic :: Software Development :: Testing",
 ]
 dynamic = [ "version" ]
-dependencies = [
-  "typing-extensions>=4; python_version<'3.11'",
-]
 urls."Bug tracker" = "https://github.com/pylint-dev/astroid/issues"
 urls."Discord server" = "https://discord.gg/Egy6P8AMB5"
 urls.Docs = "https://pylint.readthedocs.io/projects/astroid/en/latest/"
 urls."Source Code" = "https://github.com/pylint-dev/astroid"
+
+[dependency-groups]
+dev = [
+  # Tools used when releasing
+  "contributors-txt>=1.1.3",
+  "tbump~=6.11",
+  "towncrier>=26.9",
+]
+test = [
+  # Packages used to run additional tests
+  "attrs",
+  "numpy>=2.4.6,<3; python_version<'3.12'",
+  "pyqt6",
+  "python-dateutil",
+  "regex",
+  # ``tests/testdata/python3/data/path_pkg_resources_1`` declares its
+  # namespace via ``pkg_resources``; pin setuptools to versions that still
+  # ship it (removed in 82.0.0). Applies on every supported Python.
+  "setuptools<82",
+  "six",
+  "typing-extensions>=4.16",
+  "urllib3>=1.26.20,<2",
+  { include-group = "test-min" },
+]
+docs = [
+  "furo==2025.12.19",
+  "sphinx~=8.1",
+]
+lint = [
+  # Tools used during development, prefer running these with pre-commit
+  "black",
+  "pre-commit",
+  "pylint>=4.1.3",
+  "ruff",
+]
+test-min = [
+  # Tools used to run tests
+  "coverage[toml]~=7.16",
+  "mypy; platform_python_implementation!='PyPy'",
+  "pytest",
+  "pytest-cov~=7.1",
+]
 
 [tool.setuptools]
 dynamic.version = { attr = "astroid.__pkginfo__.__version__" }
@@ -43,7 +81,7 @@ package-dir."" = "."
 packages.find.include = [ "astroid*" ]
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 # ruff is less lenient than pylint and does not make any exceptions
 # (for docstrings, strings and comments in particular).
 line-length = 110
@@ -107,15 +145,19 @@ report.exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 files = [
+  "astroid/__main__.py",
+  "astroid/__pkginfo__.py",
   "astroid/_ast.py",
   "astroid/astroid_manager.py",
+  "astroid/brain/__init__.py",
   "astroid/brain/brain_crypt.py",
   "astroid/brain/brain_ctypes.py",
   "astroid/brain/brain_curses.py",
   "astroid/brain/brain_datetime.py",
   "astroid/brain/brain_dateutil.py",
+  "astroid/brain/brain_decimal.py",
   "astroid/brain/brain_hashlib.py",
   "astroid/brain/brain_http.py",
   "astroid/brain/brain_hypothesis.py",
@@ -137,17 +179,21 @@ files = [
   "astroid/brain/brain_ssl.py",
   "astroid/brain/brain_subprocess.py",
   "astroid/brain/brain_threading.py",
+  "astroid/brain/brain_type.py",
   "astroid/brain/brain_unittest.py",
   "astroid/brain/brain_uuid.py",
   "astroid/const.py",
   "astroid/context.py",
+  "astroid/interpreter/__init__.py",
   "astroid/interpreter/_import/",
   "astroid/modutils.py",
   "astroid/nodes/const.py",
+  "astroid/nodes/scoped_nodes/__init__.py",
   "astroid/nodes/utils.py",
+  "astroid/transforms.py",
+  "astroid/typing.py",
 ]
 always_false = [
-  "PY311_PLUS",
   "PY312_PLUS",
   "PY313_PLUS",
 ]
@@ -173,5 +219,61 @@ module = [
 ]
 ignore_missing_imports = true
 
+[tool.pyright]
+include = [ "astroid" ]
+# Files with errors to fix. Remove a file from this list once it is clean.
+exclude = [
+  "astroid/arguments.py",
+  "astroid/bases.py",
+  "astroid/brain/brain_argparse.py",
+  "astroid/brain/brain_attrs.py",
+  "astroid/brain/brain_boto3.py",
+  "astroid/brain/brain_builtin_inference.py",
+  "astroid/brain/brain_collections.py",
+  "astroid/brain/brain_dataclasses.py",
+  "astroid/brain/brain_functools.py",
+  "astroid/brain/brain_gi.py",
+  "astroid/brain/brain_hashlib.py",
+  "astroid/brain/brain_hypothesis.py",
+  "astroid/brain/brain_io.py",
+  "astroid/brain/brain_multiprocessing.py",
+  "astroid/brain/brain_namedtuple_enum.py",
+  "astroid/brain/brain_numpy_core_numerictypes.py",
+  "astroid/brain/brain_numpy_ndarray.py",
+  "astroid/brain/brain_numpy_utils.py",
+  "astroid/brain/brain_pathlib.py",
+  "astroid/brain/brain_qt.py",
+  "astroid/brain/brain_random.py",
+  "astroid/brain/brain_re.py",
+  "astroid/brain/brain_regex.py",
+  "astroid/brain/brain_six.py",
+  "astroid/brain/brain_statistics.py",
+  "astroid/brain/brain_typing.py",
+  "astroid/brain/brain_uuid.py",
+  "astroid/brain/helpers.py",
+  "astroid/builder.py",
+  "astroid/constraint.py",
+  "astroid/filter_statements.py",
+  "astroid/helpers.py",
+  "astroid/interpreter/_import/spec.py",
+  "astroid/interpreter/objectmodel.py",
+  "astroid/manager.py",
+  "astroid/nodes/_base_nodes.py",
+  "astroid/nodes/as_string.py",
+  "astroid/nodes/node_classes.py",
+  "astroid/nodes/node_ng.py",
+  "astroid/nodes/scoped_nodes/mixin.py",
+  "astroid/nodes/scoped_nodes/scoped_nodes.py",
+  "astroid/nodes/scoped_nodes/utils.py",
+  "astroid/objects.py",
+  "astroid/protocols.py",
+  "astroid/raw_building.py",
+  "astroid/rebuilder.py",
+  "astroid/test_utils.py",
+  "astroid/util.py",
+]
+pythonVersion = "3.11"
+
 [tool.aliases]
+
 test = "pytest"

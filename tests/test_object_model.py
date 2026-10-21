@@ -9,7 +9,6 @@ import pytest
 
 import astroid
 from astroid import bases, builder, nodes, objects, util
-from astroid.const import PY311_PLUS
 from astroid.exceptions import InferenceError
 
 try:
@@ -785,17 +784,11 @@ class ExceptionModelTest(unittest.TestCase):
         assert isinstance(args, astroid.Instance)
         assert args.qname() == "builtins.tuple"
         tb = next(ast_nodes[1].infer())
-        # Python 3.11: If 'contextlib' is loaded, '__traceback__'
-        # could be set inside '__exit__' method in
-        # which case 'err.__traceback__' will be 'Uninferable'
-        try:
+        # If 'contextlib' is loaded, '__traceback__' could be set inside
+        # '__exit__' method in which case 'err.__traceback__' will be 'Uninferable'
+        if tb is not util.Uninferable:
             assert isinstance(tb, astroid.Instance)
             assert tb.name == "traceback"
-        except AssertionError:
-            if PY311_PLUS:
-                assert tb == util.Uninferable
-            else:
-                raise
 
         with pytest.raises(InferenceError):
             next(ast_nodes[2].infer())

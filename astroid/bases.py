@@ -14,7 +14,6 @@ from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 from astroid import decorators, nodes
-from astroid.const import PY311_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -39,10 +38,12 @@ if TYPE_CHECKING:
     from astroid.constraint import Constraint
 
 
-PROPERTIES = {"builtins.property", "abc.abstractproperty", "functools.cached_property"}
-# enum.property was added in Python 3.11
-if PY311_PLUS:
-    PROPERTIES.add("enum.property")
+PROPERTIES = {
+    "builtins.property",
+    "abc.abstractproperty",
+    "functools.cached_property",
+    "enum.property",
+}
 
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be
