@@ -2277,13 +2277,13 @@ class ClassDef(
                                 continue
                             yielded.add(grandpa)
                             yield grandpa
-                        # If ``baseobj`` is still parked on the sentinel
-                        # we just unwound a cyclic re-entry; the result
-                        # is missing baseobj's transitive ancestors.
-                        if (
-                            _incomplete is not None
-                            and baseobj.__dict__.get("_cached_ancestors")
-                            is _COMPUTING_ANCESTORS
+                        # If ``baseobj`` did not cache its ancestors, its own
+                        # walk was provisional: either it is still parked on
+                        # the sentinel (we just unwound a cyclic re-entry) or
+                        # it hit an unresolved base. Either way the result is
+                        # missing some of baseobj's transitive ancestors.
+                        if _incomplete is not None and not isinstance(
+                            baseobj.__dict__.get("_cached_ancestors"), tuple
                         ):
                             _incomplete[0] = True
                     if not saw_class and _incomplete is not None:

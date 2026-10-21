@@ -3048,6 +3048,23 @@ class TestAncestorsCaching:
             klass.__dict__["_cached_ancestors"], tuple
         )
 
+    @staticmethod
+    def test_incomplete_base_walk_is_not_cached() -> None:
+        """A class does not cache ancestors that one of its bases could not resolve.
+
+        ``Base`` drops its own partial cache because ``missing`` cannot be
+        inferred; ``Leaf`` would otherwise keep that partial walk forever, as
+        it did for ``urllib.parse.ParseResult`` when its namedtuple base was
+        not inferred yet.
+        """
+        leaf = extract_node("""
+            class Base(missing): pass
+            class Leaf(Base):  #@
+                pass
+        """)
+        assert [a.name for a in leaf.ancestors(recurs=True)] == ["Base"]
+        assert "_cached_ancestors" not in leaf.__dict__
+
     def test_exception_during_walk_clears_sentinel(self) -> None:
         """If the walk raises, the ``_COMPUTING_ANCESTORS`` sentinel is removed.
 
