@@ -949,14 +949,13 @@ def infer_int(node, context: InferenceContext | None = None):
         if isinstance(first_value, util.UninferableBase):
             raise UseInferenceDefault
 
-        if isinstance(first_value, nodes.Const) and isinstance(
-            first_value.value, (int, str)
-        ):
-            try:
-                actual_value = int(first_value.value)
-            except ValueError:
-                return nodes.Const(0)
-            return nodes.Const(actual_value)
+        match first_value:
+            case nodes.Const(value=int() | str() as value):
+                try:
+                    actual_value = int(value)
+                except ValueError:
+                    return nodes.Const(0)
+                return nodes.Const(actual_value)
 
     return nodes.Const(0)
 
