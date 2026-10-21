@@ -1162,12 +1162,11 @@ def match_as_assigned_stmts(
     """Infer MatchAs as the Match subject if it's the only MatchCase pattern
     else raise StopIteration to yield Uninferable.
     """
-    if (
-        isinstance(self.parent, nodes.MatchCase)
-        and isinstance(self.parent.parent, nodes.Match)
-        and self.pattern is None
-    ):
-        yield self.parent.parent.subject
+    match self.parent:
+        case nodes.MatchCase(parent=nodes.Match(subject=subject)) if (
+            self.pattern is None
+        ):
+            yield subject
 
 
 @decorators.yes_if_nothing_inferred
