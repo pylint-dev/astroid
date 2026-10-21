@@ -251,15 +251,13 @@ def _get_previous_field_default(node: nodes.ClassDef, name: str) -> nodes.NodeNG
             continue
         if name in base.locals:
             for assign in base.locals[name]:
-                if (
-                    isinstance(assign.parent, nodes.AnnAssign)
-                    and assign.parent.value
-                    and isinstance(assign.parent.value, nodes.Call)
-                    and _looks_like_dataclass_field_call(assign.parent.value)
-                ):
-                    default = _get_field_default(assign.parent.value)
-                    if default:
-                        return default[1]
+                match assign.parent:
+                    case nodes.AnnAssign(
+                        value=nodes.Call() as call
+                    ) if _looks_like_dataclass_field_call(call):
+                        default = _get_field_default(call)
+                        if default:
+                            return default[1]
     return None
 
 
