@@ -438,16 +438,13 @@ class OperatorNode(NodeNG):
         method = methods[0]
         context.callcontext.callee = method
 
-        if (
-            isinstance(instance, nodes.Const)
-            and isinstance(instance.value, (str, bytes))
-            and op == "%"
-        ):
-            return iter(
-                OperatorNode._infer_old_style_string_formatting(
-                    instance, other, context
+        match instance:
+            case nodes.Const(value=str() | bytes()) if op == "%":
+                return iter(
+                    OperatorNode._infer_old_style_string_formatting(
+                        instance, other, context
+                    )
                 )
-            )
 
         try:
             inferred = next(method.infer(context=context))
