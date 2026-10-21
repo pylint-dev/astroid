@@ -287,16 +287,15 @@ def object_len(node, context: InferenceContext | None = None):
         )
         raise InferenceError(message)
 
-    if inferred_node is None or isinstance(inferred_node, util.UninferableBase):
-        raise InferenceError(node=node)
-    if isinstance(inferred_node, nodes.Const) and isinstance(
-        inferred_node.value, (bytes, str)
-    ):
-        return len(inferred_node.value)
-    if isinstance(inferred_node, (nodes.List, nodes.Set, nodes.Tuple, FrozenSet)):
-        return len(inferred_node.elts)
-    if isinstance(inferred_node, nodes.Dict):
-        return len(inferred_node.items)
+    match inferred_node:
+        case None | util.UninferableBase():
+            raise InferenceError(node=node)
+        case nodes.Const(value=bytes() | str() as value):
+            return len(value)
+        case nodes.List() | nodes.Set() | nodes.Tuple() | FrozenSet():
+            return len(inferred_node.elts)
+        case nodes.Dict(items=items):
+            return len(items)
 
     node_type = object_type(inferred_node, context=context)
     if not node_type:
