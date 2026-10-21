@@ -79,12 +79,8 @@ class TreeRebuilder:
     def _get_doc(self, node: T_Doc) -> tuple[T_Doc, ast.Constant | None]:
         """Return the doc ast node."""
         try:
-            if node.body and isinstance(node.body[0], ast.Expr):
-                first_value = node.body[0].value
-                if isinstance(first_value, ast.Constant) and isinstance(
-                    first_value.value, str
-                ):
-                    doc_ast_node = first_value
+            match node.body:
+                case [ast.Expr(value=ast.Constant(value=str()) as doc_ast_node), *_]:
                     node.body = node.body[1:]
                     return node, doc_ast_node
         except IndexError:
