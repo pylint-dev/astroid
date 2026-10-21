@@ -50,7 +50,7 @@ test = [
   # ``tests/testdata/python3/data/path_pkg_resources_1`` declares its
   # namespace via ``pkg_resources``; pin setuptools to versions that still
   # ship it (removed in 82.0.0). Applies on every supported Python.
-  "setuptools<82",
+  "setuptools<85",
   "six",
   "typing-extensions>=4.16",
   "urllib3>=1.26.20,<2",
@@ -58,7 +58,7 @@ test = [
 ]
 docs = [
   "furo==2025.12.19",
-  "sphinx~=8.1",
+  "sphinx>=8.1,<10.0",
 ]
 lint = [
   # Tools used during development, prefer running these with pre-commit
