@@ -53,15 +53,12 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
     Match = type(...)
     ```
     """
-    return (
-        node.root().name == "re"
-        and isinstance(node.func, nodes.Name)
-        and node.func.name == "type"
-        and isinstance(node.parent, nodes.Assign)
-        and len(node.parent.targets) == 1
-        and isinstance(node.parent.targets[0], nodes.AssignName)
-        and node.parent.targets[0].name in {"Pattern", "Match"}
-    )
+    match node.func, node.parent:
+        case nodes.Name(name="type"), nodes.Assign(
+            targets=[nodes.AssignName(name="Pattern" | "Match")]
+        ):
+            return node.root().name == "re"
+    return False
 
 
 def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None = None):
