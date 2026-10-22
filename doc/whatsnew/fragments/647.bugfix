@@ -1,0 +1,4 @@
+Calls to user-defined functions and methods named ``sample`` no longer
+use the inference result for ``random.sample``.
+
+Refs #647
