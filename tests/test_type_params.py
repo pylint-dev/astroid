@@ -42,7 +42,7 @@ def test_type_alias() -> None:
     assert node.statement() is node
 
     assigned = next(node.assigned_stmts())
-    assert assigned is node.value
+    assert assigned.qname() == "typing.TypeAliasType"
 
 
 def test_type_var() -> None:
