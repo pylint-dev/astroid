@@ -191,6 +191,18 @@ def _infer_stmts(
                 ):
                     yield inf
                     inferred = True
+                    continue
+                # pylint: disable-next=import-outside-toplevel
+                from astroid import objects
+
+                if isinstance(inf, objects.Property) and isinstance(
+                    stmt, nodes.FunctionDef
+                ):
+                    # The constraints apply to the value of the property, not to the
+                    # property itself, see ClassDef.igetattr. A property read from
+                    # the class is the property itself, and is constrained as such.
+                    yield inf
+                    inferred = True
                 else:
                     constraint_failed = True
         except NameInferenceError:

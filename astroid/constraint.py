@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from typing import Self
 
 from astroid import bases, helpers, nodes, util
@@ -386,6 +386,30 @@ def get_constraints(
         current_node = parent
 
     return constraints_mapping
+
+
+def filter_by_constraints(
+    values: Iterable[InferenceResult], name: str, context: InferenceContext
+) -> Iterator[InferenceResult]:
+    """Yield the values that satisfy the constraints on name in context.
+
+    This is for values that do not come from an assignment, such as the results
+    of a property, so every constraint on name applies to them.
+    """
+    constraints = [
+        constraint
+        for potential_constraints in context.constraints.get(name, {}).values()
+        for constraint in potential_constraints
+    ]
+    inferred = constraint_failed = False
+    for value in values:
+        if all(constraint.satisfied_by(value, context) for constraint in constraints):
+            inferred = True
+            yield value
+        else:
+            constraint_failed = True
+    if constraint_failed and not inferred:
+        yield util.Uninferable
 
 
 def _add_ifs_constraints(
