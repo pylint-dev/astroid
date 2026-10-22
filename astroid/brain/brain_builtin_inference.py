@@ -193,32 +193,21 @@ def on_bootstrap():
 
 
 def _builtin_filter_predicate(node, builtin_name) -> bool:
-    # pylint: disable = too-many-boolean-expressions
-    if (
-        builtin_name == "type"
-        and node.root().name == "re"
-        and isinstance(node.func, nodes.Name)
-        and node.func.name == "type"
-        and isinstance(node.parent, nodes.Assign)
-        and len(node.parent.targets) == 1
-        and isinstance(node.parent.targets[0], nodes.AssignName)
-        and node.parent.targets[0].name in {"Pattern", "Match"}
-    ):
-        # Handle re.Pattern and re.Match in brain_re
-        # Match these patterns from stdlib/re.py
-        # ```py
-        # Pattern = type(...)
-        # Match = type(...)
-        # ```
-        return False
-    if isinstance(node.func, nodes.Name):
-        return node.func.name == builtin_name
-    if isinstance(node.func, nodes.Attribute):
-        return (
-            node.func.attrname == "fromkeys"
-            and isinstance(node.func.expr, nodes.Name)
-            and node.func.expr.name == "dict"
-        )
+    match node.func, node.parent:
+        case nodes.Name(name="type"), nodes.Assign(
+            targets=[nodes.AssignName(name="Pattern" | "Match")]
+        ) if (builtin_name == "type" and node.root().name == "re"):
+            # Handle re.Pattern and re.Match in brain_re
+            # Match these patterns from stdlib/re.py
+            # ```py
+            # Pattern = type(...)
+            # Match = type(...)
+            # ```
+            return False
+        case nodes.Name(name=name), _:
+            return name == builtin_name
+        case nodes.Attribute(attrname="fromkeys", expr=nodes.Name(name="dict")), _:
+            return True
     return False
 
 
@@ -962,14 +951,13 @@ def infer_int(node: nodes.Call, context: InferenceContext | None = None) -> node
         if isinstance(first_value, util.UninferableBase):
             raise UseInferenceDefault
 
-        if isinstance(first_value, nodes.Const) and isinstance(
-            first_value.value, (int, str)
-        ):
-            try:
-                actual_value = int(first_value.value)
-            except ValueError:
-                return nodes.Const(0)
-            return nodes.Const(actual_value)
+        match first_value:
+            case nodes.Const(value=int() | str() as value):
+                try:
+                    actual_value = int(value)
+                except ValueError:
+                    return nodes.Const(0)
+                return nodes.Const(actual_value)
 
     return nodes.Const(0)
 

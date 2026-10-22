@@ -59,12 +59,10 @@ class NoneConstraint(Constraint):
 
         Negate the constraint based on the value of negate.
         """
-        if isinstance(expr, nodes.Compare) and len(expr.ops) == 1:
-            left = expr.left
-            op, right = expr.ops[0]
-            if op in {"is", "is not"} and (
-                _matches(left, node) and _matches(right, cls.CONST_NONE)
-            ):
+        match expr:
+            case nodes.Compare(
+                left=left, ops=[("is" | "is not" as op, right)]
+            ) if _matches(left, node) and _matches(right, cls.CONST_NONE):
                 negate = (op == "is" and negate) or (op == "is not" and not negate)
                 return cls(node=node, negate=negate)
 
@@ -129,15 +127,11 @@ class TypeConstraint(Constraint):
         """Return a new constraint for node if expr matches the
         "isinstance(x, y)" pattern. Else, return None.
         """
-        is_instance_call = (
-            isinstance(expr, nodes.Call)
-            and isinstance(expr.func, nodes.Name)
-            and expr.func.name == "isinstance"
-            and not expr.keywords
-            and len(expr.args) == 2
-        )
-        if is_instance_call and _matches(expr.args[0], node):
-            return cls(node=node, classinfo=expr.args[1], negate=negate)
+        match expr:
+            case nodes.Call(
+                func=nodes.Name(name="isinstance"), args=[subject, classinfo]
+            ) if not expr.keywords and _matches(subject, node):
+                return cls(node=node, classinfo=classinfo, negate=negate)
 
         return None
 
@@ -180,15 +174,11 @@ class CallableConstraint(Constraint):
         """Return a new constraint for node if expr matches the "callable(x)"
         pattern. Else, return None.
         """
-        is_callable_call = (
-            isinstance(expr, nodes.Call)
-            and isinstance(expr.func, nodes.Name)
-            and expr.func.name == "callable"
-            and not expr.keywords
-            and len(expr.args) == 1
-        )
-        if is_callable_call and _matches(expr.args[0], node):
-            return cls(node=node, negate=negate)
+        match expr:
+            case nodes.Call(
+                func=nodes.Name(name="callable"), args=[subject]
+            ) if not expr.keywords and _matches(subject, node):
+                return cls(node=node, negate=negate)
 
         return None
 
@@ -230,15 +220,13 @@ class EqualityConstraint(Constraint):
 
         Return None if no pattern matches.
         """
-        if isinstance(expr, nodes.Compare) and len(expr.ops) == 1:
-            left = expr.left
-            op, right = expr.ops[0]
-            matches_left = _matches(left, node)
-
-            if op in {"==", "!="} and (matches_left or _matches(right, node)):
-                operand = right if matches_left else left
-                negate = (op == "==" and negate) or (op == "!=" and not negate)
-                return cls(node=node, operand=operand, negate=negate)
+        match expr:
+            case nodes.Compare(left=left, ops=[("==" | "!=" as op, right)]):
+                matches_left = _matches(left, node)
+                if matches_left or _matches(right, node):
+                    operand = right if matches_left else left
+                    negate = (op == "==" and negate) or (op == "!=" and not negate)
+                    return cls(node=node, operand=operand, negate=negate)
 
         return None
 
@@ -259,10 +247,9 @@ class EqualityConstraint(Constraint):
         if operand_inferred is util.Uninferable or operand_inferred is None:
             return True
 
-        if isinstance(inferred, nodes.Const) and isinstance(
-            operand_inferred, nodes.Const
-        ):
-            return self.negate ^ (inferred.value == operand_inferred.value)
+        match inferred, operand_inferred:
+            case nodes.Const(value=value), nodes.Const(value=operand_value):
+                return self.negate ^ (value == operand_value)
 
         if inferred.callable() and operand_inferred.callable():
             return self.negate ^ (inferred is operand_inferred)

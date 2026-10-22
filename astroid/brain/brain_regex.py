@@ -59,15 +59,12 @@ def _looks_like_pattern_or_match(node: nodes.Call) -> bool:
     Older versions of regex define these in ``regex.regex``, newer versions
     define them in ``regex._main``.
     """
-    return (
-        node.root().name in {"regex.regex", "regex._main"}
-        and isinstance(node.func, nodes.Name)
-        and node.func.name == "type"
-        and isinstance(node.parent, nodes.Assign)
-        and len(node.parent.targets) == 1
-        and isinstance(node.parent.targets[0], nodes.AssignName)
-        and node.parent.targets[0].name in {"Pattern", "Match"}
-    )
+    match node.func, node.parent:
+        case nodes.Name(name="type"), nodes.Assign(
+            targets=[nodes.AssignName(name="Pattern" | "Match")]
+        ):
+            return node.root().name in {"regex.regex", "regex._main"}
+    return False
 
 
 def infer_pattern_match(node: nodes.Call, ctx: context.InferenceContext | None = None):

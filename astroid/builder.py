@@ -335,32 +335,29 @@ def _extract_expressions(node: nodes.NodeNG) -> Iterator[nodes.NodeNG]:
     :yields: The sequence of wrapped expressions on the modified tree
     expression can be found.
     """
-    if (
-        isinstance(node, nodes.Call)
-        and isinstance(node.func, nodes.Name)
-        and node.func.name == _TRANSIENT_FUNCTION
-        and node.args
-    ):
-        real_expr = node.args[0]
-        assert node.parent
-        real_expr.parent = node.parent
-        # Search for node in all _astng_fields (the fields checked when
-        # get_children is called) of its parent. Some of those fields may
-        # be lists or tuples, in which case the elements need to be checked.
-        # When we find it, replace it by real_expr, so that the AST looks
-        # like no call to _TRANSIENT_FUNCTION ever took place.
-        for name in node.parent._astroid_fields:
-            child = getattr(node.parent, name)
-            if isinstance(child, list):
-                for idx, compound_child in enumerate(child):
-                    if compound_child is node:
-                        child[idx] = real_expr
-            elif child is node:
-                setattr(node.parent, name, real_expr)
-        yield real_expr
-    else:
-        for child in node.get_children():
-            yield from _extract_expressions(child)
+    match node:
+        case nodes.Call(func=nodes.Name(name=func_name), args=[real_expr, *_]) if (
+            func_name == _TRANSIENT_FUNCTION
+        ):
+            assert node.parent
+            real_expr.parent = node.parent
+            # Search for node in all _astng_fields (the fields checked when
+            # get_children is called) of its parent. Some of those fields may
+            # be lists or tuples, in which case the elements need to be checked.
+            # When we find it, replace it by real_expr, so that the AST looks
+            # like no call to _TRANSIENT_FUNCTION ever took place.
+            for name in node.parent._astroid_fields:
+                child = getattr(node.parent, name)
+                if isinstance(child, list):
+                    for idx, compound_child in enumerate(child):
+                        if compound_child is node:
+                            child[idx] = real_expr
+                elif child is node:
+                    setattr(node.parent, name, real_expr)
+            yield real_expr
+        case _:
+            for child in node.get_children():
+                yield from _extract_expressions(child)
 
 
 def _find_statement_by_line(node: nodes.NodeNG, line: int) -> nodes.NodeNG | None:

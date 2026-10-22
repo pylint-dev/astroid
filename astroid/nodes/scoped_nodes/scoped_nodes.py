@@ -855,16 +855,11 @@ def _infer_decorator_callchain(node):
             return None
         # Determine if this function is decorated with one of the builtin descriptors we want.
         for decorator in result.decorators.nodes:
-            if isinstance(decorator, node_classes.Name):
-                if decorator.name in BUILTIN_DESCRIPTORS:
-                    return decorator.name
-            if (
-                isinstance(decorator, node_classes.Attribute)
-                and isinstance(decorator.expr, node_classes.Name)
-                and decorator.expr.name == "builtins"
-                and decorator.attrname in BUILTIN_DESCRIPTORS
-            ):
-                return decorator.attrname
+            match decorator:
+                case node_classes.Name(name=name) | node_classes.Attribute(
+                    expr=node_classes.Name(name="builtins"), attrname=name
+                ) if (name in BUILTIN_DESCRIPTORS):
+                    return name
     return None
 
 
@@ -1317,29 +1312,23 @@ class FunctionDef(
             return type_name
 
         for node in self.decorators.nodes:
-            if isinstance(node, node_classes.Name):
-                if node.name in BUILTIN_DESCRIPTORS:
-                    return node.name
-            if (
-                isinstance(node, node_classes.Attribute)
-                and isinstance(node.expr, node_classes.Name)
-                and node.expr.name == "builtins"
-                and node.attrname in BUILTIN_DESCRIPTORS
-            ):
-                return node.attrname
-
-            if isinstance(node, node_classes.Call):
-                # Handle the following case:
-                # @some_decorator(arg1, arg2)
-                # def func(...)
-                #
-                try:
-                    current = next(node.func.infer())
-                except (InferenceError, StopIteration):
-                    continue
-                _type = _infer_decorator_callchain(current)
-                if _type is not None:
-                    return _type
+            match node:
+                case node_classes.Name(name=name) | node_classes.Attribute(
+                    expr=node_classes.Name(name="builtins"), attrname=name
+                ) if (name in BUILTIN_DESCRIPTORS):
+                    return name
+                case node_classes.Call():
+                    # Handle the following case:
+                    # @some_decorator(arg1, arg2)
+                    # def func(...)
+                    #
+                    try:
+                        current = next(node.func.infer())
+                    except (InferenceError, StopIteration):
+                        continue
+                    _type = _infer_decorator_callchain(current)
+                    if _type is not None:
+                        return _type
 
             try:
                 for inferred in node.infer():
