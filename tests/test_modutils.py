@@ -11,7 +11,8 @@ import os
 import shutil
 import sys
 import tempfile
-import unittest
+import types
+import unittest.mock
 import xml
 from pathlib import Path
 from xml.etree import ElementTree
@@ -21,6 +22,7 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
+from astroid.const import IS_PYPY
 from astroid.interpreter._import import spec
 
 from . import resources
@@ -675,3 +677,45 @@ def test_no_import_done_for_submodule_sharing_std_lib_name() -> None:
             )
     finally:
         sys.path.pop(0)
+
+
+@pytest.mark.skipif(IS_PYPY, reason="PyPy has no frozen modules")
+def test_frozen_module_found_without_file() -> None:
+    found = spec.find_spec(["_frozen_importlib"])
+    assert found.type is spec.ModuleType.PY_FROZEN
+
+
+def test_frozen_module_alias_found_without_import() -> None:
+    """A frozen module aliased in sys.modules is found without importing anything,
+    like collections.abc which aliases _collections_abc on Python >= 3.13."""
+    frozen = types.ModuleType("xmlrpc.frozen_alias")
+    frozen.__spec__ = importlib.machinery.ModuleSpec(
+        "_frozen_alias", importlib.machinery.FrozenImporter, origin="frozen"
+    )
+    not_frozen = types.ModuleType("xmlrpc.not_frozen")
+    not_frozen.__spec__ = importlib.machinery.ModuleSpec("xmlrpc.not_frozen", None)
+    modules = {"xmlrpc.frozen_alias": frozen, "xmlrpc.not_frozen": not_frozen}
+    with unittest.mock.patch.dict(sys.modules, modules):
+        found = spec.find_spec(["xmlrpc", "frozen_alias"])
+        assert found.type is spec.ModuleType.PY_FROZEN
+        with pytest.raises(ImportError):
+            spec.find_spec(["xmlrpc", "not_frozen"])
+
+
+def test_no_import_done_for_missing_submodule_of_std_lib_named_package() -> None:
+    """A package shadowing a stdlib name must not run when a submodule is missing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        os.mkdir(os.path.join(tmpdir, "xmlrpc"))
+        with open(
+            os.path.join(tmpdir, "xmlrpc", "__init__.py"), "w", encoding="utf-8"
+        ) as f:
+            f.write("raise AssertionError('xmlrpc was imported')\n")
+        sys.path.insert(0, tmpdir)
+        try:
+            with unittest.mock.patch.dict(sys.modules):
+                sys.modules.pop("xmlrpc", None)
+                with pytest.raises(ImportError):
+                    spec.find_spec(["xmlrpc", "missing"])
+                assert "xmlrpc" not in sys.modules
+        finally:
+            sys.path.pop(0)
