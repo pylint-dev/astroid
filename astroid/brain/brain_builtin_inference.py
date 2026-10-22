@@ -15,7 +15,7 @@ from typing import NoReturn, cast
 from astroid import arguments, helpers, nodes, objects, util
 from astroid.bases import Instance
 from astroid.builder import AstroidBuilder
-from astroid.context import InferenceContext
+from astroid.context import CallContext, InferenceContext, copy_context
 from astroid.exceptions import (
     AstroidTypeError,
     AttributeInferenceError,
@@ -24,6 +24,7 @@ from astroid.exceptions import (
     UseInferenceDefault,
 )
 from astroid.inference_tip import inference_tip
+from astroid.interpreter import dunder_lookup
 from astroid.manager import AstroidManager
 from astroid.nodes import scoped_nodes
 from astroid.typing import (
@@ -883,6 +884,51 @@ def infer_isinstance(
     return nodes.Const(isinstance_bool)
 
 
+def _looks_like_next(node: nodes.Call) -> bool:
+    return (isinstance(node.func, nodes.Name) and node.func.name == "next") or (
+        isinstance(node.func, nodes.Attribute) and node.func.attrname == "next"
+    )
+
+
+def infer_next(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> Iterator[InferenceResult]:
+    # minimalism: delegate one-argument user methods; leave defaults and iterator state to normal inference.
+    if len(node.args) != 1 or node.keywords or isinstance(node.args[0], nodes.Starred):
+        raise UseInferenceDefault
+    callee = util.safe_infer(node.func, context)
+    if not isinstance(callee, nodes.FunctionDef) or callee.qname() != "builtins.next":
+        raise UseInferenceDefault
+    iterator = util.safe_infer(node.args[0], context)
+    if not isinstance(iterator, Instance) or not helpers.has_known_bases(
+        iterator._proxied
+    ):
+        raise UseInferenceDefault
+    try:
+        methods = dunder_lookup.lookup(
+            cast(nodes.NodeNG, iterator), "__next__", context
+        )
+        if len(methods) != 1:
+            raise UseInferenceDefault
+        method = util.safe_infer(methods[0], context)
+        if (
+            not isinstance(method, nodes.FunctionDef)
+            or method.type != "method"
+            or len(method.args.arguments) != 1
+            or not (method.args.posonlyargs or method.args.args)
+        ):
+            raise UseInferenceDefault
+        call_context = copy_context(context)
+        call_context.boundnode = iterator
+        call_context.callcontext = CallContext(args=[], callee=method)
+        results = list(method.infer_call_result(node, context=call_context))
+    except (AttributeInferenceError, InferenceError) as exc:
+        raise UseInferenceDefault from exc
+    if any(isinstance(value, util.UninferableBase) for value in results):
+        raise UseInferenceDefault
+    yield from results
+
+
 def infer_len(node: nodes.Call, context: InferenceContext | None = None) -> nodes.Const:
     """Infer length calls.
 
@@ -1164,6 +1210,7 @@ def _infer_str_format_call(
 
 def register(manager: AstroidManager) -> None:
     # Builtins inference
+    manager.register_transform(nodes.Call, inference_tip(infer_next), _looks_like_next)
     register_builtin_transform(manager, infer_bool, "bool")
     register_builtin_transform(manager, infer_super, "super")
     register_builtin_transform(manager, infer_callable, "callable")

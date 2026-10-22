@@ -10,6 +10,7 @@ import pytest
 
 from astroid import nodes, objects, util
 from astroid.builder import _extract_single_node, extract_node
+from astroid.exceptions import InferenceError
 
 
 class BuiltinsTest(unittest.TestCase):
@@ -158,3 +159,171 @@ class Number:
 """)
         inferit = function_def.infer_call_result(function_def, context=None)
         assert [a.name for a in inferit] == [util.Uninferable]
+
+
+@pytest.mark.parametrize(
+    "setup, expression, expected",
+    [
+        ("", "next(It())", {42}),
+        ("import builtins", "builtins.next(It())", {42}),
+        ("from builtins import next", "next(It())", {42}),
+        ("class Child(It):\n    pass", "next(Child())", {42}),
+        ("def next(value):\n    return 77", "next(It())", {77}),
+        (
+            "class Local:\n    def next(self, value):\n        return 77",
+            "Local().next(It())",
+            {77},
+        ),
+        (
+            "class Local:\n    def __call__(self, value):\n        return 77\nnext = Local()",
+            "next(It())",
+            {77},
+        ),
+        ("next = 0", "next(It())", None),
+        (
+            "if flag:\n    def next(value): return 77\nelse:\n    def next(value): return 88",
+            "next(It())",
+            {77, 88},
+        ),
+        ("", "unknown.next(It())", None),
+        ("", "next(42)", None),
+        ("", "next(object())", None),
+        (
+            "class Other:\n    def __init__(self):\n        self.__next__ = lambda: 42",
+            "next(Other())",
+            None,
+        ),
+        ("class Other:\n    __next__ = None", "next(Other())", None),
+        (
+            "class Other:\n    @staticmethod\n    def __next__():\n        return 42",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Callable:\n    def __call__(self):\n        return 42\n"
+            "class Other:\n    __next__ = Callable()",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Other:\n    def __next__(self, required):\n        return 42",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Other(Missing):\n    def __next__(self):\n        return 42",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Other(It):\n    def __next__(self):\n        return 7",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Other:\n    def __next__(self):\n        return missing",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Other:\n    def __next__(self):\n        raise StopIteration",
+            "next(Other())",
+            None,
+        ),
+        ("", "next((value for value in (1, 2)))", None),
+        (
+            "class Other:\n    def __next__(*, self):\n        return 42",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Other:\n    def __next__(self, /):\n        return 42",
+            "next(Other())",
+            {42},
+        ),
+        (
+            "def values():\n    yield 1\n    yield 2",
+            "next(values())",
+            None,
+        ),
+        (
+            "class Empty:\n    def __next__(self):\n        raise StopIteration",
+            "next(Empty(), 99)",
+            None,
+        ),
+        (
+            "class Descriptor:\n    def __get__(self, obj, owner):\n        return lambda: 42\n"
+            "class Other:\n    __next__ = Descriptor()",
+            "next(Other())",
+            None,
+        ),
+        (
+            "class Other:\n    def __next__(*args):\n        return 42",
+            "next(Other())",
+            None,
+        ),
+        ("", "next(It)", None),
+        ("", "next()", None),
+        ("", "next(It(), 99)", None),
+        ("", "next(It(), 99, 100)", None),
+        ("", "next(It(), default=99)", None),
+        ("", "next(*[It()])", None),
+        ("from builtins import next as advance", "advance(It())", None),
+    ],
+)
+def test_next_custom_iterator(
+    setup: str, expression: str, expected: set[int] | None
+) -> None:
+    node = extract_node("""
+class It:
+    def __iter__(self):
+        return self
+    def __next__(self):
+        return 42
+""" + setup + "\n" + expression + " #@")
+    if expected is None:
+        with pytest.raises(InferenceError):
+            list(node.infer())
+    else:
+        inferred = list(node.infer())
+        assert all(isinstance(value, nodes.Const) for value in inferred)
+        assert {value.value for value in inferred} == expected
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+def test_next_distinct_call_contexts(reverse: bool) -> None:
+    selected = extract_node("""
+class It:
+    def __next__(self):
+        return self.value
+class First(It):
+    value = 3
+class Second(It):
+    value = 9
+next(First()) #@
+next(Second()) #@
+First().__next__() #@
+Second().__next__() #@
+""")
+    order = [3, 2, 1, 0] if reverse else [0, 1, 2, 3]
+    expected = [3, 9, 3, 9]
+    for index in order:
+        inferred = list(selected[index].infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == expected[index]
+
+
+def test_next_does_not_override_instance_slot() -> None:
+    node = extract_node("""
+class It:
+    def __init__(self):
+        self.__next__ = lambda: 99
+    def __next__(self):
+        return 42
+next(It()) #@
+""")
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 42
