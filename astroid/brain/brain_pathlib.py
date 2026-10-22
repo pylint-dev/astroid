@@ -12,6 +12,7 @@ from astroid.const import PY313
 from astroid.exceptions import InferenceError, UseInferenceDefault
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
+from astroid.typing import InferenceResult
 
 PATH_TEMPLATE = """
 from pathlib import Path
@@ -39,7 +40,7 @@ def _looks_like_parents_subscript(node: nodes.Subscript) -> bool:
 
 def infer_parents_subscript(
     subscript_node: nodes.Subscript, ctx: context.InferenceContext | None = None
-) -> Iterator[bases.Instance]:
+) -> Iterator[InferenceResult]:
     if isinstance(subscript_node.slice, nodes.Const):
         path_cls = next(_extract_single_node(PATH_TEMPLATE).infer())
         return iter([path_cls.instantiate_class()])
