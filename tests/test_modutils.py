@@ -13,8 +13,10 @@ import sys
 import tempfile
 import unittest
 import xml
+from collections.abc import Iterator
 from pathlib import Path
 from xml.etree import ElementTree
+from zipfile import ZipFile
 
 import pytest
 from pytest import CaptureFixture, LogCaptureFixture
@@ -65,6 +67,74 @@ class ModuleFileTest(unittest.TestCase):
             found_spec.location.split(os.sep)[-3:],
             ["data", "MyPyPa-0.1.0-py2.5.egg", self.package],
         )
+
+
+@pytest.fixture
+def zip_module_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[list[str]]:
+    monkeypatch.setattr(sys, "path", sys.path.copy())
+    monkeypatch.setattr(sys, "path_importer_cache", sys.path_importer_cache.copy())
+    paths = []
+    for name in ("first", "second"):
+        archive = tmp_path / f"{name}.zip"
+        with ZipFile(archive, "w") as zipped:
+            zipped.writestr("zip_module_607.py", "value = 42\n")
+            zipped.writestr("zip_package_607/__init__.py", "")
+            zipped.writestr("zip_package_607/submodule.py", "value = 43\n")
+            if name == "second":
+                zipped.writestr("zip_second_only_607.py", "value = 44\n")
+        paths.append(str(archive))
+    astroid.MANAGER.clear_cache()
+    yield paths
+    astroid.MANAGER.clear_cache()
+
+
+@pytest.mark.parametrize(
+    "module_path", [["zip_module_607"], ["zip_package_607", "submodule"]]
+)
+@pytest.mark.parametrize("default_first", [False, True])
+def test_zip_search_path_isolation(
+    zip_module_paths: list[str],
+    tmp_path: Path,
+    module_path: list[str],
+    default_first: bool,
+) -> None:
+    if default_first:
+        with pytest.raises(ImportError):
+            modutils.file_info_from_modpath(module_path)
+    found = modutils.file_info_from_modpath(module_path, zip_module_paths[:1])
+    assert found.type is spec.ModuleType.PY_ZIPMODULE
+    with pytest.raises(ImportError):
+        modutils.file_info_from_modpath(module_path)
+    with pytest.raises(ImportError):
+        modutils.file_info_from_modpath(module_path, [str(tmp_path)])
+
+    sys.path.insert(0, zip_module_paths[0])
+    found = modutils.file_info_from_modpath(module_path)
+    assert found.type is spec.ModuleType.PY_ZIPMODULE
+    assert found.location.startswith(zip_module_paths[0])
+    # Direct finder calls still use sys.path when no path is supplied.
+    found = spec.ZipFinder.find_module(module_path[-1], tuple(module_path), (), None)
+    assert found is not None
+    assert found.location.startswith(zip_module_paths[0])
+
+
+@pytest.mark.parametrize(
+    "module_path", [["zip_module_607"], ["zip_package_607", "submodule"]]
+)
+@pytest.mark.parametrize("reverse", [False, True])
+def test_zip_search_path_order(
+    zip_module_paths: list[str], module_path: list[str], reverse: bool
+) -> None:
+    for path in zip_module_paths:
+        found = spec.find_spec(module_path, [path])
+        assert found.location.startswith(path)
+    paths = zip_module_paths[::-1] if reverse else zip_module_paths
+    found = spec.find_spec(module_path, paths)
+    assert found.location.startswith(paths[0])
+    found = spec.find_spec(["zip_second_only_607"], zip_module_paths)
+    assert found.location.startswith(zip_module_paths[1])
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
