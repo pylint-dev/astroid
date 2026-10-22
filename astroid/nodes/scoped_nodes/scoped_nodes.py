@@ -606,11 +606,12 @@ class GeneratorExp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('(thing for thing in things if thing)')
     >>> node
-    <GeneratorExp l.1 at 0x...>
+    <GeneratorExp.<genexpr> l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
     _other_other_fields = ("locals",)
+    name = "<genexpr>"
     elt: NodeNG
     """The element that forms the output of the expression."""
 
@@ -661,11 +662,12 @@ class DictComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('{k:v for k, v in things if k > v}')
     >>> node
-    <DictComp l.1 at 0x...>
+    <DictComp.<dictcomp> l.1 at 0x...>
     """
 
     _astroid_fields = ("key", "value", "generators")
     _other_other_fields = ("locals",)
+    name = "<dictcomp>"
     key: NodeNG
     """What produces the keys."""
 
@@ -722,11 +724,12 @@ class SetComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('{thing for thing in things if thing}')
     >>> node
-    <SetComp l.1 at 0x...>
+    <SetComp.<setcomp> l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
     _other_other_fields = ("locals",)
+    name = "<setcomp>"
     elt: NodeNG
     """The element that forms the output of the expression."""
 
@@ -779,11 +782,12 @@ class ListComp(ComprehensionScope):
     >>> import astroid
     >>> node = astroid.extract_node('[thing for thing in things if thing]')
     >>> node
-    <ListComp l.1 at 0x...>
+    <ListComp.<listcomp> l.1 at 0x...>
     """
 
     _astroid_fields = ("elt", "generators")
     _other_other_fields = ("locals",)
+    name = "<listcomp>"
 
     elt: NodeNG
     """The element that forms the output of the expression."""
