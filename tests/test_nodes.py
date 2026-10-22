@@ -278,6 +278,20 @@ y = (3).imag
         assert pre_repr == post_repr
         assert pre.as_string().strip() == code.strip()
 
+    def test_comprehension_operand_precedence(self) -> None:
+        """The iterable and the conditions of a comprehension keep the parentheses
+        around a conditional expression or a lambda, or the output does not parse.
+        """
+        for code in (
+            "[x for x in (a if b else c)]",
+            "[x for x in y if (a if b else c)]",
+            "{x for x in y if x if (lambda: z)}",
+            "{x: x for x in (a if b else c)}",
+            "sum((x for x in y if (a if b else c)))",
+            "[x for x in y if a or b if not c]",
+        ):
+            self.check_as_string_ast_equality(code)
+
     def test_class_def(self) -> None:
         code = """
 import abc
