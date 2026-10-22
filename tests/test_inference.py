@@ -41,6 +41,7 @@ from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, 
 from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS, PY315_PLUS
 from astroid.context import CallContext, InferenceContext
 from astroid.exceptions import (
+    AstroidIndexError,
     AstroidTypeError,
     AttributeInferenceError,
     InferenceError,
@@ -7749,3 +7750,47 @@ def test_augassign_list_tuple_does_not_mutate_initial_value():
     inferred = next(module.body[-1].value.infer())
     assert inferred.as_string() == "[0, 1, 1]"
     assert module.body[0].value.as_string() == "[0]"
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("{'a': 1, 'a': 2}['a']", 2),
+        ("{1: 'old', True: 'new'}[1]", "new"),
+        ("{1.0: 'old', 1: 'new'}[1.0]", "new"),
+        ("dict([('a', 1), ('a', 2)])['a']", 2),
+        ("dict({'a': 1}, a=2)['a']", 2),
+        ("{0: 'old', 0: 'middle', 0: 'new'}[0]", "new"),
+        ("{'a': 1, 'b': 7, 'a': 2}['b']", 7),
+        ("{**{'a': 1}, 'a': 2}['a']", 2),
+        ("{'a': 1, **{'a': 2}}['a']", 2),
+    ],
+)
+def test_dictionary_subscription_uses_last_value(source: str, expected: Any) -> None:
+    result = next(extract_node(source).infer())
+    assert isinstance(result, nodes.Const)
+    assert result.value == expected
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("{'a': 1, **{'a': 2}}", 2),
+        ("{**{'a': 1}, 'a': 2}", 2),
+        ("{'a': 1, **{'b': 2}}", 1),
+    ],
+)
+def test_dictionary_getitem_checks_later_unpacking(source: str, expected: int) -> None:
+    dictionary = extract_node(source)
+    assert isinstance(dictionary, nodes.Dict)
+    result = next(dictionary.getitem(nodes.Const("a")).infer())
+    assert isinstance(result, nodes.Const)
+    assert result.value == expected
+
+
+@pytest.mark.parametrize("source", ["{}", "{'b': 1}"])
+def test_dictionary_getitem_missing_key(source: str) -> None:
+    dictionary = extract_node(source)
+    assert isinstance(dictionary, nodes.Dict)
+    with pytest.raises(AstroidIndexError):
+        dictionary.getitem(nodes.Const("a"))
