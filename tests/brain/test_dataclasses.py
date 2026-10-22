@@ -1175,6 +1175,27 @@ def test_dataclass_with_field_init_is_false() -> None:
     assert [a.value for a in third_init.args.defaults] == []
 
 
+def test_dataclass_with_field_init_is_false_without_default() -> None:
+    """A parent field() without a default gives no default to the child."""
+    node = astroid.extract_node("""
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class Parent:
+        a: int = field(init=False)
+
+    @dataclass
+    class Child(Parent):
+        a: int
+
+    Child.__init__  #@
+    """)
+
+    child_init: bases.UnboundMethod = next(node.infer())
+    assert [a.name for a in child_init.args.args] == ["self", "a"]
+    assert child_init.args.defaults == []
+
+
 def test_dataclass_inits_of_non_dataclasses() -> None:
     """Regression test for __init__ mangling for non dataclasses.
 

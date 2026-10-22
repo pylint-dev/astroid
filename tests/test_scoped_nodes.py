@@ -752,6 +752,21 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(node.locals["staticmethod_wrapped"][0].type, "staticmethod")
         self.assertEqual(node.locals["long_classmethod"][0].type, "classmethod")
 
+    def test_decorator_factory_returning_classmethod_subclass(self) -> None:
+        node = builder.extract_node("""
+        class my_classmethod(classmethod):
+            pass
+
+        def factory():
+            return my_classmethod
+
+        class SomeClass:
+            @factory()
+            def method(cls):
+                pass
+        """)
+        self.assertEqual(node.locals["method"][0].type, "classmethod")
+
     def test_igetattr(self) -> None:
         func = builder.extract_node("""
         def test():
