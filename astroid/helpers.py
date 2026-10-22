@@ -312,6 +312,19 @@ def object_len(
             f"object of type '{node_type.pytype()}' has no len()"
         ) from e
 
+    if not isinstance(
+        len_call,
+        (
+            util.UninferableBase,
+            bases.Proxy,
+            nodes.Lambda,
+            nodes.FunctionDef,
+            nodes.ClassDef,
+        ),
+    ):
+        raise AstroidTypeError(
+            f"'__len__' of type '{node_type.pytype()}' is not callable"
+        )
     inferred = len_call.infer_call_result(node, context)
     if isinstance(inferred, util.UninferableBase):
         raise InferenceError(node=node, context=context)
