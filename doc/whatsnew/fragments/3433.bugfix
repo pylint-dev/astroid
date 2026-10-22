@@ -1,0 +1,4 @@
+Every dataclass now has a ``__dataclass_fields__`` class attribute, as the
+``dataclass`` decorator sets at runtime.
+
+Refs pylint-dev/pylint#9183
