@@ -1,0 +1,7 @@
+``as_string()`` now keeps the parentheses around a conditional expression or a
+lambda used as the iterable or a condition of a comprehension, such as
+``[x for x in (a if b else c)]``. The output did not parse without them, so the
+dataclass brain dropped the generated ``__init__`` of a dataclass whose field
+default held such a comprehension.
+
+Refs #3434
