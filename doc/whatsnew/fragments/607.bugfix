@@ -1,0 +1,4 @@
+Zip module lookups now respect the requested search paths and their order,
+without finding modules in archives cached by previous unrelated lookups.
+
+Refs #607
