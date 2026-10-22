@@ -388,6 +388,28 @@ def get_constraints(
     return constraints_mapping
 
 
+def assigned_in_condition(
+    constraint_stmt: nodes.NodeNG, stmt: nodes.NodeNG, expr: _NameNodes
+) -> bool:
+    """Return True if stmt is the target of an assignment expression in the
+    condition that constraint_stmt checks before expr, as in ``if (x := f()):``.
+    """
+    if not isinstance(stmt.parent, nodes.NamedExpr):
+        return False
+    if isinstance(constraint_stmt, (nodes.If, nodes.IfExp)):
+        return constraint_stmt.test.parent_of(stmt)
+    if isinstance(constraint_stmt, nodes.BoolOp):
+        # The operand assigning stmt must come before the operand using expr.
+        values = constraint_stmt.values
+        index = next(
+            i
+            for i, value in enumerate(values)
+            if value is expr or value.parent_of(expr)
+        )
+        return any(value.parent_of(stmt) for value in values[:index])
+    return False
+
+
 def _add_ifs_constraints(
     expr: _NameNodes,
     ifs: list[nodes.NodeNG],
@@ -406,6 +428,7 @@ _CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]
     nodes.Call: (TypeConstraint, CallableConstraint),
     nodes.Compare: (NoneConstraint, EqualityConstraint),
     nodes.Name: (BooleanConstraint,),
+    nodes.NamedExpr: (BooleanConstraint,),
     # No nodes.UnaryOp entry: _match_constraint handles ``not`` itself, by matching
     # the operand with the inversion flipped, so that any constraint can be negated.
 }
@@ -416,6 +439,9 @@ def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
     """Returns True if the two nodes match."""
     if isinstance(node1, nodes.Name) and isinstance(node2, nodes.Name):
         return node1.name == node2.name
+    if isinstance(node1, nodes.NamedExpr) and isinstance(node2, nodes.Name):
+        # The value of ``(x := f())`` is the new value of x.
+        return node1.target.name == node2.name
     if isinstance(node1, nodes.Attribute) and isinstance(node2, nodes.Attribute):
         return node1.attrname == node2.attrname and _matches(node1.expr, node2.expr)
     if isinstance(node1, nodes.Const) and isinstance(node2, nodes.Const):

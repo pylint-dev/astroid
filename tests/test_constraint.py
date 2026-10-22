@@ -1807,3 +1807,111 @@ def test_compound_constraint_only_matches_bool_op() -> None:
     """Test that only boolean operations make a compound constraint."""
     node = builder.extract_node("x")
     assert _CompoundConstraint.match(node, node) is None
+
+
+@pytest.mark.parametrize(
+    ("condition", "satisfy_val", "fail_val"),
+    (
+        ("(x := y) is None", None, 3),
+        ("(x := y) is not None", 3, None),
+        ("x := y", 3, None),
+        ("not (x := y)", None, 3),
+        ("isinstance(x := y, int)", 3, None),
+        ("(x := y) == 3", 3, None),
+        ("3 != (x := y)", None, 3),
+        ("(x := y) is not None and x", 3, None),
+    ),
+)
+def test_assignment_expression(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test constraint for a variable assigned in the if condition."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(y = {fail_val}):
+        if {condition}:  # Filters out the assigned value
+            return (
+                x  #@
+            )
+
+    def f2(y = {satisfy_val}):
+        if {condition}:  # Does not filter out the assigned value
+            return (
+                x  #@
+            )
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+
+def test_assignment_expression_else() -> None:
+    """Test that the else branch applies the inverted condition to the variable."""
+    node = builder.extract_node("""
+    def f(y = None):
+        if (x := y) is None:
+            pass
+        else:
+            x  #@
+    """)
+
+    assert node.inferred() == [Uninferable]
+
+
+@pytest.mark.parametrize(
+    "expression",
+    ("x if (x := y) else 0", "(x := y) and x", "not (x := y) or x"),
+)
+def test_assignment_expression_ifexp_and_bool_op(expression: str) -> None:
+    """Test constraint for a variable assigned in an earlier operand or in the
+    condition of a conditional expression.
+    """
+    node = builder.extract_node(f"""
+    def f(y = None):
+        return {expression}  #@
+    """)
+    use = node.value.body if isinstance(node.value, nodes.IfExp) else node.value
+    if isinstance(use, nodes.BoolOp):
+        use = use.values[-1]
+
+    assert use.inferred() == [Uninferable]
+
+
+def test_assignment_expression_after_condition() -> None:
+    """Test that a condition on the previous value of a variable does not
+    constrain the value assigned after the condition.
+    """
+    node = builder.extract_node("""
+    def f(y = None, z = None):
+        x = 1
+        return x is not None and ((x := y) or x) and z  #@
+    """)
+    use = node.value.values[1].values[1]
+
+    inferred = use.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+    assert inferred[1] is Uninferable
+
+
+def test_assignment_expression_comprehension_condition() -> None:
+    """Test that an assignment in a comprehension condition is not constrained
+    by that condition.
+    """
+    node = builder.extract_node("""
+    def f(y = None):
+        return [x for _ in "a" if (x := y)]  #@
+    """)
+
+    inferred = node.value.elt.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+    assert inferred[1] is Uninferable
