@@ -1666,6 +1666,30 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.Const)
         self.assertEqual(inferred[0].value, 3)
 
+    def test_augassign_conditional_unknown_rhs(self) -> None:
+        node = extract_node("""
+            a = ''
+            if cond:
+                a += thing()
+            a #@
+        """)
+        inferred = list(node.infer())
+        self.assertCountEqual(
+            [
+                value.value if isinstance(value, nodes.Const) else value
+                for value in inferred
+            ],
+            ["", Uninferable],
+        )
+
+    def test_augassign_unconditional_unknown_rhs(self) -> None:
+        node = extract_node("""
+            a = ''
+            a += thing()
+            a #@
+        """)
+        self.assertEqual(list(node.infer()), [Uninferable])
+
     def test_nonregr_func_arg(self) -> None:
         code = """
             def foo(self, bar):

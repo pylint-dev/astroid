@@ -1,0 +1,4 @@
+Preserve an uninferable result for augmented assignments with an unresolved
+right-hand side, including assignments inside a conditional.
+
+Refs #315
