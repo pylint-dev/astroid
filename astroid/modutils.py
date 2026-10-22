@@ -4,13 +4,10 @@
 
 """Python modules manipulation utility functions.
 
-:type PY_SOURCE_EXTS: tuple(str)
 :var PY_SOURCE_EXTS: list of possible python source file extension
 
-:type STD_LIB_DIRS: set of str
 :var STD_LIB_DIRS: directories where standard modules are located
 
-:type BUILTIN_MODULES: dict
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 
@@ -34,7 +31,7 @@ from astroid.const import IS_JYTHON
 from astroid.interpreter._import import spec, util
 
 if sys.platform.startswith("win"):
-    PY_SOURCE_EXTS = ("py", "pyw", "pyi")
+    PY_SOURCE_EXTS: tuple[str, ...] = ("py", "pyw", "pyi")
     PY_SOURCE_EXTS_STUBS_FIRST = ("pyi", "pyw", "py")
     PY_COMPILED_EXTS = ("dll", "pyd")
 else:
@@ -48,7 +45,10 @@ PY_BYTECODE_EXTS = ("pyc", "pyo")
 
 # TODO: Adding `platstdlib` is a fix for a workaround in virtualenv. At some point we should
 # revisit whether this is still necessary. See https://github.com/pylint-dev/astroid/pull/1323.
-STD_LIB_DIRS = {sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")}
+STD_LIB_DIRS: set[str] = {
+    sysconfig.get_path("stdlib"),
+    sysconfig.get_path("platstdlib"),
+}
 
 if os.name == "nt":
     STD_LIB_DIRS.add(os.path.join(sys.prefix, "dlls"))
@@ -93,7 +93,7 @@ if os.name == "posix":
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
 EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
-BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
+BUILTIN_MODULES: dict[str, bool] = dict.fromkeys(sys.builtin_module_names, True)
 
 
 class NoSourceFile(Exception):
@@ -154,12 +154,10 @@ def _cache_normalize_path(path: str) -> str:
 def load_module_from_name(dotted_name: str) -> types.ModuleType:
     """Load a Python module from its name.
 
-    :type dotted_name: str
     :param dotted_name: python name of a module or package
 
     :raise ImportError: if the module or package is not found
 
-    :rtype: module
     :return: the loaded module
     """
     try:
@@ -209,12 +207,10 @@ def load_module_from_modpath(parts: Sequence[str]) -> types.ModuleType:
 def load_module_from_file(filepath: str) -> types.ModuleType:
     """Load a Python module from it's path.
 
-    :type filepath: str
     :param filepath: path to the python module or package
 
     :raise ImportError: if the module or package is not found
 
-    :rtype: module
     :return: the loaded module
     """
     modpath = modpath_from_file(filepath)
@@ -312,17 +308,15 @@ def modpath_from_file(filename: str, path: list[str] | None = None) -> list[str]
 
     This function will return the name of a module or package split on `.`.
 
-    :type filename: str
     :param filename: file's path for which we want the module's name
 
-    :type Optional[List[str]] path:
+    :param path:
       Optional list of paths where the module or package should be
       searched, additionally to sys.path
 
     :raise ImportError:
       if the corresponding module's name has not been found
 
-    :rtype: list(str)
     :return: the corresponding split module's name
     """
     return modpath_from_file_with_callback(filename, path, check_modpath_has_init)

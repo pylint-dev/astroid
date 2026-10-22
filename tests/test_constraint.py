@@ -12,6 +12,7 @@ import pytest
 
 from astroid import builder, nodes
 from astroid.bases import Instance
+from astroid.constraint import _CompoundConstraint
 from astroid.util import Uninferable
 
 
@@ -35,6 +36,10 @@ def common_params(node: str) -> pytest.MarkDecorator:
             (f"3 != {node}", None, 3),
             (f"isinstance({node}, int) and {node} == 3", 3, 5),
             (f"isinstance({node}, str) or {node} == 3", 3, None),
+            (f"not {node} is None", 3, None),
+            (f"not isinstance({node}, int)", None, 3),
+            (f"not (isinstance({node}, int) and {node} == 3)", None, 3),
+            (f"not not {node}", 3, None),
         ),
     )
 
@@ -719,7 +724,7 @@ def test_if_exp_instance_attr(
     assert len(inferred) == 2
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == satisfy_val
-    assert inferred[1].value is Uninferable
+    assert inferred[1] is Uninferable
 
 
 @common_params(node="self.x")
@@ -742,7 +747,139 @@ def test_if_exp_instance_attr_varname_collision(
     assert len(inferred) == 2
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == fail_val
-    assert inferred[1].value is Uninferable
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_and_op_apply_constraint_to_later_operand(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that a constraint in an `and` operation is applied to the later operand."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        if {condition} and x:  #@
+            pass
+
+    def f2(x = {satisfy_val}):
+        if ({condition}) and x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[1].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_or_op_apply_constraint_to_later_operand(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that a constraint in an `or` operation is applied to the later operand."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        if ({condition}) or x:  #@
+            pass
+
+    def f2(x = {satisfy_val}):
+        if ({condition}) or x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[1].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == fail_val
+    assert inferred[1] is Uninferable
+
+    inferred = node2.test.values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+
+@common_params(node="x")
+def test_bool_op_constraint_not_apply_to_earlier_operand(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that a constraint in a boolean operation does not apply to the earlier operand."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {satisfy_val}):
+        if x or ({condition}):  #@
+            pass
+
+    def f2(x = {fail_val}):
+        if x and ({condition}):  #@
+            pass
+    """)
+
+    inferred = node1.test.values[0].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+    inferred = node2.test.values[0].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == fail_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_and_op_propagate_constraint_to_later_operand(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that a constraint from an earlier `and` operand applies to a later operand."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(y, x = {fail_val}):
+        if ({condition}) and y and x:  #@
+            pass
+
+    def f2(y, x = {satisfy_val}):
+        if ({condition}) and y and x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[2].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[2].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+
+@common_params(node="x")
+def test_or_op_propagate_constraint_to_later_operand(
+    condition: str, satisfy_val: int | None, fail_val: int | None
+) -> None:
+    """Test that a constraint from an earlier `or` operand applies to a later operand."""
+    node1, node2 = builder.extract_node(f"""
+    def f1(y, x = {fail_val}):
+        if ({condition}) or y or x:  #@
+            pass
+
+    def f2(y, x = {satisfy_val}):
+        if ({condition}) or y or x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[2].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == fail_val
+    assert inferred[1] is Uninferable
+
+    inferred = node2.test.values[2].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
 
 
 def test_isinstance_equal_types() -> None:
@@ -1463,3 +1600,210 @@ def test_expression_with_non_constraint_is_ignored(
     assert len(inferred) == 1
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == value
+
+
+def test_and_op_apply_all_previous_constraints() -> None:
+    """Test that constraints from all preceding operands in an `and` operation apply."""
+    node1, node2, node3 = builder.extract_node("""
+    def f1(x = None):
+        if x is not None and x != 1 and x:  #@
+            pass
+
+    def f2(x = 1):
+        if x is not None and x != 1 and x:  #@
+            pass
+
+    def f3(x = 3):
+        if x is not None and x != 1 and x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[2].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[2].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node3.test.values[2].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
+    assert inferred[1] is Uninferable
+
+
+def test_or_op_apply_all_previous_constraints() -> None:
+    """Test that constraints from all preceding operands in an `or` operation apply."""
+    node1, node2, node3 = builder.extract_node("""
+    def f1(x = None):
+        if x is None or x == 1 or x:  #@
+            pass
+
+    def f2(x = 1):
+        if x is None or x == 1 or x:  #@
+            pass
+
+    def f3(x = 3):
+        if x is None or x == 1 or x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[2].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[2].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node3.test.values[2].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
+    assert inferred[1] is Uninferable
+
+
+def test_bool_op_apply_constraint_from_nested_operand() -> None:
+    """Test that a nested boolean operation constrains a later operand."""
+    node1, node2 = builder.extract_node("""
+    def f1(x = None):
+        if (x and x is None) and x:  #@
+            pass
+
+    def f2(x = None):
+        if not x and x is None or x:  #@
+            pass
+    """)
+
+    inferred = node1.test.values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+
+def test_bool_op_apply_constraint_inside_nested_operand() -> None:
+    """Test that an operand of a nested boolean operation is constrained."""
+    node1, node2 = builder.extract_node("""
+    def f1(y, x = None):
+        if y or (x is not None and x):  #@
+            pass
+
+    def f2(y, x = 1):
+        if y or (x is not None and x):  #@
+            pass
+    """)
+
+    inferred = node1.test.values[1].values[1].inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.test.values[1].values[1].inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 1
+    assert inferred[1] is Uninferable
+
+
+@pytest.mark.parametrize(
+    "value",
+    ("len", "lambda: None", "Callable", "Callable()", "int"),
+)
+def test_callable(value: str) -> None:
+    """Test that callable(x) keeps callable values and not callable(x) removes them."""
+    node1, node2 = builder.extract_node(f"""
+    class Callable:
+        def __call__(self):
+            pass
+
+    def f(x={value}):
+        if callable(x):
+            x  #@
+        if not callable(x):
+            x  #@
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 2
+    assert inferred[0] is not Uninferable
+    assert inferred[1] is Uninferable
+
+    assert node2.inferred() == [Uninferable]
+
+
+@pytest.mark.parametrize(
+    "value", ("None", "1", "[]", "NotCallable()", "NotCallable.color")
+)
+def test_not_callable(value: str) -> None:
+    """Test that callable(x) removes values that are not callable."""
+    node1, node2 = builder.extract_node(f"""
+    class NotCallable:
+        @property
+        def color(self):
+            return "red"
+
+    def f(x={value}):
+        if callable(x):
+            x  #@
+        if not callable(x):
+            x  #@
+    """)
+
+    assert node1.inferred() == [Uninferable]
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert inferred[0] is not Uninferable
+    assert inferred[1] is Uninferable
+
+
+def test_callable_unknown_base() -> None:
+    """Test that an instance of a class with an unknown base is never removed,
+    since the base may define __call__.
+    """
+    node1, node2 = builder.extract_node("""
+    import missing
+
+    class Unknown(missing.Base):
+        pass
+
+    def f(x=Unknown()):
+        if callable(x):
+            x  #@
+        if not callable(x):
+            x  #@
+    """)
+
+    for node in (node1, node2):
+        inferred = node.inferred()
+        assert len(inferred) == 2
+        assert isinstance(inferred[0], Instance)
+        assert inferred[1] is Uninferable
+
+
+@pytest.mark.parametrize(
+    "condition",
+    ("callable(y)", "callable(x, y)", "callable(obj=x)", "check(x)", "x.callable(x)"),
+)
+def test_callable_unsupported_pattern(condition: str) -> None:
+    """Test that calls not matching callable(x) do not constrain x."""
+    node = builder.extract_node(f"""
+    def f(x=None, y=None):
+        if {condition}:
+            x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+    assert inferred[1] is Uninferable
+
+
+def test_compound_constraint_only_matches_bool_op() -> None:
+    """Test that only boolean operations make a compound constraint."""
+    node = builder.extract_node("x")
+    assert _CompoundConstraint.match(node, node) is None

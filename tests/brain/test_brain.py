@@ -688,19 +688,14 @@ class TypingBrain(unittest.TestCase):
 
     def test_typed_dict_required_and_optional_keys(self):
         """TypedDict subclasses expose ``__required_keys__`` and ``__optional_keys__``."""
-        code = builder.extract_node("""
+        cls = builder.extract_node("""
         from typing import TypedDict
-        from typing_extensions import TypedDict as ETD
 
         class CustomTD(TypedDict):  #@
             var: int
-
-        class CustomTD2(ETD):  #@
-            var: int
         """)
-        for cls in code:
-            for attr in ("__required_keys__", "__optional_keys__"):
-                assert cls.getattr(attr), f"{cls.name}.{attr} not found"
+        for attr in ("__required_keys__", "__optional_keys__"):
+            assert cls.getattr(attr), f"{cls.name}.{attr} not found"
 
     def test_typing_alias_type(self):
         """
@@ -1067,6 +1062,20 @@ class RandomSampleTest(unittest.TestCase):
         assert len(inferred.elts) == 1
         assert isinstance(inferred.elts[0], nodes.Module)
         assert inferred.elts[0].name == "gc"
+
+    def test_no_crash_on_instance_element(self) -> None:
+        """Test that random.sample does not crash when an element is not a source node.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3310
+        """
+        node = astroid.extract_node("""
+        from random import sample
+        sample(list({list(None)}) * 1, 1)  #@
+        """)
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.List)
+        assert len(inferred.elts) == 1
+        assert isinstance(inferred.elts[0], Instance)
 
 
 class SubprocessTest(unittest.TestCase):
@@ -1578,6 +1587,8 @@ def test_infer_dict_from_keys() -> None:
     dict.fromkeys(some_other_value) #@
     dict.fromkeys([Unknown(), Unknown()]) #@
     dict.fromkeys([Unknown(), Unknown()]) #@
+    dict.fromkeys({(1, 2): 3}) #@
+    dict.fromkeys(1) #@
     """)
     for node in good_nodes:
         inferred = next(node.infer())

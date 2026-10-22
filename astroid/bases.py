@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import collections
 import collections.abc
+import copy
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 from astroid import decorators, nodes
-from astroid.const import PY311_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -39,10 +39,12 @@ if TYPE_CHECKING:
     from astroid.constraint import Constraint
 
 
-PROPERTIES = {"builtins.property", "abc.abstractproperty", "functools.cached_property"}
-# enum.property was added in Python 3.11
-if PY311_PLUS:
-    PROPERTIES.add("enum.property")
+PROPERTIES = {
+    "builtins.property",
+    "abc.abstractproperty",
+    "functools.cached_property",
+    "enum.property",
+}
 
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be
@@ -329,13 +331,6 @@ class BaseInstance(Proxy):
         context = bind_context_to_node(context, self)
         inferred = False
 
-        # If the call is an attribute on the instance, we infer the attribute itself
-        if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
-            for res in self.igetattr(caller.func.attrname, context):
-                inferred = True
-                yield res
-
-        # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
             if isinstance(node, UninferableBase) or not node.callable():
                 continue
@@ -344,6 +339,11 @@ class BaseInstance(Proxy):
                 yield node
                 # Prevent recursion.
                 continue
+            if context.callcontext:
+                # Arguments belong to __call__, not to the instance's class.
+                # The incoming CallContext is shared with the caller.
+                context.callcontext = copy.copy(context.callcontext)
+                context.callcontext.callee = node
             for res in node.infer_call_result(caller, context):
                 inferred = True
                 yield res

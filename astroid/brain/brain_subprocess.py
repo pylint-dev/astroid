@@ -7,7 +7,6 @@ import textwrap
 from astroid import nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
-from astroid.const import PY311_PLUS
 from astroid.manager import AstroidManager
 
 
@@ -19,9 +18,8 @@ def _subprocess_transform() -> nodes.Module:
         preexec_fn=None, close_fds=True, shell=False, cwd=None, env=None,
         universal_newlines=None, startupinfo=None, creationflags=0, restore_signals=True,
         start_new_session=False, pass_fds=(), *, encoding=None, errors=None, text=None,
-        user=None, group=None, extra_groups=None, umask=-1, pipesize=-1"""
-    if PY311_PLUS:
-        args += ", process_group=None"
+        user=None, group=None, extra_groups=None, umask=-1, pipesize=-1,
+        process_group=None"""
 
     init = f"""
         def __init__({args}):

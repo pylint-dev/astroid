@@ -13,10 +13,9 @@ leads to an inferred FrozenSet:
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Generator, Iterator
 from functools import cached_property
-from typing import Literal, NoReturn
+from typing import Literal, NoReturn, Self
 
 from astroid import bases, util
 from astroid.context import InferenceContext
@@ -30,11 +29,6 @@ from astroid.interpreter import objectmodel
 from astroid.manager import AstroidManager
 from astroid.nodes import node_classes, scoped_nodes
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 
 class FrozenSet(node_classes.BaseContainer):
@@ -371,6 +365,9 @@ class Property(scoped_nodes.FunctionDef):
 
     def pytype(self) -> Literal["builtins.property"]:
         return "builtins.property"
+
+    def callable(self) -> Literal[False]:
+        return False
 
     def infer_call_result(
         self,
