@@ -1,0 +1,5 @@
+Stop inferring a ``__get__`` attribute on generators, which are not
+descriptors. Accessing it is now reported as ``no-member``, like the
+``AttributeError`` at runtime, instead of crashing attribute inference.
+
+Refs #3428
