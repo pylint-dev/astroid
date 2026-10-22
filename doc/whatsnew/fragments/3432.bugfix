@@ -1,0 +1,5 @@
+Fields that an intermediate dataclass base redefines with ``field(init=False)``
+are no longer arguments of a subclass's generated ``__init__``, even though
+the root base's ``__init__`` takes them.
+
+Refs pylint-dev/pylint#10056
