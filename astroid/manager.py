@@ -123,7 +123,24 @@ class AstroidManager:
 
     @prefer_stubs.setter
     def prefer_stubs(self, value: bool) -> None:
+        if value == AstroidManager.brain["prefer_stubs"]:
+            return
+
         AstroidManager.brain["prefer_stubs"] = value
+        # The synthetic builtins module does not depend on source discovery
+        for modname in tuple(self.astroid_cache):
+            if modname != "builtins":
+                self.astroid_cache.pop(modname)
+        self._invalidate_inference_caches()
+
+    @staticmethod
+    def _invalidate_inference_caches() -> None:
+        # Inference dependencies are not tracked, so invalidate both caches
+        # pylint: disable-next=import-outside-toplevel
+        from astroid.inference_tip import clear_inference_tip_cache
+
+        clear_inference_tip_cache()
+        _invalidate_cache()
 
     def visit_transforms(self, node: nodes.NodeNG) -> InferenceResult:
         """Visit the transforms and apply them to the given *node*."""
@@ -468,7 +485,6 @@ class AstroidManager:
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
         from astroid.brain.helpers import register_all_brains
-        from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter._import.spec import (
             _find_spec,
             _is_setuptools_namespace,
@@ -477,8 +493,7 @@ class AstroidManager:
         from astroid.nodes._base_nodes import LookupMixIn
         from astroid.nodes.scoped_nodes import ClassDef
 
-        clear_inference_tip_cache()
-        _invalidate_cache()  # inference context cache
+        self._invalidate_inference_caches()
 
         self.astroid_cache.clear()
         self._mod_file_cache.clear()
