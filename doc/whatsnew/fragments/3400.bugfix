@@ -1,0 +1,8 @@
+An instance is no longer dropped from the inference results when its class was
+already inferred for the same name, so a class rebound to an instance of itself
+(``MyDict = MyDict()``) infers to both when it is imported from another module.
+This fixes false positives such as ``unsupported-membership-test`` on the
+imported name.
+
+Refs #3400
+Closes pylint-dev/pylint#9846

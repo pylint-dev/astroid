@@ -7264,6 +7264,28 @@ def test_imported_module_var_inferable() -> None:
     assert i_w_val.as_string() == "[1, 2]"
 
 
+def test_imported_class_name_rebound_to_its_instance() -> None:
+    """A class rebound to an instance of itself infers to both when imported.
+
+    Https://github.com/pylint-dev/pylint/issues/9846
+    """
+    parse(
+        textwrap.dedent("""
+    class MyDict(dict):
+        pass
+
+    MyDict = MyDict()
+    """),
+        module_name="rebound_class_9846",
+    )
+    node = extract_node("from rebound_class_9846 import MyDict\nMyDict  #@\n")
+    inferred = list(node.infer())
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.ClassDef)
+    assert isinstance(inferred[1], Instance)
+    assert inferred[1]._proxied is inferred[0]
+
+
 def test_imported_module_var_inferable2() -> None:
     """Version list of strings."""
     mod2 = parse(
