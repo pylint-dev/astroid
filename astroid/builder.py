@@ -50,7 +50,11 @@ def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
     with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
     stream = open(filename, newline=None, encoding=encoding)
-    data = stream.read()
+    try:
+        data = stream.read()
+    except BaseException:
+        stream.close()
+        raise
     return stream, encoding, data
 
 
