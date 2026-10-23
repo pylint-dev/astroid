@@ -4018,6 +4018,219 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(author, nodes.Const)
         self.assertEqual(author.value, "Rushdie")
 
+    def test_class_statements_with_non_type_base_infer_to_factory_instances(self) -> None:
+        ast_nodes = extract_node("""
+        class InterfaceClass:
+            def __init__(self, name, bases=(), attrs=None):
+                self.name = name
+
+        Interface = InterfaceClass("Interface")
+        AnotherInterface = InterfaceClass("AnotherInterface")
+
+        class IThing(Interface):
+            def method(arg):
+                pass
+
+        class ISubThing(IThing):
+            def other(arg):
+                pass
+
+        class ICombined(Interface, AnotherInterface):
+            pass
+
+        IThing #@
+        ISubThing #@
+        ICombined #@
+        """)
+        assert isinstance(ast_nodes, list)
+        for node in ast_nodes:
+            inferred = list(node.infer())
+            self.assertEqual(len(inferred), 1)
+            self.assertIsInstance(inferred[0], Instance)
+            self.assertEqual(inferred[0]._proxied.name, "InterfaceClass")
+
+    def test_non_type_factory_inference_checks_class_statement_arguments(self) -> None:
+        module = parse("""
+        class NormalBase:
+            pass
+
+        class Normal(NormalBase):
+            pass
+
+        class VariadicFactory:
+            def __init__(self, *args):
+                pass
+
+        variadic_base = VariadicFactory()
+
+        class Variadic(variadic_base):
+            pass
+
+        class TooFewArgs:
+            def __init__(self, name):
+                pass
+
+        too_few = TooFewArgs("base")
+
+        class BadTooFew(too_few):
+            pass
+
+        class TooManyArgs:
+            def __init__(self, name, bases, namespace, extra):
+                pass
+
+        too_many = TooManyArgs("base", (), {}, 1)
+
+        class BadTooMany(too_many):
+            pass
+
+        class RequiredKeyword:
+            def __init__(self, name, bases, namespace, *, required):
+                pass
+
+        required_keyword = RequiredKeyword("base", (), {}, required=True)
+
+        class BadKeyword(required_keyword):
+            pass
+
+        class BadObject(object()):
+            pass
+
+        class NonFunctionInit:
+            __init__ = None
+
+        non_function_init = NonFunctionInit()
+
+        class BadInit(non_function_init):
+            pass
+
+        class IncompleteFactory(MissingBase):
+            pass
+
+        incomplete = IncompleteFactory()
+
+        class BadIncomplete(incomplete):
+            pass
+
+        class InvalidBase(MissingBase):
+            pass
+
+        class MroEntriesFactory:
+            def __init__(self, *args):
+                pass
+
+            def __mro_entries__(self, original_bases):
+                return ()
+
+        mro_entries_base = MroEntriesFactory()
+
+        class MroEntriesClass(mro_entries_base):
+            pass
+        """)
+        self.assertIsInstance(next(module["Variadic"].infer()), Instance)
+        for name in (
+            "Normal",
+            "BadTooFew",
+            "BadTooMany",
+            "BadKeyword",
+            "BadObject",
+            "BadInit",
+            "BadIncomplete",
+            "InvalidBase",
+            "MroEntriesClass",
+        ):
+            self.assertIsInstance(next(module[name].infer()), nodes.ClassDef)
+
+    def test_non_type_factory_inference_skips_unsupported_class_declarations(self) -> None:
+        module = parse("""
+        class Factory:
+            def __init__(self, *args, **kwargs):
+                pass
+
+        base = Factory()
+
+        class OtherFactory:
+            def __init__(self, *args):
+                pass
+
+        other_base = OtherFactory()
+
+        def identity(value):
+            return value
+
+        class ExplicitMetaclass(base, metaclass=type):
+            pass
+
+        @identity
+        class Decorated(base):
+            pass
+
+        class WithKeywords(base, option=True):
+            pass
+
+        class MixedBases(base, object):
+            pass
+
+        class DifferentFactories(base, other_base):
+            pass
+        """)
+        for name in (
+            "ExplicitMetaclass",
+            "Decorated",
+            "WithKeywords",
+            "MixedBases",
+            "DifferentFactories",
+        ):
+            self.assertIsInstance(next(module[name].infer()), nodes.ClassDef)
+
+    def test_non_type_factory_inference_skips_unknown_signature_metadata(self) -> None:
+        module = parse("""
+        class UnknownDefaults:
+            def __init__(self, *args):
+                pass
+
+        unknown_defaults = UnknownDefaults()
+
+        class BadDefaults(unknown_defaults):
+            pass
+
+        class UnknownKeywordDefaults:
+            def __init__(self, *args):
+                pass
+
+        unknown_keyword_defaults = UnknownKeywordDefaults()
+
+        class BadKeywordDefaults(unknown_keyword_defaults):
+            pass
+        """)
+        constructor = module["UnknownDefaults"].local_attr("__init__")[0]
+        assert isinstance(constructor, nodes.FunctionDef)
+        constructor.args.defaults = None
+
+        constructor = module["UnknownKeywordDefaults"].local_attr("__init__")[0]
+        assert isinstance(constructor, nodes.FunctionDef)
+        constructor.args.kw_defaults = None
+
+        self.assertIsInstance(next(module["BadDefaults"].infer()), nodes.ClassDef)
+        self.assertIsInstance(next(module["BadKeywordDefaults"].infer()), nodes.ClassDef)
+
+    def test_non_type_factory_inference_keeps_type_instances_as_classes(self) -> None:
+        klass = extract_node("""
+        class Child(Base): #@
+            pass
+        """)
+        assert isinstance(klass, nodes.ClassDef)
+        type_class = next(extract_node("type #@").infer())
+        assert isinstance(type_class, nodes.ClassDef)
+
+        klass.bases = [
+            nodes.EvaluatedObject(
+                original=klass.bases[0],
+                value=Instance(type_class),
+            )
+        ]
+        self.assertEqual(list(klass._infer()), [klass])
+
     def test_subscript_inference_error(self) -> None:
         # Used to raise StopIteration
         ast_node = extract_node("""

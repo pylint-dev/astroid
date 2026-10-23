@@ -134,6 +134,14 @@ class RawBuildingTC(unittest.TestCase):
         # This should not raise an exception
         AstroidBuilder(AstroidManager()).module_build(m, "test")
 
+    def test_module_object_with_method_wrapper(self) -> None:
+        module = types.ModuleType("method_wrapper_module")
+        module.method_wrapper = object().__str__
+
+        node = AstroidBuilder(AstroidManager()).inspect_build(module, "method_wrapper_module")
+
+        self.assertIsInstance(node["method_wrapper"], nodes.FunctionDef)
+
     def test_module_object_with_broken_getattr(self) -> None:
         # Tests https://github.com/pylint-dev/astroid/issues/1958
         # When astroid deep inspection of modules raises

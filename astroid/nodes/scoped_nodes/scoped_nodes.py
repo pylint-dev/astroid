@@ -2972,5 +2972,63 @@ class ClassDef(
         """
         return self
 
-    def _infer(self, context: InferenceContext | None = None) -> Generator[ClassDef]:
+    def _infer(self, context: InferenceContext | None = None) -> Generator[InferenceResult]:
+        context = context or InferenceContext()
+        factory = self._non_class_metaclass_factory(context)
+        if factory is not None:
+            yield from factory.infer_call_result(None, context=context)
+            return
         yield self
+
+    def _non_class_metaclass_factory(self, context: InferenceContext) -> ClassDef | None:
+        if self._metaclass is not None or self.decorators is not None or self.keywords:
+            return None
+
+        factory: ClassDef | None = None
+        for base in self.bases:
+            try:
+                baseobj = _infer_last(base, context)
+            except InferenceError:
+                return None
+            if not isinstance(baseobj, bases.Instance) or baseobj.is_subtype_of(
+                "builtins.type", context=context
+            ):
+                return None
+
+            candidate = baseobj._proxied
+            if not self._is_compatible_non_class_metaclass_factory(candidate, context):
+                return None
+            if factory is not None and factory is not candidate:
+                return None
+            factory = candidate
+        return factory
+
+    @staticmethod
+    def _is_compatible_non_class_metaclass_factory(candidate: ClassDef, context: InferenceContext) -> bool:
+        try:
+            constructor = candidate.local_attr("__init__", context=context)[0]
+        except AttributeInferenceError:
+            return False
+        if not isinstance(constructor, FunctionDef):
+            return False
+        try:
+            candidate.local_attr("__mro_entries__", context=context)
+        except AttributeInferenceError:
+            pass
+        else:
+            return False
+
+        arguments = constructor.args
+        defaults = arguments.defaults
+        keyword_defaults = arguments.kw_defaults
+        if arguments.args is None or defaults is None or keyword_defaults is None:
+            return False
+
+        # The factory receives name, bases, and namespace, plus self.
+        class_creation_arg_count = 4
+        nb_positional = len(arguments.posonlyargs) + len(arguments.args)
+        return (
+            nb_positional - len(defaults) <= class_creation_arg_count
+            and (nb_positional >= class_creation_arg_count or arguments.vararg is not None)
+            and None not in keyword_defaults
+        )
