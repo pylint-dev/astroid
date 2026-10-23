@@ -4018,7 +4018,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(author, nodes.Const)
         self.assertEqual(author.value, "Rushdie")
 
-    def test_class_statements_with_non_type_base_infer_to_factory_instances(self) -> None:
+    def test_class_statements_with_non_type_base_infer_to_factory_instances(
+        self,
+    ) -> None:
         ast_nodes = extract_node("""
         class InterfaceClass:
             def __init__(self, name, bases=(), attrs=None):
@@ -4141,7 +4143,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ):
             self.assertIsInstance(next(module[name].infer()), nodes.ClassDef)
 
-    def test_non_type_factory_inference_skips_unsupported_class_declarations(self) -> None:
+    def test_non_type_factory_inference_skips_unsupported_class_declarations(
+        self,
+    ) -> None:
         module = parse("""
         class Factory:
             def __init__(self, *args, **kwargs):
@@ -4212,7 +4216,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         constructor.args.kw_defaults = None
 
         self.assertIsInstance(next(module["BadDefaults"].infer()), nodes.ClassDef)
-        self.assertIsInstance(next(module["BadKeywordDefaults"].infer()), nodes.ClassDef)
+        self.assertIsInstance(
+            next(module["BadKeywordDefaults"].infer()), nodes.ClassDef
+        )
 
     def test_non_type_factory_inference_keeps_type_instances_as_classes(self) -> None:
         klass = extract_node("""

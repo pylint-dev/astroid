@@ -138,7 +138,9 @@ class RawBuildingTC(unittest.TestCase):
         module = types.ModuleType("method_wrapper_module")
         module.method_wrapper = object().__str__
 
-        node = AstroidBuilder(AstroidManager()).inspect_build(module, "method_wrapper_module")
+        node = AstroidBuilder(AstroidManager()).inspect_build(
+            module, "method_wrapper_module"
+        )
 
         self.assertIsInstance(node["method_wrapper"], nodes.FunctionDef)
 

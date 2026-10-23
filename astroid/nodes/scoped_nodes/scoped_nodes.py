@@ -2972,7 +2972,9 @@ class ClassDef(
         """
         return self
 
-    def _infer(self, context: InferenceContext | None = None) -> Generator[InferenceResult]:
+    def _infer(
+        self, context: InferenceContext | None = None
+    ) -> Generator[InferenceResult]:
         context = context or InferenceContext()
         factory = self._non_class_metaclass_factory(context)
         if factory is not None:
@@ -2980,7 +2982,9 @@ class ClassDef(
             return
         yield self
 
-    def _non_class_metaclass_factory(self, context: InferenceContext) -> ClassDef | None:
+    def _non_class_metaclass_factory(
+        self, context: InferenceContext
+    ) -> ClassDef | None:
         if self._metaclass is not None or self.decorators is not None or self.keywords:
             return None
 
@@ -3004,7 +3008,9 @@ class ClassDef(
         return factory
 
     @staticmethod
-    def _is_compatible_non_class_metaclass_factory(candidate: ClassDef, context: InferenceContext) -> bool:
+    def _is_compatible_non_class_metaclass_factory(
+        candidate: ClassDef, context: InferenceContext
+    ) -> bool:
         try:
             constructor = candidate.local_attr("__init__", context=context)[0]
         except AttributeInferenceError:
@@ -3029,6 +3035,9 @@ class ClassDef(
         nb_positional = len(arguments.posonlyargs) + len(arguments.args)
         return (
             nb_positional - len(defaults) <= class_creation_arg_count
-            and (nb_positional >= class_creation_arg_count or arguments.vararg is not None)
+            and (
+                nb_positional >= class_creation_arg_count
+                or arguments.vararg is not None
+            )
             and None not in keyword_defaults
         )
