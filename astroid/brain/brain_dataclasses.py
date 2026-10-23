@@ -169,6 +169,21 @@ def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
     )
 
 
+def _init_false_field_names(node: nodes.ClassDef) -> Iterator[str]:
+    """Yield the names of the fields ``node`` itself defines with ``field(init=False)``."""
+    for assign in _get_dataclass_attributes(node):
+        value = assign.value
+        if (
+            isinstance(value, nodes.Call)
+            and _looks_like_dataclass_field_call(value, check_scope=False)
+            and any(
+                keyword.arg == "init" and keyword.value.bool_value() is False
+                for keyword in value.keywords or ()
+            )
+        ):
+            yield assign.target.name
+
+
 def _find_arguments_from_base_classes(
     node: nodes.ClassDef,
 ) -> tuple[
@@ -188,6 +203,13 @@ def _find_arguments_from_base_classes(
     for base in reversed(mro):
         if not base.is_dataclass:
             continue
+
+        # A field that this base redefines with init=False is no longer an
+        # argument, even though an earlier base's __init__ still lists it.
+        for name in _init_false_field_names(base):
+            pos_only_store.pop(name, None)
+            kw_only_store.pop(name, None)
+
         try:
             base_init = base.locals["__init__"][0]
         except KeyError:
