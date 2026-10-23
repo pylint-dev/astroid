@@ -1,0 +1,4 @@
+Changing ``AstroidManager.prefer_stubs`` now invalidates cached modules and
+inference results, so modules loaded with the previous setting are not reused.
+
+Refs #3439
