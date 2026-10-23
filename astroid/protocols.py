@@ -807,10 +807,19 @@ def _infer_context_manager(self, mgr, context):
         else:
             # It doesn't interest us.
             raise InferenceError(node=func)
-        try:
-            yield next(inferred.infer_yield_types())
-        except StopIteration as e:
-            raise InferenceError(node=func) from e
+        # Only the first yield gives the value bound by ``as``, but that
+        # yield can infer to several values. A generator always has a yield
+        # of its own, so ``next`` cannot run out here.
+        # pylint: disable-next=stop-iteration-return
+        first_yield = next(
+            yield_
+            for yield_ in func.nodes_of_class(nodes.Yield)
+            if yield_.value is None or yield_.scope() == func
+        )
+        if first_yield.value is None:
+            yield nodes.Const(None, parent=first_yield, lineno=first_yield.lineno)
+        else:
+            yield from first_yield.value.infer(context=inferred._call_context)
 
     elif isinstance(inferred, bases.Instance):
         try:
