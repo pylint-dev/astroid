@@ -78,20 +78,10 @@ def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef | None:
     if not _check_generate_dataclass_init(node):
         return None
 
-    kw_only_decorated = False
-    if node.decorators.nodes:
-        for decorator in node.decorators.nodes:
-            if not isinstance(decorator, nodes.Call):
-                kw_only_decorated = False
-                break
-            for keyword in decorator.keywords:
-                if keyword.arg == "kw_only":
-                    kw_only_decorated = keyword.value.bool_value() is True
-
     init_str = _generate_dataclass_init(
         node,
         list(_get_dataclass_attributes(node, init=True)),
-        kw_only_decorated,
+        _is_kw_only_decorated(node),
     )
 
     try:
@@ -109,6 +99,19 @@ def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef | None:
             new_assign.parent = root
             root.locals[DEFAULT_FACTORY] = [new_assign.targets[0]]
     return node
+
+
+def _is_kw_only_decorated(node: nodes.ClassDef) -> bool:
+    """Return True if the dataclass decorator of node was called with kw_only=True."""
+    kw_only_decorated = False
+    for decorator in node.decorators.nodes:
+        if not isinstance(decorator, nodes.Call):
+            kw_only_decorated = False
+            break
+        for keyword in decorator.keywords:
+            if keyword.arg == "kw_only":
+                kw_only_decorated = keyword.value.bool_value() is True
+    return kw_only_decorated
 
 
 def _get_dataclass_attributes(
@@ -186,12 +189,23 @@ def _find_arguments_from_base_classes(
         return pos_only_store, kw_only_store
 
     for base in reversed(mro):
-        if not base.is_dataclass:
+        if base is node or not base.is_dataclass:
             continue
         try:
             base_init = base.locals["__init__"][0]
         except KeyError:
-            continue
+            # A base decorated with init=False has no __init__,
+            # but its fields are still part of the subclass's __init__
+            try:
+                base_init = parse(
+                    _generate_dataclass_init(
+                        base,
+                        list(_get_dataclass_attributes(base, init=True)),
+                        _is_kw_only_decorated(base),
+                    )
+                )["__init__"]
+            except AstroidSyntaxError:
+                continue
 
         # A base can bind "__init__" to something that is not a function, for
         # example by annotating it as a field: "__init__: int". There are no

@@ -1,0 +1,5 @@
+Fields of a dataclass base decorated with ``init=False`` are now part of the
+``__init__`` inferred for its subclasses, instead of being left out.
+
+Refs #3409
+Closes pylint-dev/pylint#9389
