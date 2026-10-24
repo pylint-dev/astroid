@@ -129,7 +129,7 @@ nitpick_ignore_regex = [
     # Type aliases and base classes used unqualified in annotations. They exist
     # only to spell out signatures, and have no page of their own.
     (r"py:class", r"FrameType|InferenceContext|InferenceResult"),
-    (r"py:class", r"LookupMixIn|SuccessfulInferenceResult"),
+    (r"py:class", r"ConstFactoryResult|LookupMixIn|SuccessfulInferenceResult"),
 ]
 
 # -- Options for the linkcheck builder -----------------------------------------

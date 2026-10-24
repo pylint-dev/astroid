@@ -99,7 +99,7 @@ def raise_if_nothing_inferred(
 # fall back to passthrough implementations.
 if util.check_warnings_filter():  # noqa: C901
 
-    def deprecate_default_argument_values(
+    def deprecate_default_argument_values(  # pyright: ignore[reportRedeclaration]
         astroid_version: str = "3.0", **arguments: str
     ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
         """Decorator which emits a DeprecationWarning if any arguments specified
@@ -163,7 +163,7 @@ if util.check_warnings_filter():  # noqa: C901
 
         return deco
 
-    def deprecate_arguments(
+    def deprecate_arguments(  # pyright: ignore[reportRedeclaration]
         astroid_version: str = "3.0", **arguments: str
     ) -> Callable[[Callable[_P, _R]], Callable[_P, _R]]:
         """Decorator which emits a DeprecationWarning if any arguments specified

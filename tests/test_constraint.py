@@ -12,6 +12,7 @@ import pytest
 
 from astroid import builder, nodes
 from astroid.bases import Instance
+from astroid.constraint import _CompoundConstraint
 from astroid.util import Uninferable
 
 
@@ -1705,3 +1706,104 @@ def test_bool_op_apply_constraint_inside_nested_operand() -> None:
     assert isinstance(inferred[0], nodes.Const)
     assert inferred[0].value == 1
     assert inferred[1] is Uninferable
+
+
+@pytest.mark.parametrize(
+    "value",
+    ("len", "lambda: None", "Callable", "Callable()", "int"),
+)
+def test_callable(value: str) -> None:
+    """Test that callable(x) keeps callable values and not callable(x) removes them."""
+    node1, node2 = builder.extract_node(f"""
+    class Callable:
+        def __call__(self):
+            pass
+
+    def f(x={value}):
+        if callable(x):
+            x  #@
+        if not callable(x):
+            x  #@
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 2
+    assert inferred[0] is not Uninferable
+    assert inferred[1] is Uninferable
+
+    assert node2.inferred() == [Uninferable]
+
+
+@pytest.mark.parametrize(
+    "value", ("None", "1", "[]", "NotCallable()", "NotCallable.color")
+)
+def test_not_callable(value: str) -> None:
+    """Test that callable(x) removes values that are not callable."""
+    node1, node2 = builder.extract_node(f"""
+    class NotCallable:
+        @property
+        def color(self):
+            return "red"
+
+    def f(x={value}):
+        if callable(x):
+            x  #@
+        if not callable(x):
+            x  #@
+    """)
+
+    assert node1.inferred() == [Uninferable]
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert inferred[0] is not Uninferable
+    assert inferred[1] is Uninferable
+
+
+def test_callable_unknown_base() -> None:
+    """Test that an instance of a class with an unknown base is never removed,
+    since the base may define __call__.
+    """
+    node1, node2 = builder.extract_node("""
+    import missing
+
+    class Unknown(missing.Base):
+        pass
+
+    def f(x=Unknown()):
+        if callable(x):
+            x  #@
+        if not callable(x):
+            x  #@
+    """)
+
+    for node in (node1, node2):
+        inferred = node.inferred()
+        assert len(inferred) == 2
+        assert isinstance(inferred[0], Instance)
+        assert inferred[1] is Uninferable
+
+
+@pytest.mark.parametrize(
+    "condition",
+    ("callable(y)", "callable(x, y)", "callable(obj=x)", "check(x)", "x.callable(x)"),
+)
+def test_callable_unsupported_pattern(condition: str) -> None:
+    """Test that calls not matching callable(x) do not constrain x."""
+    node = builder.extract_node(f"""
+    def f(x=None, y=None):
+        if {condition}:
+            x  #@
+    """)
+
+    inferred = node.inferred()
+    assert len(inferred) == 2
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value is None
+    assert inferred[1] is Uninferable
+
+
+def test_compound_constraint_only_matches_bool_op() -> None:
+    """Test that only boolean operations make a compound constraint."""
+    node = builder.extract_node("x")
+    assert _CompoundConstraint.match(node, node) is None
