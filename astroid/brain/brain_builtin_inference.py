@@ -799,12 +799,14 @@ def _infer_object__new__decorator_check(node) -> bool:
     return False
 
 
-def infer_issubclass(callnode, context: InferenceContext | None = None):
+def infer_issubclass(
+    callnode: nodes.Call, context: InferenceContext | None = None
+) -> nodes.Const:
     """Infer issubclass() calls.
 
-    :param nodes.Call callnode: an `issubclass` call
-    :param InferenceContext context: the context for the inference
-    :rtype nodes.Const: Boolean Const value of the `issubclass` call
+    :param callnode: an `issubclass` call
+    :param context: the context for the inference
+    :returns: Boolean Const value of the `issubclass` call
     :raises UseInferenceDefault: If the node cannot be inferred
     """
     call = arguments.CallSite.from_call(callnode, context=context)
@@ -849,7 +851,7 @@ def infer_isinstance(
 ) -> nodes.Const:
     """Infer isinstance calls.
 
-    :param nodes.Call callnode: an isinstance call
+    :param callnode: an isinstance call
     :raises UseInferenceDefault: If the node cannot be inferred
     """
     call = arguments.CallSite.from_call(callnode, context=context)
@@ -881,12 +883,12 @@ def infer_isinstance(
     return nodes.Const(isinstance_bool)
 
 
-def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
+def infer_len(node: nodes.Call, context: InferenceContext | None = None) -> nodes.Const:
     """Infer length calls.
 
-    :param nodes.Call node: len call to infer
-    :param context.InferenceContext: node context
-    :rtype nodes.Const: a Const node with the inferred length, if possible
+    :param node: len call to infer
+    :param context: node context
+    :returns: a Const node with the inferred length, if possible
     """
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
@@ -904,12 +906,12 @@ def infer_len(node, context: InferenceContext | None = None) -> nodes.Const:
         raise UseInferenceDefault(str(exc)) from exc
 
 
-def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
+def infer_str(node: nodes.Call, context: InferenceContext | None = None) -> nodes.Const:
     """Infer str() calls.
 
-    :param nodes.Call node: str() call to infer
-    :param context.InferenceContext: node context
-    :rtype nodes.Const:
+    :param node: str() call to infer
+    :param context: node context
+    :returns:
         a Const containing a stringified value of str() call if possible, else an empty string
     """
     call = arguments.CallSite.from_call(node, context=context)
@@ -940,12 +942,12 @@ def infer_str(node, context: InferenceContext | None = None) -> nodes.Const:
     return fallback
 
 
-def infer_int(node, context: InferenceContext | None = None):
+def infer_int(node: nodes.Call, context: InferenceContext | None = None) -> nodes.Const:
     """Infer int() calls.
 
-    :param nodes.Call node: int() call to infer
-    :param context.InferenceContext: node context
-    :rtype nodes.Const: a Const containing the integer value of the int() call
+    :param node: int() call to infer
+    :param context: node context
+    :returns: a Const containing the integer value of the int() call
     """
     call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
@@ -972,12 +974,14 @@ def infer_int(node, context: InferenceContext | None = None):
     return nodes.Const(0)
 
 
-def infer_dict_fromkeys(node, context: InferenceContext | None = None):
+def infer_dict_fromkeys(
+    node: nodes.Call, context: InferenceContext | None = None
+) -> nodes.Dict:
     """Infer dict.fromkeys.
 
-    :param nodes.Call node: dict.fromkeys() call to infer
-    :param context.InferenceContext context: node context
-    :rtype nodes.Dict:
+    :param node: dict.fromkeys() call to infer
+    :param context: node context
+    :returns:
         a Dictionary containing the values that astroid was able to infer.
         In case the inference failed for any reason, an empty dictionary
         will be inferred instead.
@@ -1147,11 +1151,12 @@ def _infer_str_format_call(
         formatted_string = formatter.format(
             format_template, *pos_values, **keyword_values
         )
-    except (AttributeError, IndexError, KeyError, TypeError, ValueError):
+    except (AttributeError, IndexError, KeyError, TypeError, ValueError, OverflowError):
         # AttributeError: named field in format string was not found in the arguments
         # IndexError: there are too few arguments to interpolate
         # TypeError: Unsupported format string
         # ValueError: Unknown format code
+        # OverflowError: "c" with an out-of-range code point, e.g. "{:c}".format(-1)
         return iter([util.Uninferable])
 
     return iter([nodes.const_factory(formatted_string)])

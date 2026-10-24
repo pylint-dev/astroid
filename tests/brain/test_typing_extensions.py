@@ -37,3 +37,15 @@ class TestTypingExtensions:
         for node in ast_nodes:
             inferred = next(node.infer())
             assert isinstance(inferred, nodes.ClassDef)
+
+    @staticmethod
+    def test_typed_dict_required_and_optional_keys() -> None:
+        """TypedDict subclasses expose ``__required_keys__`` and ``__optional_keys__``."""
+        cls = builder.extract_node("""
+        from typing_extensions import TypedDict
+
+        class CustomTD(TypedDict):  #@
+            var: int
+        """)
+        for attr in ("__required_keys__", "__optional_keys__"):
+            assert cls.getattr(attr), f"{cls.name}.{attr} not found"

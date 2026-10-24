@@ -262,18 +262,15 @@ def _multiply_seq_by_int(
     return node
 
 
-def _filter_uninferable_nodes(
+def _infer_sequence_elements(
     elts: Sequence[InferenceResult], context: InferenceContext
 ) -> Iterator[SuccessfulInferenceResult]:
     for elt in elts:
-        if isinstance(elt, util.UninferableBase):
+        inferred = util.safe_infer(elt, context)
+        if inferred is None or isinstance(inferred, util.UninferableBase):
             yield node_classes.UNATTACHED_UNKNOWN
         else:
-            for inferred in elt.infer(context):
-                if not isinstance(inferred, util.UninferableBase):
-                    yield inferred
-                else:
-                    yield node_classes.UNATTACHED_UNKNOWN
+            yield inferred
 
 
 @decorators.yes_if_nothing_inferred
@@ -296,7 +293,12 @@ def tl_infer_binary_op(
     # For tuples and list the boundnode is no longer the tuple or list instance
     context.boundnode = None
     not_implemented = nodes.Const(NotImplemented)
-    if isinstance(other, self.__class__) and operator == "+":
+    # "+=" only reaches here for lists: tuples have no __iadd__, so the
+    # augmented flow falls back to "+" for them. list.__iadd__ accepts a
+    # tuple, unlike list.__add__.
+    if (isinstance(other, self.__class__) and operator == "+") or (
+        isinstance(other, (nodes.List, nodes.Tuple)) and operator == "+="
+    ):
         # Don't build (and infer every element of) an overly large sequence.
         if len(self.elts) + len(other.elts) > 1e8:
             yield util.Uninferable
@@ -304,8 +306,8 @@ def tl_infer_binary_op(
         node = self.__class__(parent=opnode)
         node.elts = list(
             itertools.chain(
-                _filter_uninferable_nodes(self.elts, context),
-                _filter_uninferable_nodes(other.elts, context),
+                _infer_sequence_elements(self.elts, context),
+                _infer_sequence_elements(other.elts, context),
             )
         )
         yield node

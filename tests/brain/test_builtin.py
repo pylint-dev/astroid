@@ -125,6 +125,8 @@ class TestStringNodes:
             pytest.param(
                 """"{:>{}}".format("x", 2000000000)""", id="oversized-nested-width"
             ),
+            pytest.param(""""{:c}".format(-1)""", id="char-negative"),
+            pytest.param(""""{:c}".format(0x110000)""", id="char-too-large"),
         ],
     )
     def test_string_format_uninferable(self, format_string: str) -> None:

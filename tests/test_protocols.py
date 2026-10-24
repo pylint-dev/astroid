@@ -20,6 +20,13 @@ from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
 
+try:
+    import typing_extensions  # pylint: disable=unused-import
+
+    HAS_TYPING_EXTENSIONS = True
+except ImportError:
+    HAS_TYPING_EXTENSIONS = False
+
 
 @contextlib.contextmanager
 def _add_transform(
@@ -681,6 +688,9 @@ class StubAnnotationInferenceTest(unittest.TestCase):
         assert isinstance(inferred[0], Instance)
         assert inferred[0].name == "int"
 
+    @pytest.mark.skipif(
+        not HAS_TYPING_EXTENSIONS, reason="Requires the typing_extensions library"
+    )
     def test_stub_typing_extensions_annotated_unwrapped(self) -> None:
         module = builder.parse(
             """

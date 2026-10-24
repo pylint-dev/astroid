@@ -6,6 +6,9 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
+from importlib import metadata
+
 from astroid import nodes
 from astroid.builder import extract_node
 from astroid.context import InferenceContext
@@ -28,17 +31,17 @@ def numpy_version_2_or_later() -> bool:
         return False
 
 
+@lru_cache
 def _get_numpy_version() -> tuple[str, str, str]:
     """
-    Return the numpy version number if numpy can be imported.
+    Return the numpy version number if numpy is installed.
 
-    Otherwise returns ('0', '0', '0')
+    Otherwise returns ('0', '0', '0'). Read from the package metadata rather
+    than by importing numpy, which may resolve to the analysed code.
     """
     try:
-        import numpy  # pylint: disable=import-outside-toplevel
-
-        return tuple(numpy.version.version.split("."))
-    except (ImportError, AttributeError):
+        return tuple(metadata.version("numpy").split("."))
+    except metadata.PackageNotFoundError:
         return ("0", "0", "0")
 
 

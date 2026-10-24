@@ -10,12 +10,11 @@ import abc
 import ast
 import itertools
 import operator
-import sys
 import typing
 import warnings
 from collections.abc import Callable, Generator, Iterable, Iterator, Mapping
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Self, Union
 
 from astroid import decorators, protocols, util
 from astroid.bases import Instance, _infer_stmts
@@ -46,11 +45,6 @@ from astroid.typing import (
     InferenceResult,
     SuccessfulInferenceResult,
 )
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from astroid import nodes
@@ -313,11 +307,10 @@ class BaseContainer(_base_nodes.ParentAssignNode, Instance, metaclass=abc.ABCMet
         node.elts = [const_factory(e) if _is_const(e) else e for e in elts]
         return node
 
-    def itered(self):
+    def itered(self) -> list[SuccessfulInferenceResult]:
         """An iterator over the elements this node contains.
 
         :returns: The contents of this node.
-        :rtype: Iterator[NodeNG]
         """
         return self.elts
 
@@ -811,7 +804,6 @@ class Arguments(
         """Get the arguments formatted as string.
 
         :returns: The formatted arguments.
-        :rtype: str
         """
         result = []
         positional_only_defaults = []
@@ -926,38 +918,35 @@ class Arguments(
 
         return pos_only, kw_only
 
-    def default_value(self, argname):
+    def default_value(self, argname: str) -> NodeNG:
         """Get the default value for an argument.
 
         :param argname: The name of the argument to get the default value for.
-        :type argname: str
 
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        args = [
-            arg for arg in self.arguments if arg.name not in [self.vararg, self.kwarg]
-        ]
-
         index = _find_arg(argname, self.kwonlyargs)[0]
         if (index is not None) and (len(self.kw_defaults) > index):
-            if self.kw_defaults[index] is not None:
-                return self.kw_defaults[index]
+            kw_default = self.kw_defaults[index]
+            if kw_default is not None:
+                return kw_default
             raise NoDefault(func=self.parent, name=argname)
 
-        index = _find_arg(argname, args)[0]
+        positional = [*(self.posonlyargs or ()), *(self.args or ())]
+        index = _find_arg(argname, positional)[0]
         if index is not None:
-            idx = index - (len(args) - len(self.defaults) - len(self.kw_defaults))
+            # ``defaults`` covers the last positional arguments.
+            idx = index - (len(positional) - len(self.defaults))
             if idx >= 0:
                 return self.defaults[idx]
 
         raise NoDefault(func=self.parent, name=argname)
 
-    def is_argument(self, name) -> bool:
+    def is_argument(self, name: str) -> bool:
         """Check if the given name is defined in the arguments.
 
         :param name: The name to check for.
-        :type name: str
 
         :returns: Whether the given name is defined in the arguments,
         """
@@ -967,14 +956,12 @@ class Arguments(
             return True
         return self.find_argname(name)[1] is not None
 
-    def find_argname(self, argname):
+    def find_argname(self, argname: str) -> tuple[int | None, AssignName | None]:
         """Get the index and :class:`AssignName` node for given name.
 
         :param argname: The name of the argument to search for.
-        :type argname: str
 
         :returns: The index and node for the argument.
-        :rtype: tuple(str or None, AssignName or None)
         """
         if self.arguments:
             index, argument = _find_arg(argname, self.arguments)
@@ -1833,24 +1820,22 @@ class Compare(NodeNG):
         self.left = left
         self.ops = ops
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         """Get the child nodes below this node.
 
         Overridden to handle the tuple fields and skip returning the operator
         strings.
 
         :returns: The children.
-        :rtype: Iterator[NodeNG]
         """
         yield self.left
         for _, comparator in self.ops:
             yield comparator  # we don't want the 'op'
 
-    def last_child(self):
+    def last_child(self) -> NodeNG:
         """An optimized version of list(get_children())[-1]
 
         :returns: The last child.
-        :rtype: NodeNG
         """
         # XXX maybe if self.ops:
         return self.ops[-1][1]
@@ -1902,6 +1887,8 @@ class Compare(NodeNG):
                 expr = op_func(left, right)
             except TypeError as exc:
                 raise AstroidTypeError from exc
+            except ValueError as exc:
+                raise AstroidValueError from exc
 
             if retval is None:
                 retval = expr
@@ -1927,7 +1914,7 @@ class Compare(NodeNG):
             rhs = list(right_node.infer(context=context))
             try:
                 retval = self._do_compare(lhs, op, rhs)
-            except AstroidTypeError:
+            except (AstroidTypeError, AstroidValueError):
                 retval = util.Uninferable
                 break
             if retval is not True:
@@ -1988,11 +1975,10 @@ class Comprehension(NodeNG):
     See astroid/protocols.py for actual implementation.
     """
 
-    def assign_type(self):
+    def assign_type(self) -> Self:
         """The type of assignment that this node performs.
 
         :returns: The assignment type.
-        :rtype: NodeNG
         """
         return self
 
@@ -2103,11 +2089,12 @@ class Const(_base_nodes.NoChildrenNode, Instance):
             raise AttributeError
         return super().__getattr__(name)
 
-    def getitem(self, index, context: InferenceContext | None = None):
+    def getitem(
+        self, index: SuccessfulInferenceResult, context: InferenceContext | None = None
+    ) -> Const:
         """Get an item from this node if subscriptable.
 
         :param index: The node to use as a subscript index.
-        :type index: Const or Slice
 
         :raises AstroidTypeError: When the given index cannot be used as a
             subscript index, or if this node is not subscriptable.
@@ -2155,11 +2142,10 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """
         return False
 
-    def itered(self):
+    def itered(self) -> list[ConstFactoryResult]:
         """An iterator over the elements this node contains.
 
         :returns: The contents of this node.
-        :rtype: Iterator[Const]
 
         :raises TypeError: If this node does not represent something that is iterable.
         """
@@ -2174,11 +2160,12 @@ class Const(_base_nodes.NoChildrenNode, Instance):
         """
         return self._proxied.qname()
 
-    def bool_value(self, context: InferenceContext | None = None):
+    def bool_value(
+        self, context: InferenceContext | None = None
+    ) -> bool | util.UninferableBase:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-        :rtype: bool or Uninferable
         """
         # bool(NotImplemented) is deprecated; it raises TypeError starting from Python 3.14
         # and returns True for versions under 3.14
@@ -2386,34 +2373,31 @@ class Dict(NodeNG, Instance):
         """
         return "builtins.dict"
 
-    def get_children(self):
+    def get_children(self) -> Iterator[InferenceResult]:
         """Get the key and value nodes below this node.
 
         Children are returned in the order that they are defined in the source
         code, key first then the value.
 
         :returns: The children.
-        :rtype: Iterator[NodeNG]
         """
         for key, value in self.items:
             yield key
             yield value
 
-    def last_child(self):
+    def last_child(self) -> InferenceResult | None:
         """An optimized version of list(get_children())[-1]
 
         :returns: The last child, or None if no children exist.
-        :rtype: NodeNG or None
         """
         if self.items:
             return self.items[-1][1]
         return None
 
-    def itered(self):
+    def itered(self) -> list[InferenceResult]:
         """An iterator over the keys this node contains.
 
         :returns: The keys of this node.
-        :rtype: Iterator[NodeNG]
         """
         return [key for (key, _) in self.items]
 
@@ -2450,11 +2434,10 @@ class Dict(NodeNG, Instance):
 
         raise AstroidIndexError(index)
 
-    def bool_value(self, context: InferenceContext | None = None):
+    def bool_value(self, context: InferenceContext | None = None) -> bool:
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
-        :rtype: bool
         """
         return bool(self.items)
 
@@ -2655,11 +2638,8 @@ class ExceptHandler(
         yield from self.body
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int | None:
+        """The line on which the beginning of this block ends."""
         if self.name:
             return self.name.tolineno
         if self.type:
@@ -2734,11 +2714,8 @@ class For(
     """
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.iter.tolineno
 
     def get_children(self):
@@ -3039,11 +3016,8 @@ class If(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         self.orelse = orelse
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.test.tolineno
 
     def get_children(self):
@@ -3328,11 +3302,12 @@ class List(BaseContainer):
         """
         return "builtins.list"
 
-    def getitem(self, index, context: InferenceContext | None = None):
+    def getitem(
+        self, index: SuccessfulInferenceResult, context: InferenceContext | None = None
+    ) -> InferenceResult:
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
-        :type index: Const or Slice
         """
         return _container_getitem(self, self.elts, index, context=context)
 
@@ -4085,11 +4060,12 @@ class Tuple(BaseContainer):
         """
         return "builtins.tuple"
 
-    def getitem(self, index, context: InferenceContext | None = None):
+    def getitem(
+        self, index: SuccessfulInferenceResult, context: InferenceContext | None = None
+    ) -> InferenceResult:
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
-        :type index: Const or Slice
         """
         return _container_getitem(self, self.elts, index, context=context)
 
@@ -4479,11 +4455,8 @@ class While(_base_nodes.MultiLineWithElseBlockNode, _base_nodes.Statement):
         self.orelse = orelse
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.test.tolineno
 
     def get_children(self):
@@ -4587,18 +4560,14 @@ class With(
     """
 
     @cached_property
-    def blockstart_tolineno(self):
-        """The line on which the beginning of this block ends.
-
-        :type: int
-        """
+    def blockstart_tolineno(self) -> int:
+        """The line on which the beginning of this block ends."""
         return self.items[-1][0].tolineno
 
-    def get_children(self):
+    def get_children(self) -> Iterator[NodeNG]:
         """Get the child nodes below this node.
 
         :returns: The children.
-        :rtype: Iterator[NodeNG]
         """
         for expr, var in self.items:
             yield expr
@@ -4724,7 +4693,6 @@ class FormattedValue(NodeNG):
         :param conversion: The type of formatting to be applied to the value.
 
         :param format_spec: The formatting to be applied to the value.
-        :type format_spec: JoinedStr or None
         """
         self.value = value
         self.conversion = conversion
@@ -4770,9 +4738,10 @@ class FormattedValue(NodeNG):
                         end_col_offset=self.end_col_offset,
                     )
                     continue
-                except (ValueError, TypeError, MemoryError):
+                except (ValueError, TypeError, MemoryError, OverflowError):
                     # ValueError/TypeError: invalid format spec
                     # MemoryError: format spec with huge width (e.g. f'{0:11111111111}')
+                    # OverflowError: "c" with an out-of-range code point (e.g. f'{-1:c}')
                     yield util.Uninferable
                     uninferable_already_generated = True
                 continue
@@ -4815,10 +4784,7 @@ class JoinedStr(NodeNG):
             source code. Note: This is after the last symbol.
         """
         self.values: list[NodeNG] = []
-        """The string expressions to be joined.
-
-        :type: list(FormattedValue or Const)
-        """
+        """The string expressions to be joined."""
 
         super().__init__(
             lineno=lineno,
@@ -4832,8 +4798,6 @@ class JoinedStr(NodeNG):
         """Do some setup after initialisation.
 
         :param value: The string expressions to be joined.
-
-        :type: list(FormattedValue or Const)
         """
         if values is not None:
             self.values = values
@@ -4936,10 +4900,7 @@ class NamedExpr(_base_nodes.AssignTypeNode):
             source code. Note: This is after the last symbol.
         """
         self.target: NodeNG
-        """The assignment target
-
-        :type: Name
-        """
+        """The assignment target"""
 
         self.value: NodeNG
         """The value that gets assigned in the expression"""
@@ -5684,28 +5645,28 @@ CONST_CLS: dict[type, type[NodeNG]] = {
 
 
 def _create_basic_elements(
-    value: Iterable[Any], node: List | Set | Tuple
+    value: Iterable[Any], node: List | Set | Tuple, building: set[int]
 ) -> list[NodeNG]:
     """Create a list of nodes to function as the elements of a new node."""
     elements: list[NodeNG] = []
     for element in value:
         # NOTE: avoid accessing any attributes of element in the loop.
-        element_node = const_factory(element)
+        element_node = _const_factory(element, building)
         element_node.parent = node
         elements.append(element_node)
     return elements
 
 
 def _create_dict_items(
-    values: Mapping[Any, Any], node: Dict
+    values: Mapping[Any, Any], node: Dict, building: set[int]
 ) -> list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]]:
     """Create a list of node pairs to function as the items of a new dict node."""
     elements: list[tuple[SuccessfulInferenceResult, SuccessfulInferenceResult]] = []
     for key, value in values.items():
         # NOTE: avoid accessing any attributes of both key and value in the loop.
-        key_node = const_factory(key)
+        key_node = _const_factory(key, building)
         key_node.parent = node
-        value_node = const_factory(value)
+        value_node = _const_factory(value, building)
         value_node.parent = node
         elements.append((key_node, value_node))
     return elements
@@ -5713,6 +5674,15 @@ def _create_dict_items(
 
 def const_factory(value: Any) -> ConstFactoryResult:
     """Return an astroid node for a python value."""
+    return _const_factory(value, set())
+
+
+def _const_factory(value: Any, building: set[int]) -> ConstFactoryResult:
+    """Return an astroid node for value.
+
+    ``building`` holds the ids of the containers whose elements are being
+    converted, i.e. the containers value is nested in.
+    """
     # NOTE: avoid accessing any attributes of value until it is known that value
     # is of a const type, to avoid possibly triggering code for a live object.
     # Accesses include value.__class__ and isinstance(value, ...), but not type(value).
@@ -5730,6 +5700,18 @@ def const_factory(value: Any) -> ConstFactoryResult:
 
     instance: List | Set | Tuple | Dict
     initializer_cls = CONST_CLS[value_type]
+    if initializer_cls is Const:
+        return Const(value)
+
+    # A live container can hold itself, directly or through other containers
+    # (``namespace = globals()``): converting it again would recurse forever,
+    # so the back reference becomes an EmptyNode, like a non-const object.
+    value_id = id(value)
+    if value_id in building:
+        node = EmptyNode()
+        node.object = value
+        return node
+    building.add(value_id)
     if issubclass(initializer_cls, (List, Set, Tuple)):
         instance = initializer_cls(
             lineno=None,
@@ -5738,9 +5720,9 @@ def const_factory(value: Any) -> ConstFactoryResult:
             end_lineno=None,
             end_col_offset=None,
         )
-        instance.postinit(_create_basic_elements(value, instance))
-        return instance
-    if issubclass(initializer_cls, Dict):
+        instance.postinit(_create_basic_elements(value, instance, building))
+    else:
+        assert issubclass(initializer_cls, Dict)
         instance = initializer_cls(
             lineno=None,
             col_offset=None,
@@ -5748,6 +5730,6 @@ def const_factory(value: Any) -> ConstFactoryResult:
             end_lineno=None,
             end_col_offset=None,
         )
-        instance.postinit(_create_dict_items(value, instance))
-        return instance
-    return Const(value)
+        instance.postinit(_create_dict_items(value, instance, building))
+    building.remove(value_id)
+    return instance

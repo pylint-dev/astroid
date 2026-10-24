@@ -277,7 +277,24 @@ def _looks_like_require_version(node) -> bool:
         return False
 
     if isinstance(func, nodes.Name):
-        return func.name == "require_version"
+        if func.name != "require_version":
+            return False
+        # A bare ``require_version(...)`` is gi's only when the name comes from
+        # gi. Without this check any unrelated function with the same name would
+        # make _register_require_version import gi and call gi.require_version.
+        _, assignments = func.lookup(func.name)
+        if assignments:
+            return any(
+                isinstance(assignment, nodes.ImportFrom)
+                and assignment.modname == "gi"
+                and any(orig == "require_version" for orig, _ in assignment.names)
+                for assignment in assignments
+            )
+        # ``from gi import *`` binds the name without an explicit assignment.
+        return any(
+            imp.modname == "gi" and ("*", None) in imp.names
+            for imp in func.root().nodes_of_class(nodes.ImportFrom)
+        )
 
     return False
 
