@@ -129,7 +129,12 @@ def _model_class(name: str) -> nodes.ClassDef:
         "        raise NotImplementedError\n"
         for method, signature in signatures.items()
     )
-    result = parse(f"class {name}:\n{methods}", module_name="re")[name]
+    # The model is a plain synthetic class: transforms, including the "re"
+    # module extender, must not run here. They would re-parse the whole flags
+    # module into this tree's locals on every call.
+    result = parse(
+        f"class {name}:\n{methods}", module_name="re", apply_transforms=False
+    )[name]
     if name in {"Pattern", "Match"}:
         item = _extract_single_node(CLASS_GETITEM_TEMPLATE)
         item.parent = result
