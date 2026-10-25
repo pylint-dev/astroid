@@ -356,16 +356,21 @@ def _looks_like_re_compile(node: nodes.Call) -> bool:
         return False
     if func.name == "compile":
         return True
-    for definition in func.lookup(func.name)[1]:
-        if isinstance(definition, nodes.ImportFrom) and definition.modname == "re":
-            if ("compile", func.name) in definition.names:
-                return True
-        if isinstance(definition, nodes.AssignName) and isinstance(
-            definition.parent, (nodes.Assign, nodes.AnnAssign)
-        ):
-            value = definition.parent.value
-            if isinstance(value, nodes.Attribute) and value.attrname == "compile":
-                return True
+    # This predicate runs for every call while parsing. Inspect unfiltered locals
+    # rather than resolving names; infer_re_compile validates the actual binding.
+    scope = func.scope()
+    while scope is not None:
+        for definition in scope.locals.get(func.name, ()):
+            if isinstance(definition, nodes.ImportFrom) and definition.modname == "re":
+                if ("compile", func.name) in definition.names:
+                    return True
+            if isinstance(definition, nodes.AssignName) and isinstance(
+                definition.parent, (nodes.Assign, nodes.AnnAssign)
+            ):
+                value = definition.parent.value
+                if isinstance(value, nodes.Attribute) and value.attrname == "compile":
+                    return True
+        scope = scope.parent.scope() if scope.parent is not None else None
     return False
 
 

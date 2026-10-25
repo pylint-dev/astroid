@@ -356,3 +356,75 @@ def test_typed_unknown_values_can_be_composed():
         "import re\nmatch = re.compile('x').match('x')\nif match:\n",
     )
     assert types(values) == {"re.Pattern"}
+
+
+@pytest.mark.parametrize(
+    "code, expected",
+    [
+        ("from re import compile as alias\nalias('x') #@", True),
+        ("import re\nalias: object = re.compile\nalias('x') #@", True),
+        (
+            "import re\nalias = re.compile\ndef wrapper():\n    alias('x') #@",
+            True,
+        ),
+        (
+            "import re\ndef outer():\n    alias = re.compile\n"
+            "    def inner():\n        alias('x') #@",
+            True,
+        ),
+        ("def unrelated(pattern):\n    return 42\nunrelated('x') #@", False),
+        ("from builtins import int as alias\nalias('x') #@", False),
+        ("alias = 42\nalias('x') #@", False),
+    ],
+)
+def test_compile_candidate_detection_does_not_resolve_names(
+    monkeypatch, code, expected
+):
+    node = extract_node(code)
+
+    def unexpected_lookup(_name):
+        pytest.fail("The parse-time candidate predicate must not resolve names")
+
+    monkeypatch.setattr(node.func, "lookup", unexpected_lookup)
+    assert brain_re._looks_like_re_compile(node) is expected
+
+
+def test_shadowed_outer_compile_alias_uses_normal_inference():
+    values = infer(
+        "wrapper()",
+        "import re\nalias = re.compile\ndef wrapper():\n"
+        "    alias = lambda pattern: 42\n    return alias('x')\n",
+    )
+    assert [value.value for value in values] == [42]
+
+
+@pytest.mark.parametrize(
+    "prefix, expression",
+    [
+        (
+            "import re\nalias = re.compile\ndef wrapper():\n"
+            "    global alias\n    return alias('x')\n",
+            "wrapper()",
+        ),
+        (
+            "import re\ndef outer():\n    alias = re.compile\n"
+            "    def inner():\n        nonlocal alias\n        return alias('x')\n"
+            "    return inner()\n",
+            "outer()",
+        ),
+        (
+            "import re\ndef outer():\n    alias = re.compile\n"
+            "    def inner():\n        return alias('x')\n    return inner()\n",
+            "outer()",
+        ),
+        ("import re\nalias: object = re.compile\n", "alias('x')"),
+        (
+            "import re\nalias = re.compile\nclass Wrapper:\n"
+            "    alias = lambda pattern: 42\n    def method(self):\n"
+            "        return alias('x')\n",
+            "Wrapper().method()",
+        ),
+    ],
+)
+def test_compile_aliases_in_enclosing_scopes(prefix, expression):
+    assert types(infer(expression, prefix)) == {"re.Pattern"}
