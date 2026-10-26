@@ -132,8 +132,6 @@ def test_inner_call_with_const_argument() -> None:
 def test_inner_call_with_dynamic_argument() -> None:
     """Test function where return value is the result of a separate function call,
     with a dynamic value passed to the inner function.
-
-    Currently, this is Uninferable.
     """
     node = builder.extract_node("""
     def f(x):
@@ -147,7 +145,8 @@ def test_inner_call_with_dynamic_argument() -> None:
     assert isinstance(node, nodes.NodeNG)
     inferred = node.inferred()
     assert len(inferred) == 1
-    assert inferred[0] is Uninferable
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == 3
 
 
 def test_method_const_instance_attr() -> None:
@@ -513,6 +512,65 @@ def test_class_method_inherited() -> None:
         inferred = node.inferred()
         assert len(inferred) == 1
         assert isinstance(inferred[0], nodes.ClassDef)
+        assert inferred[0].name == expected
+
+
+def test_class_method_helper_inherited() -> None:
+    """Infer the subclass when an inherited classmethod forwards cls to a helper."""
+    node = builder.extract_node("""
+    from dataclasses import dataclass
+    from typing import Type, TypeVar
+
+    T = TypeVar("T")
+
+    def from_dict(data_class: Type[T], data: dict[str, str]) -> T:
+        return data_class(**data)
+
+    @dataclass
+    class Base:
+        @classmethod
+        def from_dict(cls: Type[T], data: dict[str, str]) -> T:
+            return from_dict(data_class=cls, data=data)
+
+    @dataclass
+    class User(Base):
+        name: str
+
+    User.from_dict({"name": "John"})  #@
+    """)
+    assert isinstance(node, nodes.NodeNG)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "User"
+
+
+def test_class_method_helper_bound_classes_are_isolated() -> None:
+    """Keep sibling classmethod helper calls bound to their own calling class."""
+    nodes_ = builder.extract_node("""
+    def create(data_class):
+        return data_class()
+
+    class Base:
+        @classmethod
+        def create(cls):
+            return create(cls)
+
+    class First(Base):
+        pass
+
+    class Second(Base):
+        pass
+
+    First.create()  #@
+    Second.create()  #@
+    First.create()  #@
+    """)
+    for node, expected in zip(nodes_, ("First", "Second", "First")):
+        assert isinstance(node, nodes.NodeNG)
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], bases.Instance)
         assert inferred[0].name == expected
 
 
