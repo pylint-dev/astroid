@@ -616,6 +616,25 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
+    def test_func_getattr_does_not_modify_instance_attrs(self) -> None:
+        """Looking up an attribute that is also a special attribute must not
+        add the special attribute to instance_attrs.
+        """
+        func = builder.extract_node("""
+            def func():
+                pass
+
+            func.__name__ = "name"
+            func #@
+        """).inferred()[0]
+        self.assertIsInstance(func, nodes.FunctionDef)
+        lambda_func = builder.extract_node("lambda: None")
+        lambda_func.instance_attrs["__name__"] = [nodes.Const("name")]
+        for node in (func, lambda_func):
+            self.assertEqual(len(node.getattr("__name__")), 2)
+            self.assertEqual(len(node.getattr("__name__")), 2)
+            self.assertEqual(len(node.instance_attrs["__name__"]), 1)
+
     def test_func_is_bound(self) -> None:
         data = """
         class MyClass:
@@ -732,6 +751,21 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(node.locals["classmethod_wrapped"][0].type, "classmethod")
         self.assertEqual(node.locals["staticmethod_wrapped"][0].type, "staticmethod")
         self.assertEqual(node.locals["long_classmethod"][0].type, "classmethod")
+
+    def test_decorator_factory_returning_classmethod_subclass(self) -> None:
+        node = builder.extract_node("""
+        class my_classmethod(classmethod):
+            pass
+
+        def factory():
+            return my_classmethod
+
+        class SomeClass:
+            @factory()
+            def method(cls):
+                pass
+        """)
+        self.assertEqual(node.locals["method"][0].type, "classmethod")
 
     def test_igetattr(self) -> None:
         func = builder.extract_node("""
@@ -2763,6 +2797,11 @@ def test_slots_duplicate_bases_issue_1089() -> None:
         astroid["First"].slots()
 
 
+def test_classdef_repr_tree_ast_state() -> None:
+    node = builder.extract_node("class A: pass")
+    assert "locals=" in node.repr_tree(ast_state=True)
+
+
 def test_import_with_global() -> None:
     code = builder.parse("""
     def f1():
@@ -2951,13 +2990,12 @@ class StubScopedNodeTest(unittest.TestCase):
         assert len(results) == 1
         assert results[0] is util.Uninferable
 
-    def test_nonstub_funcdef_ellipsis_infer_unchanged(self) -> None:
+    def test_nonstub_funcdef_ellipsis_infer_uninferable(self) -> None:
+        """Outside a stub module, the annotation is not used to infer the result."""
         module = builder.parse("def f() -> int: ...")
         func = module.body[0]
         results = list(func.infer_call_result(None))
-        assert len(results) == 1
-        assert isinstance(results[0], nodes.Const)
-        assert results[0].value is None
+        assert results == [util.Uninferable]
 
 
 class TestFrameNodes:

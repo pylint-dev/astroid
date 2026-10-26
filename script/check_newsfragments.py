@@ -35,7 +35,7 @@ VALID_FILE_TYPE = frozenset(
 ISSUES_KEYWORDS = "|".join(VALID_ISSUES_KEYWORDS)
 VALID_CHANGELOG_PATTERN = (
     rf"(?P<description>(.*\n)*(.*\.\n))\n(?P<ref>({ISSUES_KEYWORDS})"
-    r" (pylint-dev/pylint)?#(?P<issue>\d+))"
+    r" (?P<repo>pylint-dev/pylint)?#(?P<issue>\d+))"
 )
 VALID_CHANGELOG_COMPILED_PATTERN: Pattern[str] = re.compile(
     VALID_CHANGELOG_PATTERN, flags=re.MULTILINE
@@ -65,6 +65,15 @@ def check_file(file: Path, verbose: bool) -> bool:
     match = VALID_CHANGELOG_COMPILED_PATTERN.match(content)
     if match:
         issue = match.group("issue")
+        if match.group("repo"):
+            echo(
+                f"{file}: the first reference must be an astroid issue or pull request,"
+                f" not '{match.group('ref')}'. towncrier links the file name to the"
+                " astroid repository, so a pylint issue number there links to an"
+                " unrelated astroid issue. Put the astroid reference first, then the"
+                " pylint one, for example:\n\nRefs #1234\nCloses pylint-dev/pylint#5678"
+            )
+            return False
         if file.stem != issue:
             echo(
                 f"{file} must be named '{issue}.<fragmenttype>', after the issue it references."
@@ -95,6 +104,9 @@ The standard format is:
 <issue reference> #<issuenumber>
 
 Where <issue reference> can be one of: {', '.join(VALID_ISSUES_KEYWORDS)}
+
+The first reference must be an astroid issue or pull request. References
+to pylint issues (pylint-dev/pylint#<issuenumber>) can follow it.
 
 The regex used is '{VALID_CHANGELOG_COMPILED_PATTERN}'.
 

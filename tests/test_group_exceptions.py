@@ -3,19 +3,15 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 import textwrap
 
-import pytest
-
 from astroid import (
     Uninferable,
     bases,
     extract_node,
     nodes,
 )
-from astroid.const import PY311_PLUS
 from astroid.context import InferenceContext
 
 
-@pytest.mark.skipif(not PY311_PLUS, reason="Exception group introduced in Python 3.11")
 def test_group_exceptions_exceptions() -> None:
     node = extract_node(textwrap.dedent("""
         try:
@@ -27,7 +23,6 @@ def test_group_exceptions_exceptions() -> None:
     assert isinstance(inferred, nodes.Tuple)
 
 
-@pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_group_exceptions() -> None:
     node = extract_node(textwrap.dedent("""
         try:
@@ -54,7 +49,6 @@ def test_group_exceptions() -> None:
     assert isinstance(for_loop, nodes.For)
 
 
-@pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions() -> None:
     code = textwrap.dedent("""
     try:
@@ -94,7 +88,6 @@ def test_star_exceptions() -> None:
     assert final.value.args[0].value == 0
 
 
-@pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions_infer_name() -> None:
     trystar = extract_node("""
 try:
@@ -109,7 +102,6 @@ except* ValueError:
     assert context.lookupname == name
 
 
-@pytest.mark.skipif(not PY311_PLUS, reason="Requires Python 3.11 or higher")
 def test_star_exceptions_infer_exceptions() -> None:
     code = textwrap.dedent("""
     try:

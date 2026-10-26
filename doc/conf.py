@@ -5,7 +5,7 @@
 import doctest
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -45,7 +45,7 @@ root_doc = "index"
 
 # General information about the project.
 project = "Astroid"
-current_year = datetime.now(timezone.utc).year
+current_year = datetime.now(UTC).year
 contributors = "Logilab, and astroid contributors"
 copyright = f"2003-{current_year}, {contributors}"
 
@@ -129,7 +129,7 @@ nitpick_ignore_regex = [
     # Type aliases and base classes used unqualified in annotations. They exist
     # only to spell out signatures, and have no page of their own.
     (r"py:class", r"FrameType|InferenceContext|InferenceResult"),
-    (r"py:class", r"LookupMixIn|SuccessfulInferenceResult"),
+    (r"py:class", r"ConstFactoryResult|LookupMixIn|SuccessfulInferenceResult"),
 ]
 
 # -- Options for the linkcheck builder -----------------------------------------

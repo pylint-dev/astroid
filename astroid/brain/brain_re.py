@@ -7,21 +7,15 @@ from __future__ import annotations
 from astroid import context, nodes
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import _extract_single_node, parse
-from astroid.const import PY311_PLUS
 from astroid.inference_tip import inference_tip
 from astroid.manager import AstroidManager
 
 
 def _re_transform() -> nodes.Module:
     # The RegexFlag enum exposes all its entries by updating globals()
-    # In 3.6-3.10 all flags come from sre_compile
-    # On 3.11+ all flags come from re._compiler
-    if PY311_PLUS:
-        import_compiler = "import re._compiler as _compiler"
-    else:
-        import_compiler = "import sre_compile as _compiler"
-    return parse(f"""
-    {import_compiler}
+    # All flags come from re._compiler
+    return parse("""
+    import re._compiler as _compiler
     NOFLAG = 0
     ASCII = _compiler.SRE_FLAG_ASCII
     IGNORECASE = _compiler.SRE_FLAG_IGNORECASE

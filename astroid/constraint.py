@@ -6,23 +6,14 @@
 
 from __future__ import annotations
 
-import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from typing import Self
 
-from astroid import helpers, nodes, util
+from astroid import bases, helpers, nodes, util
 from astroid.context import InferenceContext
 from astroid.exceptions import AstroidTypeError, InferenceError, MroError
 from astroid.typing import InferenceResult
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
-if TYPE_CHECKING:
-    from astroid import bases
 
 _NameNodes = nodes.AssignAttr | nodes.Attribute | nodes.AssignName | nodes.Name
 
@@ -98,22 +89,12 @@ class BooleanConstraint(Constraint):
     def match(
         cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Self | None:
-        """Return a new constraint for node if expr matches one of these patterns:
+        """Return a new constraint for node if expr is node, else return None.
 
-        - direct match (expr == node): use given negate value
-        - negated match (expr == `not node`): flip negate value
-
-        Return None if no pattern matches.
+        ``not x`` is matched by ``_match_constraint``, which flips negate.
         """
         if _matches(expr, node):
             return cls(node=node, negate=negate)
-
-        if (
-            isinstance(expr, nodes.UnaryOp)
-            and expr.op == "not"
-            and _matches(expr.operand, node)
-        ):
-            return cls(node=node, negate=not negate)
 
         return None
 
@@ -187,6 +168,48 @@ class TypeConstraint(Constraint):
             return self.negate ^ matches_checked_types
         except (InferenceError, AstroidTypeError, MroError):
             return True
+
+
+class CallableConstraint(Constraint):
+    """Represents a "callable(x)" constraint."""
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches the "callable(x)"
+        pattern. Else, return None.
+        """
+        is_callable_call = (
+            isinstance(expr, nodes.Call)
+            and isinstance(expr.func, nodes.Name)
+            and expr.func.name == "callable"
+            and not expr.keywords
+            and len(expr.args) == 1
+        )
+        if is_callable_call and _matches(expr.args[0], node):
+            return cls(node=node, negate=negate)
+
+        return None
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for uninferable results, or depending on negate flag:
+
+        - negate=False: satisfied when inferred is callable.
+        - negate=True: satisfied when inferred is not callable.
+        """
+        if inferred is util.Uninferable:
+            return True
+
+        # A base class that cannot be inferred may define __call__.
+        if isinstance(inferred, bases.Instance) and not helpers.has_known_bases(
+            inferred._proxied, context
+        ):
+            return True
+
+        return self.negate ^ inferred.callable()
 
 
 class EqualityConstraint(Constraint):
@@ -311,21 +334,33 @@ def get_constraints(
     corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
-    Currently this only supports constraints generated from if conditions and
-    comprehension conditions.
+    Currently this only supports constraints generated from if conditions,
+    comprehension conditions and preceding operands in boolean operations.
     """
     current_node: nodes.NodeNG | None = expr
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
+        constraints: set[Constraint] | None = None
+
         if isinstance(parent, (nodes.If, nodes.IfExp)):
             branch, _ = parent.locate_child(current_node)
-            constraints: set[Constraint] | None = None
             if branch == "body":
                 constraints = set(_match_constraint(expr, parent.test))
             elif branch == "orelse":
                 constraints = set(_match_constraint(expr, parent.test, invert=True))
+            if constraints:
+                constraints_mapping[parent] = constraints
 
+        elif isinstance(parent, nodes.BoolOp):
+            # Later operands are evaluated only if all preceding ones are
+            # truthy for "and", or all falsy for "or".
+            index = parent.values.index(current_node)
+            constraints = set()
+            for previous_value in parent.values[:index]:
+                constraints.update(
+                    _match_constraint(expr, previous_value, invert=parent.op == "or")
+                )
             if constraints:
                 constraints_mapping[parent] = constraints
         elif isinstance(parent, nodes.Comprehension):
@@ -368,10 +403,11 @@ def _add_ifs_constraints(
 _CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]] = {
     nodes.Attribute: (BooleanConstraint,),
     nodes.BoolOp: (_CompoundConstraint,),
-    nodes.Call: (TypeConstraint,),
+    nodes.Call: (TypeConstraint, CallableConstraint),
     nodes.Compare: (NoneConstraint, EqualityConstraint),
     nodes.Name: (BooleanConstraint,),
-    nodes.UnaryOp: (BooleanConstraint,),
+    # No nodes.UnaryOp entry: _match_constraint handles ``not`` itself, by matching
+    # the operand with the inversion flipped, so that any constraint can be negated.
 }
 """Constraint types that can match each expression node type."""
 
@@ -392,6 +428,9 @@ def _match_constraint(
     node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
 ) -> Iterator[Constraint]:
     """Yields all constraint patterns for node that match."""
+    if isinstance(expr, nodes.UnaryOp) and expr.op == "not":
+        yield from _match_constraint(node, expr.operand, not invert)
+        return
     for constraint_cls in _CONSTRAINTS_BY_NODE_TYPE.get(type(expr), ()):
         constraint = constraint_cls.match(node, expr, invert)
         if constraint:
