@@ -3,6 +3,8 @@
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 import textwrap
 
+import pytest
+
 from astroid import (
     Uninferable,
     bases,
@@ -10,17 +12,40 @@ from astroid import (
     nodes,
 )
 from astroid.context import InferenceContext
+from astroid.util import safe_infer
 
 
-def test_group_exceptions_exceptions() -> None:
-    node = extract_node(textwrap.dedent("""
+@pytest.mark.parametrize(
+    ("group_type", "exception_type"),
+    [("ExceptionGroup", "TypeError"), ("BaseExceptionGroup", "KeyboardInterrupt")],
+)
+def test_group_exceptions_exceptions(group_type: str, exception_type: str) -> None:
+    node = extract_node(textwrap.dedent(f"""
         try:
-            raise ExceptionGroup('', [TypeError(), TypeError()])
-        except ExceptionGroup as eg:
+            raise {group_type}("group", [{exception_type}()])
+        except {group_type} as eg:
             eg.exceptions #@"""))
 
     inferred = node.inferred()[0]
-    assert isinstance(inferred, nodes.Tuple)
+    assert inferred.pytype() == "builtins.tuple"
+    assert inferred.bool_value() is Uninferable
+
+
+@pytest.mark.parametrize(
+    ("group_type", "exception_type"),
+    [("ExceptionGroup", "TypeError"), ("BaseExceptionGroup", "KeyboardInterrupt")],
+)
+@pytest.mark.parametrize("operation", ["len", "bool"])
+def test_group_exceptions_unknown_contents(
+    group_type: str, exception_type: str, operation: str
+) -> None:
+    node = extract_node(textwrap.dedent(f"""
+        try:
+            raise {group_type}("group", [{exception_type}()])
+        except {group_type} as eg:
+            {operation}(eg.exceptions) #@"""))
+
+    assert safe_infer(node) in (None, Uninferable)
 
 
 def test_group_exceptions() -> None:
