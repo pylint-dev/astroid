@@ -1,5 +1,4 @@
 include README.rst
-include requirements*.txt
 include tox.ini
 recursive-include tests *.py
 graft tests/testdata

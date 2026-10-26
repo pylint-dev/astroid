@@ -310,13 +310,13 @@ def parse(
 ) -> nodes.Module:
     """Parses a source string in order to obtain an astroid AST from it.
 
-    :param str code: The code for the module.
-    :param str module_name: The name for the module, if any
-    :param str path: The path for the module
-    :param bool apply_transforms:
+    :param code: The code for the module.
+    :param module_name: The name for the module, if any
+    :param path: The path for the module
+    :param apply_transforms:
         Apply the transforms for the give code. Use it if you
         don't want the default transforms to be applied.
-    :param bool is_stub: Whether to treat the code as a ``.pyi`` stub.
+    :param is_stub: Whether to treat the code as a ``.pyi`` stub.
         When ``None``, auto-detected from *path*.
     """
     # pylint: disable-next=import-outside-toplevel
@@ -336,7 +336,6 @@ def _extract_expressions(node: nodes.NodeNG) -> Iterator[nodes.NodeNG]:
     replacing it by the wrapped expression inside the parent.
 
     :param node: An astroid node.
-    :type node:  astroid.bases.NodeNG
     :yields: The sequence of wrapped expressions on the modified tree
     expression can be found.
     """
@@ -376,12 +375,9 @@ def _find_statement_by_line(node: nodes.NodeNG, line: int) -> nodes.NodeNG | Non
     recursively.
 
     :param node: An astroid node.
-    :type node: astroid.bases.NodeNG
     :param line: The line number of the statement to extract.
-    :type line: int
     :returns: The statement on the line, or None if no statement for the line
       can be found.
-    :rtype:  astroid.bases.NodeNG or None
     """
     if isinstance(node, (nodes.ClassDef, nodes.FunctionDef, nodes.MatchCase)):
         # This is an inaccuracy in the AST: the nodes that can be
@@ -459,9 +455,9 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
 
     For convenience, singleton lists are unpacked.
 
-    :param str code: A piece of Python code that is parsed as
+    :param code: A piece of Python code that is parsed as
         a module. Will be passed through textwrap.dedent first.
-    :param str module_name: The name of the module.
+    :param module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
     """
 

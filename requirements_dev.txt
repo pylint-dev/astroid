@@ -1,7 +1,0 @@
--r requirements_minimal.txt
-
-# Tools used during development, prefer running these with pre-commit
-black
-pre-commit
-pylint>=4.1.2
-ruff
