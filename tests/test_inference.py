@@ -1449,6 +1449,57 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert i2.left.name == "List"
         assert isinstance(i2.right, UnionType)
 
+    def test_binary_op_or_union_type_explicit_metaclass(self) -> None:
+        """Classes with an explicit metaclass form a PEP 604 union like other classes.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/9488
+        """
+        code = """
+        from abc import ABC
+
+        class A: ...
+        class B(ABC): ...
+        class C(metaclass=type): ...
+
+        A | B  #@
+        B | A  #@
+        B | None  #@
+        None | B  #@
+        C | int  #@
+        """
+        for node in extract_node(code):
+            inferred = node.inferred()
+            assert len(inferred) == 1
+            assert isinstance(inferred[0], UnionType)
+
+        code = """
+        from abc import ABC
+
+        class B(ABC): ...
+
+        B | 2  #@
+        """
+        assert extract_node(code).inferred() == [util.Uninferable]
+
+    def test_binary_op_or_custom_metaclass_dunder(self) -> None:
+        """A metaclass that defines ``__or__``/``__ror__`` still takes precedence."""
+        code = """
+        class Meta(type):
+            def __or__(cls, other):
+                return 1
+            def __ror__(cls, other):
+                return "reflected"
+
+        class A: ...
+        class M(metaclass=Meta): ...
+
+        M | A  #@
+        A | M  #@
+        """
+        left, right = extract_node(code)
+        assert [i.value for i in left.inferred()] == [1]
+        assert [i.value for i in right.inferred()] == ["reflected"]
+
     def test_nonregr_lambda_arg(self) -> None:
         code = """
         def f(g = lambda: None):
