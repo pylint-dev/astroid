@@ -200,9 +200,6 @@ class ImportlibFinder(Finder):
         if spec.location is None:
             # Builtin.
             return None
-        # pylint: disable-next=import-outside-toplevel
-        from astroid.modutils import EXT_LIB_DIRS
-
         if _is_setuptools_namespace(Path(spec.location)):
             # extend_path is called, search sys.path for module/packages
             # of this name see pkgutil.extend_path documentation
@@ -211,24 +208,6 @@ class ImportlibFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
-        elif spec.name == "distutils" and not any(
-            spec.location.lower().startswith(ext_lib_dir.lower())
-            for ext_lib_dir in EXT_LIB_DIRS
-        ):
-            # virtualenv below 20.0 patches distutils in an unexpected way
-            # so we just find the location of distutils that will be
-            # imported to avoid spurious import-error messages
-            # https://github.com/pylint-dev/pylint/issues/5645
-            # A regression test to create this scenario exists in release-tests.yml
-            # and can be triggered manually from GitHub Actions
-            distutils_spec = importlib.util.find_spec("distutils")
-            if distutils_spec and distutils_spec.origin:
-                origin_path = Path(
-                    distutils_spec.origin
-                )  # e.g. .../distutils/__init__.py
-                path = [str(origin_path.parent)]  # e.g. .../distutils
-            else:
-                path = [spec.location]
         else:
             path = [spec.location]
         return path
