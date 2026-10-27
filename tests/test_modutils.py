@@ -21,7 +21,7 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
-from astroid.interpreter._import import spec
+from astroid.interpreter._import import spec, util
 
 from . import resources
 
@@ -297,6 +297,43 @@ class ModPathFromFileTest(unittest.TestCase):
             modutils.modpath_from_file(str(Path("src") / "package"), ["."]),
             ["src", "package"],
         )
+
+
+def test_modpath_from_file_with_shadowed_namespace_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A namespace package that also exists in site-packages is still resolved.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/10278
+    """
+    # is_namespace() caches its results per module name, so the name is unique
+    # to this test.
+    namespace = "astroid_shadowed_namespace_10278"
+    project = tmp_path / "project"
+    module = project / namespace / "subpackage" / "module.py"
+    module.parent.mkdir(parents=True)
+    module.touch()
+    # Fake one portion of the namespace in site-packages instead of writing into
+    # the site-packages of the test environment.
+    site_packages = tmp_path / "site-packages"
+    (site_packages / namespace).mkdir(parents=True)
+    monkeypatch.syspath_prepend(str(project))
+    monkeypatch.syspath_prepend(str(site_packages))
+    monkeypatch.setattr(
+        modutils, "EXT_LIB_DIRS", modutils.EXT_LIB_DIRS | {str(site_packages)}
+    )
+
+    # Resolved from the project the package is a namespace package: the portion
+    # that shadows it in site-packages must not disqualify it.
+    assert modutils.modpath_from_file(str(module)) == [
+        namespace,
+        "subpackage",
+        "module",
+    ]
+    # Resolved from site-packages the answer is unchanged.
+    assert not util.is_namespace(namespace, str(site_packages))
+    # No portion of it lives under an unrelated directory.
+    assert not util.is_namespace(namespace, str(project / "elsewhere"))
 
 
 class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
