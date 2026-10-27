@@ -1,0 +1,6 @@
+``brain_gi`` no longer imports ``gi`` when the name resolves to a package in the
+analysed project rather than to an installed library, so linting a checkout that
+ships its own ``gi`` package does not execute it. The ``extension-pkg-allow-list``
+still lets ``gi`` be loaded from anywhere.
+
+Refs #562
