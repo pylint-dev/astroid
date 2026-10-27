@@ -60,6 +60,7 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_numpy_core_numeric,
         brain_numpy_core_numerictypes,
         brain_numpy_core_umath,
+        brain_numpy_dtypes,
         brain_numpy_ma,
         brain_numpy_ndarray,
         brain_numpy_random_mtrand,
@@ -113,6 +114,7 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_numpy_core_numerictypes.register(manager)
     brain_numpy_core_umath.register(manager)
     brain_numpy_random_mtrand.register(manager)
+    brain_numpy_dtypes.register(manager)
     brain_numpy_ma.register(manager)
     brain_numpy_ndarray.register(manager)
     brain_numpy_core_numeric.register(manager)
