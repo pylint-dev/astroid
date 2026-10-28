@@ -135,6 +135,10 @@ class ImportlibFinder(Finder):
         # pylint: disable-next=import-outside-toplevel
         from astroid.modutils import cached_os_path_isfile
 
+        # A submodule whose parent gave no search path is not a top-level module.
+        if submodule_path is None and processed:
+            submodule_path = ()
+
         # Although we should be able to use `find_spec` this doesn't work on PyPy for builtins.
         # Therefore, we use the `builtin_module_nams` heuristic for these.
         if submodule_path is None and modname in sys.builtin_module_names:
