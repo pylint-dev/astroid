@@ -420,6 +420,12 @@ class Instance(BaseInstance):
     def getitem(
         self, index: nodes.Const, context: InferenceContext | None = None
     ) -> InferenceResult | None:
+        return next(self._infer_getitem(index, context), None)
+
+    def _infer_getitem(
+        self, index: nodes.Const, context: InferenceContext | None = None
+    ) -> Iterator[InferenceResult]:
+        """Infer all possible results of a call to ``__getitem__``."""
         new_context = bind_context_to_node(context, self)
         if not context:
             context = new_context
@@ -436,7 +442,7 @@ class Instance(BaseInstance):
                 node=self,
                 context=context,
             )
-        return next(method.infer_call_result(self, new_context), None)
+        return method.infer_call_result(self, new_context)
 
 
 class UnboundMethod(Proxy):
