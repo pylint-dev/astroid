@@ -1111,6 +1111,14 @@ def starred_assigned_stmts(  # noqa: C901
                 else:
                     found_element = element
 
+            # Only a lookup chain applied to completion ends with the slice
+            # lookup, which extracts a list. Breaking out of the loop early
+            # leaves the last intermediate element instead: a single node
+            # that says nothing about the starred values.
+            if found_element is not None and not isinstance(found_element, list):
+                yield util.Uninferable
+                return
+
             unpacked = nodes.List(
                 ctx=Context.Store,
                 parent=self,
