@@ -979,6 +979,24 @@ def test_dataclass_with_default_factory() -> None:
     assert [a.name for a in good_init.args.args] == ["self", "xyz"]
 
 
+def test_dataclass_default_with_conditional_in_comprehension() -> None:
+    """The ``__init__`` is still generated when a field default holds a
+    comprehension that filters on a conditional expression.
+    """
+    klass = astroid.extract_node("""
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class Settings:  #@
+        name: str
+        plugins: list = field(
+            default_factory=lambda: [p for p in PLUGINS if (p.on if STRICT else True)]
+        )
+    """)
+    init = klass.locals["__init__"][0]
+    assert [a.name for a in init.args.args] == ["self", "name", "plugins"]
+
+
 def test_dataclass_with_multiple_inheritance() -> None:
     """Regression test for dataclasses with multiple inheritance.
 

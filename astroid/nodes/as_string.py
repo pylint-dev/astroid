@@ -11,6 +11,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from astroid import nodes
+from astroid.nodes.const import OP_PRECEDENCE
 
 if TYPE_CHECKING:
     from astroid import objects
@@ -209,9 +210,16 @@ class AsStringVisitor:
 
     def visit_comprehension(self, node: nodes.Comprehension) -> str:
         """return an nodes.Comprehension node as string"""
-        ifs = "".join(f" if {n.accept(self)}" for n in node.ifs)
-        generated = f"for {node.target.accept(self)} in {node.iter.accept(self)}{ifs}"
+        ifs = "".join(f" if {self._comprehension_operand(n)}" for n in node.ifs)
+        iterable = self._comprehension_operand(node.iter)
+        generated = f"for {node.target.accept(self)} in {iterable}{ifs}"
         return f"{'async ' if node.is_async else ''}{generated}"
+
+    def _comprehension_operand(self, child: nodes.NodeNG) -> str:
+        """Wrap the iterable or a condition if it binds looser than ``or``."""
+        if child.op_precedence() < OP_PRECEDENCE["or"]:
+            return f"({child.accept(self)})"
+        return child.accept(self)
 
     def visit_const(self, node: nodes.Const) -> str:
         """return an nodes.Const node as string"""
