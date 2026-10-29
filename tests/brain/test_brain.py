@@ -1172,6 +1172,31 @@ class TestIsinstanceInference:
         """obj just has to be an instance of ANY class/type on the right"""
         assert _get_result("isinstance(1, (str, int))") == "True"
 
+    def test_isinstance_pep604_union_true(self) -> None:
+        """PEP 604 unions behave like the tuple of their members"""
+        assert _get_result("isinstance(1, int | str)") == "True"
+
+    def test_isinstance_pep604_union_false(self) -> None:
+        assert _get_result("isinstance(1.5, int | str)") == "False"
+
+    def test_isinstance_pep604_union_chained_true(self) -> None:
+        """Chained unions are flattened during inference"""
+        assert _get_result("isinstance('a', int | str | bytes)") == "True"
+
+    def test_isinstance_pep604_union_with_none_true(self) -> None:
+        """The None member of a union is matched against NoneType"""
+        assert _get_result("isinstance(None, int | None)") == "True"
+
+    def test_isinstance_pep604_union_with_none_false(self) -> None:
+        assert _get_result("isinstance('a', int | None)") == "False"
+
+    def test_isinstance_tuple_with_pep604_union_true(self) -> None:
+        """Unions nested in a tuple classinfo behave like tuples of types"""
+        assert _get_result("isinstance(1, (int | str, bytes))") == "True"
+
+    def test_isinstance_tuple_with_pep604_union_false(self) -> None:
+        assert _get_result("isinstance(1, (float | complex, bytes))") == "False"
+
     def test_isinstance_type_false2(self) -> None:
         assert _get_result("""
         isinstance(1, type)
@@ -1268,6 +1293,17 @@ class TestIssubclassBrain:
     def test_isinstance_tuple_argument(self) -> None:
         """obj just has to be a subclass of ANY class/type on the right"""
         assert _get_result("issubclass(int, (str, int))") == "True"
+
+    def test_issubclass_pep604_union_true(self) -> None:
+        """PEP 604 unions behave like the tuple of their members"""
+        assert _get_result("issubclass(bool, int | str)") == "True"
+
+    def test_issubclass_pep604_union_false(self) -> None:
+        assert _get_result("issubclass(float, int | str)") == "False"
+
+    def test_issubclass_pep604_union_with_none_true(self) -> None:
+        """The None member of a union is matched against NoneType"""
+        assert _get_result("issubclass(type(None), int | None)") == "True"
 
     def test_isinstance_object_true2(self) -> None:
         assert _get_result("""
