@@ -16,7 +16,7 @@ import astroid
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
-from astroid.const import PY312_PLUS, PY313_PLUS, PY315_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS, PY315_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -1849,6 +1849,62 @@ class TestFunctoolsPartial:
         for keyword, value in expected_keywords.items():
             assert keyword in called_keywords
             assert called_keywords[keyword].value == value
+
+    @pytest.mark.skipif(not PY314_PLUS, reason="functools.Placeholder is new in 3.14")
+    def test_partial_placeholder(self) -> None:
+        """Call arguments fill the ``Placeholder`` positions first."""
+        ast_nodes = astroid.extract_node("""
+        import functools
+        from functools import partial, Placeholder
+
+        def first(a, b, c=0):
+            return a
+        def second(a, b, c=0):
+            return b
+        def third(a, b, c=0):
+            return c
+
+        partial(first, Placeholder, 2)(1) #@
+        partial(second, Placeholder, 2)(1) #@
+        partial(third, Placeholder, 2)(1, 3) #@
+        partial(first, functools.Placeholder, Placeholder, 3)(1, 2) #@
+        partial(second, functools.Placeholder, Placeholder, 3)(1, 2) #@
+        """)
+        assert [next(node.infer()).value for node in ast_nodes] == [1, 2, 3, 1, 2]
+
+        partial_function = next(ast_nodes[0].func.infer())
+        assert isinstance(partial_function, objects.PartialFunction)
+        assert partial_function.filled_positionals == 1
+
+        # An argument that cannot be inferred is not a placeholder.
+        node = astroid.extract_node("""
+        from functools import partial
+
+        def first(a, b, c=0):
+            return a
+
+        partial(first, undefined_name, 2) #@
+        """)
+        assert next(node.infer()).filled_positionals == 2
+
+    @pytest.mark.skipif(not PY314_PLUS, reason="functools.Placeholder is new in 3.14")
+    def test_nested_partial_placeholder(self) -> None:
+        """A partial of a partial fills the ``Placeholder`` positions first."""
+        ast_nodes = astroid.extract_node("""
+        from functools import partial, Placeholder
+
+        def first(a, b, c=0):
+            return a
+        def third(a, b, c=0):
+            return c
+
+        partial(partial(first, Placeholder, 2), 1)() #@
+        partial(partial(third, Placeholder, 2), 1, 5)() #@
+        """)
+        assert [next(node.infer()).value for node in ast_nodes] == [1, 5]
+        nested = next(ast_nodes[1].func.infer())
+        assert [arg.value for arg in nested.filled_args] == [1, 2, 5]
+        assert nested.filled_positionals == 3
 
 
 def test_http_client_brain() -> None:
