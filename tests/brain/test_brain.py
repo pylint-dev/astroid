@@ -572,6 +572,33 @@ class TypingBrain(unittest.TestCase):
         assert ancestors[0].name == "Foo"
         assert ancestors[1].name == "object"
 
+    @test_utils.require_version(minver="3.12")
+    def test_typing_namedtuple_pep695(self):
+        """A generic ``typing.NamedTuple`` written with type parameters is a namedtuple."""
+        cls, instance, fields, replace, subscript = builder.extract_node("""
+        from typing import NamedTuple
+
+        class Pair[T](NamedTuple):
+            first: T
+            second: T
+
+        Pair  #@
+        Pair(1, 2)  #@
+        Pair._fields  #@
+        Pair(1, 2)._replace  #@
+        Pair[int]  #@
+        """)
+        inferred = next(cls.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert "tuple" in [ancestor.name for ancestor in inferred.ancestors()]
+        assert isinstance(next(instance.infer()), astroid.Instance)
+        assert [field.value for field in next(fields.infer()).elts] == [
+            "first",
+            "second",
+        ]
+        assert isinstance(next(replace.infer()), astroid.BoundMethod)
+        assert next(subscript.infer()).name == "Pair"
+
     def test_typing_annotated_subscriptable(self):
         """typing.Annotated is subscriptable with __class_getitem__ below 3.13."""
         node = builder.extract_node("""
