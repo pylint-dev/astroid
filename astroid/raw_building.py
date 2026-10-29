@@ -542,7 +542,7 @@ class InspectBuilder:
             elif inspect.isroutine(member):
                 # Callables not caught by the isfunction/isbuiltin branches
                 # above, e.g. some method descriptors.
-                child = _build_from_function(node, member, self._module)
+                child: nodes.NodeNG = _build_from_function(node, member, self._module)
             elif _safe_has_attribute(member, "__all__"):
                 child: nodes.NodeNG = build_module(alias)
                 # recursion
