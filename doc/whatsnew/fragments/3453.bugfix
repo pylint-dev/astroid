@@ -1,0 +1,8 @@
+Fix ``isinstance()`` and ``issubclass()`` inference when the classinfo is a
+PEP 604 union, e.g. ``isinstance(x, int | str)``. Such calls previously
+always inferred ``False`` even when the runtime result is ``True``, and an
+``if isinstance(x, int | str):`` constraint discarded every possible value
+of ``x``. Unions now behave like the tuple of their members, including the
+``None`` member of unions such as ``int | None``.
+
+Refs #3453
