@@ -1,0 +1,6 @@
+Functions decorated with ``enum.member`` are now inferred as enum members instead of
+methods: their ``value`` is the function and their first argument is not treated as
+``self``. This fixes false positives such as ``no-self-argument`` and ``no-member``.
+
+Refs #3455
+Closes pylint-dev/pylint#11756
