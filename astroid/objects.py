@@ -272,6 +272,36 @@ class DictValues(bases.Proxy):
     __repr__ = node_classes.NodeNG.__repr__
 
 
+def _is_partial_placeholder(node: InferenceResult) -> bool:
+    """Whether ``node`` is ``functools.Placeholder`` (Python 3.14+)."""
+    if not isinstance(node, (node_classes.Name, node_classes.Attribute)):
+        return False
+    try:
+        return any(
+            isinstance(inferred, bases.Instance)
+            and inferred.name == "_PlaceholderType"
+            and inferred.root().name in {"functools", "_functools"}
+            for inferred in node.infer()
+        )
+    except InferenceError:
+        return False
+
+
+def _fill_placeholders(
+    args: list[InferenceResult], new_args: list[InferenceResult]
+) -> list[InferenceResult]:
+    """Put ``new_args`` in the ``Placeholder`` positions of ``args``, then after them.
+
+    This is how ``functools.partial`` combines its arguments with the call arguments.
+    """
+    remaining = list(new_args)
+    filled = [
+        remaining.pop(0) if remaining and _is_partial_placeholder(arg) else arg
+        for arg in args
+    ]
+    return filled + remaining
+
+
 class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial."""
 
@@ -306,15 +336,18 @@ class PartialFunction(scoped_nodes.FunctionDef):
             wrapped_function = call.positional_arguments[0]
             inferred_wrapped_function = next(wrapped_function.infer())
             if isinstance(inferred_wrapped_function, PartialFunction):
-                self.filled_args = (
-                    inferred_wrapped_function.filled_args + self.filled_args
+                self.filled_args = _fill_placeholders(
+                    inferred_wrapped_function.filled_args, self.filled_args
                 )
                 self.filled_keywords = {
                     **inferred_wrapped_function.filled_keywords,
                     **self.filled_keywords,
                 }
 
-        self.filled_positionals = len(self.filled_args)
+        # A ``Placeholder`` is filled by the call, not by the partial.
+        self.filled_positionals = len(
+            [arg for arg in self.filled_args if not _is_partial_placeholder(arg)]
+        )
 
     def infer_call_result(
         self,
@@ -333,7 +366,9 @@ class PartialFunction(scoped_nodes.FunctionDef):
                     context.callcontext.keywords.append((keyword, value))
 
             call_context_args = context.callcontext.args or []
-            context.callcontext.args = self.filled_args + call_context_args
+            context.callcontext.args = _fill_placeholders(
+                self.filled_args, call_context_args
+            )
 
         return super().infer_call_result(caller=caller, context=context)
 
