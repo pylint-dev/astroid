@@ -109,11 +109,34 @@ def _object_type_is_subclass(
     ):
         return util.Uninferable
 
-    # Instances are not types
-    class_seq = [
-        item if not isinstance(item, bases.Instance) else util.Uninferable
-        for item in class_or_seq
-    ]
+    def _union_members(members: list[InferenceResult]) -> Generator[InferenceResult]:
+        """Yield the members of any PEP 604 unions, e.g. "int | str".
+
+        A union matches when any of its members matches, like a tuple of
+        types: ``isinstance(x, int | str)`` is equivalent to
+        ``isinstance(x, (int, str))``.
+        """
+        for member in members:
+            if isinstance(member, bases.UnionType):
+                yield from _union_members([member.left, member.right])
+            elif isinstance(member, nodes.Const) and member.value is None:
+                # The None member of a union, e.g. "int | None", is
+                # represented by a Const node. It matches NoneType.
+                yield object_type(member, context)
+            else:
+                yield member
+
+    # Instances are not types, but PEP 604 unions, represented by
+    # bases.UnionType, are a special kind of instance that stands for
+    # several types.
+    class_seq = []
+    for item in class_or_seq:
+        if isinstance(item, bases.UnionType):
+            class_seq.extend(_union_members([item]))
+        elif isinstance(item, bases.Instance):
+            class_seq.append(util.Uninferable)
+        else:
+            class_seq.append(item)
     # strict compatibility with issubclass
     # issubclass(type, (object, 1)) evaluates to true
     # issubclass(object, (1, type)) raises TypeError
