@@ -615,3 +615,94 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``DuplicateBasesError``.
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
+
+    def test_enum_member_decorated_functions(self) -> None:
+        """Functions decorated with ``enum.member`` are enum members, not methods.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/11756
+        """
+        add, neg, zero, describe, member_add, value, name, method = (
+            builder.extract_node("""
+        import enum
+        from enum import Enum, member
+
+
+        class Operation(Enum):
+            ONE = 1
+
+            @member
+            def add(a, b):  #@
+                return a + b
+
+            @enum.member
+            def neg(a):  #@
+                return -a
+
+            @member
+            @staticmethod
+            def zero():  #@
+                return 0
+
+            def describe(self):  #@
+                return self.name
+
+
+        Operation.add  #@
+        Operation.add.value  #@
+        Operation.neg.name  #@
+        Operation.add.describe  #@
+        """)
+        )
+        assert add.type == neg.type == zero.type == "function"
+        assert describe.type == "method"
+
+        inferred_member = next(member_add.infer())
+        assert isinstance(inferred_member, bases.Instance)
+        assert inferred_member.name == "add"
+        inferred_value = next(value.infer())
+        assert isinstance(inferred_value, nodes.FunctionDef)
+        assert inferred_value.argnames() == ["a", "b"]
+        assert inferred_value.decorators is None
+        assert next(name.infer()).value == "neg"
+        assert isinstance(next(method.infer()), bases.BoundMethod)
+
+    def test_enum_member_decorated_functions_in_members(self) -> None:
+        """``@enum.member`` functions are part of ``__members__`` but not methods."""
+        members, plain_member = builder.extract_node("""
+        from enum import Enum, member
+
+
+        class Operation(Enum):
+            ONE = 1
+
+            @member
+            def add(a, b):
+                return a + b
+
+
+        Operation.__members__  #@
+        Operation.ONE  #@
+        """)
+        inferred_members = next(members.infer())
+        assert isinstance(inferred_members, nodes.Dict)
+        assert [key.value for key, _ in inferred_members.items] == ["ONE", "add"]
+        assert "add" not in next(plain_member.infer())._proxied.locals
+
+    def test_function_decorated_with_other_member_is_a_method(self) -> None:
+        """Only ``enum.member`` turns a function into an enum member."""
+        node = builder.extract_node("""
+        from enum import Enum
+
+
+        def member(function):
+            return function
+
+
+        class Operation(Enum):
+            ONE = 1
+
+            @member
+            def add(self, other):  #@
+                return other
+        """)
+        assert node.type == "method"

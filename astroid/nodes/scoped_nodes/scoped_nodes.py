@@ -1350,6 +1350,9 @@ class FunctionDef(
 
                     if not isinstance(inferred, ClassDef):
                         continue
+                    if inferred.qname() == "enum.member":
+                        # The function is the value of an enum member, not a method.
+                        return "function"
                     for ancestor in inferred.ancestors():
                         if not isinstance(ancestor, ClassDef):
                             continue

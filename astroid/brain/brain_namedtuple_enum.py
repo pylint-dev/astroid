@@ -10,7 +10,7 @@ import functools
 import keyword
 import unicodedata
 from collections.abc import Iterator
-from textwrap import dedent
+from textwrap import dedent, indent
 from typing import Final
 
 from astroid import arguments, bases, nodes, util
@@ -413,6 +413,90 @@ INT_FLAG_ADDITION_METHODS = """
 """
 
 
+ENUM_MEMBER_FUNCTION_TEMPLATE: Final = """
+class {name}({types}):
+    @property
+    def value(self):
+{function}
+        return {name}
+    @property
+    def _value_(self):
+{function}
+        return {name}
+    @property
+    def name(self):
+        return "{name}"
+    @property
+    def _name_(self):
+        return "{name}"
+"""
+
+
+def _is_enum_member_decorator(decorator: nodes.NodeNG) -> bool:
+    """Whether ``decorator`` is ``enum.member``."""
+    match decorator:
+        # Cheap name check first, then confirm with inference.
+        case nodes.Name(name="member") | nodes.Attribute(attrname="member"):
+            inferred = util.safe_infer(decorator)
+            return (
+                isinstance(inferred, nodes.ClassDef)
+                and inferred.qname() == "enum.member"
+            )
+    return False
+
+
+def _is_enum_member_function(node: nodes.NodeNG) -> bool:
+    """Whether ``node`` is a method decorated with ``enum.member``."""
+    return (
+        isinstance(node, nodes.FunctionDef)
+        and isinstance(node.parent, nodes.ClassDef)
+        and node.decorators is not None
+        and any(_is_enum_member_decorator(d) for d in node.decorators.nodes)
+    )
+
+
+def _add_enum_methods(fake: nodes.ClassDef, enum_class: nodes.ClassDef) -> None:
+    """Make the methods of ``enum_class`` available on the mocked member ``fake``."""
+    for method in enum_class.mymethods():
+        if not _is_enum_member_function(method):
+            fake.locals[method.name] = [method]
+
+
+def _build_enum_member_function(
+    enum_class: nodes.ClassDef, function: nodes.FunctionDef
+) -> nodes.ClassDef:
+    """Mock the enum member created by an ``@enum.member`` decorated function.
+
+    The ``value`` of the member is a copy of the function without its decorators.
+    """
+    source = function.as_string().strip().splitlines()
+    while source and source[0].startswith("@"):
+        source.pop(0)
+    function_source = indent("\n".join(source), " " * 8)
+    classdef = ENUM_MEMBER_FUNCTION_TEMPLATE.format(
+        name=function.name,
+        types=", ".join(enum_class.basenames),
+        function=function_source,
+    )
+    fake = AstroidBuilder(AstroidManager(), apply_transforms=False).string_build(
+        classdef
+    )[function.name]
+    fake.parent = function.parent
+    for method in enum_class.mymethods():
+        # Keep the ``name`` and ``value`` properties of the member.
+        if method.name not in fake.locals and not _is_enum_member_function(method):
+            fake.locals[method.name] = [method]
+    return fake
+
+
+def infer_enum_member_function(
+    node: nodes.FunctionDef, context: InferenceContext | None = None
+) -> Iterator[bases.Instance]:
+    """Infer an ``@enum.member`` decorated function as the enum member it creates."""
+    assert isinstance(node.parent, nodes.ClassDef)
+    return iter([_build_enum_member_function(node.parent, node).instantiate_class()])
+
+
 def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
     try:
@@ -428,6 +512,13 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
         dunder_members = {}
         target_names = set()
         for local, values in node.locals.items():
+            if len(values) == 1 and _is_enum_member_function(values[0]):
+                # ``@enum.member`` makes a function an enum member. The function
+                # stays in the locals: inferring it gives the member, see
+                # ``infer_enum_member_function``.
+                target_names.add(local)
+                dunder_members[local] = values[0]
+                continue
             if (
                 any(not isinstance(value, nodes.AssignName) for value in values)
                 or local == "_ignore_"
@@ -493,8 +584,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                     AstroidManager(), apply_transforms=False
                 ).string_build(classdef)[target.name]
                 fake.parent = target.parent
-                for method in node.mymethods():
-                    fake.locals[method.name] = [method]
+                _add_enum_methods(fake, node)
                 new_targets.append(fake.instantiate_class())
                 if stmt.value is None:
                     continue
@@ -694,6 +784,11 @@ def register(manager: AstroidManager) -> None:
     manager.register_transform(nodes.Call, inference_tip(infer_enum), _looks_like_enum)
     manager.register_transform(
         nodes.ClassDef, infer_enum_class, predicate=_is_enum_subclass
+    )
+    manager.register_transform(
+        nodes.FunctionDef,
+        inference_tip(infer_enum_member_function),
+        _is_enum_member_function,
     )
     manager.register_transform(
         nodes.ClassDef,
