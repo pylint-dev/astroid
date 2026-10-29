@@ -1,0 +1,6 @@
+A ``typing.NamedTuple`` subclass with PEP 695 type parameters (``class Pair[T](NamedTuple)``)
+is now inferred as a named tuple. The generic class inference used to replace the named tuple
+inference, which caused false positives such as ``no-member`` on ``_replace`` and ``_fields``.
+
+Refs #3457
+Closes pylint-dev/pylint#11758
