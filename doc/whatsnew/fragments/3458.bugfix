@@ -1,0 +1,7 @@
+Inference of ``typing.Protocol[T]`` and other ``typing`` subscripts now reuses one
+synthetic class per ``typing`` object. A class that reaches ``Protocol[T]`` both
+directly and through a base no longer has ``Protocol`` twice in its MRO, which made
+pylint report a false ``duplicate-bases``.
+
+Refs #3458
+Refs pylint-dev/pylint#9874
