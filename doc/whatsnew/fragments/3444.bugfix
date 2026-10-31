@@ -1,0 +1,7 @@
+Add ``OP_ENABLE_KTLS``, ``OP_ENABLE_MIDDLEBOX_COMPAT``, ``OP_IGNORE_UNEXPECTED_EOF``,
+``OP_NO_RENEGOTIATION``, ``OP_NO_TICKET``, ``OP_NO_TLSv1_3``,
+``VERIFY_ALLOW_PROXY_CERTS``, ``VERIFY_X509_PARTIAL_CHAIN`` and
+``VERIFY_X509_TRUSTED_FIRST`` to the ``ssl`` brain, so that pylint no longer reports
+them as missing members of ``ssl``.
+
+Refs #3444
