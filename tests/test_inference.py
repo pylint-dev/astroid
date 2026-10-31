@@ -2673,6 +2673,159 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         assert isinstance(context, nodes.FunctionDef)
         assert isinstance(value, nodes.Const)
 
+    def test_contextmanager_yield_from_generator(self) -> None:
+        """A ``yield from`` in a contextmanager yields the sub-generator's values.
+
+        Previously the sub-generator object itself was inferred.
+
+        Fixes https://github.com/pylint-dev/pylint/issues/9252
+        """
+        code = """
+        from contextlib import contextmanager
+        from typing import Generator
+
+        def annotated() -> Generator[int, None, None]:
+            yield 1
+
+        def unannotated():
+            yield 2
+
+        @contextmanager
+        def from_annotated():
+            yield from annotated()
+
+        @contextmanager
+        def from_unannotated():
+            yield from unannotated()
+
+        with from_annotated() as first:
+            first #@
+        with from_unannotated() as second:
+            second #@
+        """
+        first, second = extract_node(code)
+        for node, expected in ((first, 1), (second, 2)):
+            inferred = node.inferred()
+            assert len(inferred) == 1
+            assert isinstance(inferred[0], nodes.Const)
+            assert inferred[0].value == expected
+
+    def test_contextmanager_nested_yield_from(self) -> None:
+        code = """
+        from contextlib import contextmanager
+
+        def innermost():
+            yield 1
+            yield 2
+
+        def middle():
+            yield from innermost()
+
+        @contextmanager
+        def manager():
+            yield from middle()
+
+        with manager() as value:
+            value #@
+        """
+        inferred = extract_node(code).inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 1
+
+    def test_contextmanager_yield_from_sequence(self) -> None:
+        code = """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def from_list():
+            yield from [1, 2]
+
+        @contextmanager
+        def from_tuple():
+            yield from ("a",)
+
+        with from_list() as from_list_value:
+            from_list_value #@
+        with from_tuple() as from_tuple_value:
+            from_tuple_value #@
+        """
+        list_node, tuple_node = extract_node(code)
+        for node, expected in ((list_node, 1), (tuple_node, "a")):
+            inferred = node.inferred()
+            assert len(inferred) == 1
+            assert isinstance(inferred[0], nodes.Const)
+            assert inferred[0].value == expected
+
+    def test_contextmanager_yield_from_empty_iterable(self) -> None:
+        """An exhausted or empty iterable contributes no yielded values."""
+        code = """
+        from contextlib import contextmanager
+
+        def empty():
+            yield from ()
+
+        @contextmanager
+        def empty_then_value():
+            yield from empty()
+            yield from []
+            yield 3
+
+        @contextmanager
+        def only_empty():
+            yield from empty()
+            yield from ()
+
+        with empty_then_value() as value:
+            pass
+        with only_empty() as nothing:
+            pass
+        """
+        module = parse(code)
+        inferred = module["value"].inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 3
+        with pytest.raises(InferenceError):
+            next(module["nothing"].infer())
+
+    def test_contextmanager_yield_from_uninferable(self) -> None:
+        code = """
+        from contextlib import contextmanager
+        from unknown import make_iterable
+
+        @contextmanager
+        def from_unknown():
+            yield from make_iterable()
+
+        @contextmanager
+        def from_string():
+            yield from "ab"
+
+        with from_unknown() as unknown_value:
+            unknown_value #@
+        with from_string() as string_value:
+            string_value #@
+        """
+        for node in extract_node(code):
+            assert next(node.infer()) is util.Uninferable
+
+    def test_contextmanager_yield_from_recursive_generator(self) -> None:
+        code = """
+        from contextlib import contextmanager
+
+        def recursive():
+            yield from recursive()
+
+        @contextmanager
+        def manager():
+            yield from recursive()
+
+        with manager() as value:
+            value #@
+        """
+        assert next(extract_node(code).infer()) is util.Uninferable
+
     def test_unary_op_leaks_stop_iteration(self) -> None:
         node = extract_node("+[] #@")
         self.assertEqual(util.Uninferable, next(node.infer()))
