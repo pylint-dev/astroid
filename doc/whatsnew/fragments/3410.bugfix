@@ -1,0 +1,5 @@
+A subclass of a PEP 695 generic class no longer loses its ancestors when a
+transform that returns its node is registered for ``FunctionDef``.
+
+Refs #3410
+Closes pylint-dev/pylint#10352
