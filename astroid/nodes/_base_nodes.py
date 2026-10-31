@@ -432,6 +432,15 @@ class OperatorNode(NodeNG):
         methods = dunder_lookup.lookup(instance, method_name)
         context = bind_context_to_node(context, instance)
         method = methods[0]
+        if (
+            op == "|"
+            and isinstance(instance, nodes.ClassDef)
+            and method.parent.qname() == "builtins.type"
+        ):
+            # A class with an explicit metaclass (e.g. ABCMeta) reaches the
+            # uninferable C-level ``type.__or__``; build the PEP 604 union instead,
+            # as for classes whose metaclass is implicitly ``type``.
+            raise AttributeInferenceError(attribute=method_name, target=instance)
         context.callcontext.callee = method
 
         if (
