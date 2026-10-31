@@ -5590,6 +5590,167 @@ def test_slice_inference_in_for_loops_not_working() -> None:
         assert inferred == util.Uninferable
 
 
+def test_for_loop_over_generator() -> None:
+    """The targets a for loop unpacks from a generator infer to the values it yields."""
+    number, letter, nested_first, second, value, comprehension_letter = extract_node("""
+    def gen():
+        yield 1, "a"
+        yield [2, "b"]
+
+    for number, letter in gen():
+        number  #@
+        letter  #@
+
+    def nested():
+        yield 1, (2, 3)
+        yield 4, unknown()
+
+    for _, (nested_first, _) in nested():
+        nested_first  #@
+
+    def short():
+        yield (1,)
+        yield 2, 3
+
+    for _, second in short():
+        second  #@
+
+    def outer():
+        def inner():
+            yield from []
+        yield 3, 4
+
+    for value, _ in outer():
+        value  #@
+
+    [__(letter) for _, letter in gen()]
+    """)
+    assert [inferred.value for inferred in number.inferred()] == [1, 2]
+    assert [inferred.value for inferred in letter.inferred()] == ["a", "b"]
+    inferred = nested_first.inferred()
+    assert len(inferred) == 2
+    assert inferred[0].value == 2
+    assert inferred[1] is util.Uninferable
+    assert [inferred.value for inferred in second.inferred()] == [3]
+    assert [inferred.value for inferred in value.inferred()] == [3]
+    assert [inferred.value for inferred in comprehension_letter.inferred()] == [
+        "a",
+        "b",
+    ]
+
+
+def test_for_loop_over_generator_call_context() -> None:
+    """What a loop unpacks from a generator is inferred in the context of its call."""
+    instance, name, klass, prefix = extract_node("""
+    class Base:
+        def pairs(self):
+            yield self, 1
+
+        @classmethod
+        def entries(cls):
+            yield cls.__name__, cls
+
+    class Child(Base):
+        pass
+
+    def prefixed(prefix):
+        yield prefix, 1
+
+    for instance, _ in Child().pairs():
+        instance  #@
+    for name, klass in Child.entries():
+        name  #@
+        klass  #@
+    for prefix, _ in prefixed("x"):
+        prefix  #@
+    """)
+    assert [inferred.pytype() for inferred in instance.inferred()] == [".Child"]
+    assert [inferred.value for inferred in name.inferred()] == ["Child"]
+    assert [inferred.name for inferred in klass.inferred()] == ["Child"]
+    assert [inferred.value for inferred in prefix.inferred()] == ["x"]
+
+
+def test_for_loop_over_generator_returned_tuple() -> None:
+    """A tuple a generator yields from another call is unpacked as in an assignment.
+
+    The call of the generator does not bind the names of the function that
+    built the tuple.
+    """
+    ast_nodes = extract_node("""
+    class Base:
+        def info(self):
+            return "info", self
+
+    class Other(Base):
+        pass
+
+    class Mine(Base):
+        def __init__(self):
+            self.other = Other()
+
+        def other_info(self):
+            yield self.other.info()
+
+        def labelled_other_info(self):
+            yield "other", self.other.info()
+
+    for _, value in Mine().other_info():
+        value  #@
+    for _, (_, nested) in Mine().labelled_other_info():
+        nested  #@
+    _, assigned = Mine().other.info()
+    assigned  #@
+    """)
+    for node in ast_nodes:
+        assert [inferred.pytype() for inferred in node.inferred()] == [".Base"]
+
+
+def test_for_loop_over_generator_not_inferred() -> None:
+    """Nothing is inferred when what a loop unpacks from a generator is not known."""
+    ast_nodes = extract_node("""
+    def delegating():
+        yield 1, 2
+        yield from [(3, 4)]
+
+    async def asynchronous():
+        yield 1, 2
+
+    def undefined():
+        yield 1, 2
+        yield undefined_name
+
+    def undefined_element():
+        yield undefined_name, 2
+
+    def not_sequences():
+        yield {1: 2, 3: 4}
+        yield "ab"
+
+    def repeated(item):
+        yield (item,) * 2
+
+    def triples():
+        yield 1, 2, 3
+
+    for first, second in delegating():
+        first  #@
+    for first, second in asynchronous():
+        first  #@
+    for first, second in undefined():
+        first  #@
+    for first, second in undefined_element():
+        first  #@
+    for first, second in not_sequences():
+        first  #@
+    for first, second in repeated("a"):
+        first  #@
+    for *first, second in triples():
+        second  #@
+    """)
+    for node in ast_nodes:
+        assert node.inferred() == [util.Uninferable]
+
+
 def test_slice_zero_step_does_not_raise_ValueError() -> None:
     node = extract_node("x = [][::0]; x")
     assert next(node.infer()) == util.Uninferable
