@@ -97,3 +97,40 @@ class TestSpecialAlias:
         # Should not raise IndexError
         module = builder.parse(code)
         assert isinstance(module, nodes.Module)
+
+
+def test_protocol_reached_twice_is_one_mro_entry() -> None:
+    """A class that reaches ``Protocol[T]`` both directly and through a base has one
+    ``Protocol`` in its MRO, so combining it with another subclass of that base is not
+    reported as having duplicate bases.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/9874
+    """
+    module = builder.parse("""
+    from typing import Protocol, TypeVar
+
+    T = TypeVar("T")
+
+    class A(Protocol[T]): ...
+    class B(A[T], Protocol[T]): ...
+    class C(A[T]): ...
+    class D(B[T], C[T]): ...
+    """)
+    assert [klass.name for klass in module["B"].mro()] == [
+        "B",
+        "A",
+        "Protocol",
+        "object",
+    ]
+    assert [klass.name for klass in module["D"].mro()] == [
+        "D",
+        "B",
+        "C",
+        "A",
+        "Protocol",
+        "object",
+    ]
+    first, second = (
+        next(base.infer()) for base in (module["A"].bases[0], module["B"].bases[1])
+    )
+    assert first is second
