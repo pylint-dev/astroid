@@ -12,6 +12,8 @@ from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import cast
 
+import utils.session
+
 import astroid
 
 

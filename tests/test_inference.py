@@ -7749,3 +7749,58 @@ def test_augassign_list_tuple_does_not_mutate_initial_value():
     inferred = next(module.body[-1].value.infer())
     assert inferred.as_string() == "[0, 1, 1]"
     assert module.body[0].value.as_string() == "[0]"
+
+
+@pytest.mark.parametrize(
+    "expression",
+    [
+        "100 - True",
+        "7 - False",
+        "1 << True",
+        "7 << False",
+        "100 >> True",
+        "7 / True",
+        "7 // True",
+        "7 % True",
+        "2 ** True",
+        "5 & True",
+        "4 | True",
+        "5 ^ True",
+        "True - 100",
+        "True - True",
+    ],
+)
+def test_int_and_bool_binary_operations_keep_operand_order(expression):
+    """A bool operand does not override the reflected methods of int, so the
+    operation must not be evaluated with the operands swapped."""
+    inferred = list(extract_node(expression).infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    expected = eval(expression)  # pylint: disable=eval-used
+    assert inferred[0].value == expected
+    assert type(inferred[0].value) is type(expected)
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "value = 100\nvalue -= True\nvalue",
+        "value = 1\nvalue <<= True\nvalue",
+        "value = 7\nvalue /= True\nvalue",
+        "value = 5\nvalue &= True\nvalue",
+    ],
+)
+def test_int_and_bool_augmented_operations_keep_operand_order(source):
+    namespace: dict = {}
+    exec(source.rsplit("\n", 1)[0], namespace)  # pylint: disable=exec-used
+    expected = namespace["value"]
+    inferred = list(extract_node(source).infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.Const)
+    assert inferred[0].value == expected
+    assert type(inferred[0].value) is type(expected)
+
+
+def test_int_and_bool_unsupported_binary_operation_is_not_inferred():
+    # int has no __rmatmul__, so there is no reflected method to defer to.
+    assert list(extract_node("1 @ True").infer()) == [util.Uninferable]
