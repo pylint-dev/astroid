@@ -2588,6 +2588,41 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(second, nodes.Const)
         self.assertEqual(second.value, 42)
 
+    def test_inferring_with_contextlib_contextmanager_all_first_yield_values(
+        self,
+    ) -> None:
+        """The value bound by ``as`` keeps every inferred value of the first yield."""
+        node = extract_node("""
+        from contextlib import contextmanager
+
+        @contextmanager
+        def manager(flag):
+            yield 1 if flag else "a"
+            yield 2.5  # Only the first yield matters.
+
+        with manager(unknown) as value:
+            value  #@
+        """)
+        inferred = node.inferred()
+        assert [i.value for i in inferred] == [1, "a"]
+
+    def test_inferring_with_contextlib_contextmanager_uses_call_arguments(
+        self,
+    ) -> None:
+        node = extract_node("""
+        from contextlib import contextmanager
+
+        @contextmanager
+        def manager(arg):
+            yield arg
+
+        with manager(42) as value:
+            value  #@
+        """)
+        inferred = node.inferred()
+        assert len(inferred) == 1
+        assert inferred[0].value == 42
+
     def test_inferring_context_manager_skip_index_error(self) -> None:
         # Raise an InferenceError when having multiple 'as' bindings
         # from a context manager, but its result doesn't have those
