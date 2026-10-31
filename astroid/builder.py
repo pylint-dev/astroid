@@ -17,6 +17,7 @@ import textwrap
 import types
 import warnings
 from collections.abc import Collection, Iterator, Sequence
+from contextlib import ExitStack
 from io import TextIOWrapper
 from tokenize import detect_encoding
 from typing import TYPE_CHECKING, cast
@@ -46,11 +47,12 @@ if PY314_PLUS:
 
 
 def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
-    # pylint: disable=consider-using-with
     with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
-    stream = open(filename, newline=None, encoding=encoding)
-    data = stream.read()
+    with ExitStack() as stack:
+        stream = stack.enter_context(open(filename, newline=None, encoding=encoding))
+        data = stream.read()
+        stack.pop_all()  # The caller takes ownership of the open stream on success.
     return stream, encoding, data
 
 
