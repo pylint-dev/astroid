@@ -838,6 +838,31 @@ class FileBuildTest(unittest.TestCase):
             resources.build_file("data/invalid_encoding.py")
 
 
+def test_file_build_closes_stream_after_decoding_error(tmp_path: pathlib.Path) -> None:
+    source = tmp_path / "invalid_encoding.py"
+    source.write_bytes(b"# coding: utf-8\n\nvalue = '\xff'\n")
+    opened_streams = []
+    original_open = open
+
+    def tracked_open(*args, **kwargs):
+        stream = original_open(*args, **kwargs)
+        opened_streams.append(stream)
+        return stream
+
+    astroid_builder = builder.AstroidBuilder(AstroidManager())
+    try:
+        with unittest.mock.patch("astroid.builder.open", side_effect=tracked_open):
+            with pytest.raises(AstroidBuildingError) as raised:
+                astroid_builder.file_build(str(source), "invalid_encoding")
+
+        assert isinstance(raised.value.__cause__, UnicodeDecodeError)
+        assert len(opened_streams) == 2
+        assert all(stream.closed for stream in opened_streams)
+    finally:
+        for stream in opened_streams:
+            stream.close()
+
+
 def test_module_build_dunder_file() -> None:
     """Test that module_build() can work with modules that have the *__file__*
     attribute.
