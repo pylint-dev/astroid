@@ -6,12 +6,13 @@
 
 from __future__ import annotations
 
-import utils.session
 import sys
 from argparse import ArgumentParser, Namespace
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import cast
+
+import utils.session
 
 import astroid
 

@@ -18,7 +18,9 @@ The application expects the following font files:
 ## Note
 
 If you don't have custom fonts, the application will fall back to system fonts:
+
 - BlockchainFont → system sans-serif fonts
 - TechMono → system monospace fonts (Courier New, etc.)
 
-The fonts are referenced in `public/index.html` and will be loaded automatically when available.
+The fonts are referenced in `public/index.html` and will be loaded automatically when
+available.
