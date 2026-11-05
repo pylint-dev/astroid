@@ -1,0 +1,3 @@
+Support PEP 604 union types in ``isinstance()`` and ``issubclass()`` inference and type constraint narrowing.
+
+Closes #3453

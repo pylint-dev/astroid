@@ -1807,3 +1807,19 @@ def test_compound_constraint_only_matches_bool_op() -> None:
     """Test that only boolean operations make a compound constraint."""
     node = builder.extract_node("x")
     assert _CompoundConstraint.match(node, node) is None
+
+
+def test_pep604_union_narrowing() -> None:
+    node = builder.extract_node("""
+    def f(flag):
+        if flag:
+            x = 1
+        else:
+            x = "s"
+        if isinstance(x, int | str):
+            reveal = x
+            reveal #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 2
+    assert {val.value for val in inferred} == {1, "s"}

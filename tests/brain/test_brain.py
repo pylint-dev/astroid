@@ -1216,6 +1216,18 @@ class TestIsinstanceInference:
         with pytest.raises(InferenceError):
             _get_result_node("isinstance(something, int)")
 
+    def test_isinstance_union_true(self) -> None:
+        assert _get_result("isinstance(1, int | str)") == "True"
+
+    def test_isinstance_union_false(self) -> None:
+        assert _get_result("isinstance(1.5, int | str)") == "False"
+
+    def test_isinstance_union_with_none(self) -> None:
+        assert _get_result("isinstance(None, int | None)") == "True"
+
+    def test_isinstance_nested_union(self) -> None:
+        assert _get_result("isinstance(1, (str, (int | None)))") == "True"
+
 
 class TestIssubclassBrain:
     """Test issubclass() builtin inference"""
@@ -1295,6 +1307,18 @@ class TestIssubclassBrain:
         """issubclass must have two arguments"""
         with pytest.raises(InferenceError):
             _get_result_node("issubclass(int, int, str)")
+
+    def test_issubclass_union_true(self) -> None:
+        assert _get_result("issubclass(int, int | str)") == "True"
+
+    def test_issubclass_union_false(self) -> None:
+        assert _get_result("issubclass(int, str | float)") == "False"
+
+    def test_issubclass_union_with_none(self) -> None:
+        assert _get_result("""
+        import types
+        issubclass(types.NoneType, int | None)
+        """) == "True"
 
 
 def _get_result_node(code: str) -> nodes.Const:

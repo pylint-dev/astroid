@@ -125,7 +125,11 @@ def _object_type_is_subclass(
             )
 
         for obj_subclass in obj_mro:
-            if obj_subclass == klass:
+            if obj_subclass == klass or (
+                hasattr(obj_subclass, "qname")
+                and hasattr(klass, "qname")
+                and obj_subclass.qname() == klass.qname()
+            ):
                 return True
     return False
 
@@ -161,6 +165,36 @@ def object_issubclass(
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
+def _unpack_class_container(
+    inferred: InferenceResult,
+    context: InferenceContext | None = None,
+) -> list[InferenceResult]:
+    if isinstance(inferred, nodes.Tuple):
+        result: list[InferenceResult] = []
+        for elt in inferred.elts:
+            try:
+                elt_inferred = next(elt.infer(context=context))
+            except StopIteration as e:  # pragma: no cover
+                raise InferenceError(node=elt, context=context) from e
+            result.extend(_unpack_class_container(elt_inferred, context))
+        return result
+    if isinstance(inferred, bases.UnionType):
+        result = []
+        for member in (inferred.left, inferred.right):
+            if isinstance(member, nodes.Const) and member.value is None:
+                none_type = object_type(member, context)
+                if isinstance(none_type, nodes.ClassDef):
+                    result.append(none_type)
+                elif isinstance(member._proxied, nodes.ClassDef):
+                    result.append(member._proxied)
+                else:
+                    result.append(member)
+            else:
+                result.extend(_unpack_class_container(member, context))
+        return result
+    return [inferred]
+
+
 def class_or_tuple_to_container(
     node: InferenceResult, context: InferenceContext | None = None
 ) -> list[InferenceResult]:
@@ -171,18 +205,7 @@ def class_or_tuple_to_container(
         node_infer = next(node.infer(context=context))
     except StopIteration as e:  # pragma: no cover
         raise InferenceError(node=node, context=context) from e
-    # arg2 MUST be a type or a TUPLE of types
-    # for isinstance
-    if isinstance(node_infer, nodes.Tuple):
-        try:
-            class_container = [
-                next(node.infer(context=context)) for node in node_infer.elts
-            ]
-        except StopIteration as e:  # pragma: no cover
-            raise InferenceError(node=node, context=context) from e
-    else:
-        class_container = [node_infer]
-    return class_container
+    return _unpack_class_container(node_infer, context)
 
 
 def has_known_bases(klass, context: InferenceContext | None = None) -> bool:

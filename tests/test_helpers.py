@@ -335,6 +335,34 @@ def test_tuple_to_container_inference_error() -> None:
         helpers.class_or_tuple_to_container(node.args[1])
 
 
+def test_union_to_container() -> None:
+    node = builder.extract_node("""isinstance(3, int | str)""")
+    container = helpers.class_or_tuple_to_container(node.args[1])
+    assert len(container) == 2
+    assert isinstance(container[0], nodes.ClassDef)
+    assert container[0].name == "int"
+    assert isinstance(container[1], nodes.ClassDef)
+    assert container[1].name == "str"
+
+
+def test_union_with_none_to_container() -> None:
+    node = builder.extract_node("""isinstance(3, int | None)""")
+    container = helpers.class_or_tuple_to_container(node.args[1])
+    assert len(container) == 2
+    assert isinstance(container[0], nodes.ClassDef)
+    assert container[0].name == "int"
+    assert isinstance(container[1], nodes.ClassDef)
+    assert container[1].name == "NoneType"
+
+
+def test_nested_tuple_and_union_to_container() -> None:
+    node = builder.extract_node("""isinstance(3, (int | str, (float, bytes)))""")
+    container = helpers.class_or_tuple_to_container(node.args[1])
+    assert len(container) == 4
+    names = [c.name for c in container if isinstance(c, nodes.ClassDef)]
+    assert names == ["int", "str", "float", "bytes"]
+
+
 @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
 def test_object_type_pep695_type_params() -> None:
     """PEP 695 type parameters have no concrete type at static-analysis time.
