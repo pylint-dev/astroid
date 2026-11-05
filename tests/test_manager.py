@@ -244,6 +244,79 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIn("stub", module.locals)
         self.assertNotIn("source", module.locals)
 
+    def test_unchanged_prefer_stubs_preserves_cache(self) -> None:
+        with mock.patch.dict(manager.AstroidManager.brain, prefer_stubs=False):
+            cached_module = self.manager.ast_from_string("value = 1", "cached_module")
+
+            self.manager.prefer_stubs = False
+
+            self.assertIs(self.manager.astroid_cache["cached_module"], cached_module)
+
+    def test_prefer_stubs_replaces_cached_modules(self) -> None:
+        modname = "cached_preference_module"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(
+                os.path.join(tmpdir, f"{modname}.py"), "w", encoding="utf-8"
+            ) as source:
+                source.write("from_source = True\n")
+            with open(
+                os.path.join(tmpdir, f"{modname}.pyi"), "w", encoding="utf-8"
+            ) as stub:
+                stub.write("from_stub: bool\n")
+
+            with (
+                resources.augmented_sys_path([tmpdir]),
+                mock.patch.dict(manager.AstroidManager.brain, prefer_stubs=False),
+            ):
+                builtins_module = self.manager.ast_from_module_name("builtins")
+                source_module = self.manager.ast_from_module_name(modname)
+                self.manager.prefer_stubs = True
+                stub_module = self.manager.ast_from_module_name(modname)
+                self.manager.prefer_stubs = False
+                restored_source_module = self.manager.ast_from_module_name(modname)
+
+        self.assertFalse(source_module.is_stub)
+        self.assertTrue(stub_module.is_stub)
+        self.assertIs(self.manager.builtins_module, builtins_module)
+        self.assertFalse(restored_source_module.is_stub)
+
+    def test_prefer_stubs_invalidates_dependent_inference(self) -> None:
+        dependency = "cached_inference_dependency"
+        consumer = "cached_inference_consumer"
+        global_manager = astroid.MANAGER
+        self.addCleanup(global_manager.clear_cache)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(
+                os.path.join(tmpdir, f"{dependency}.py"), "w", encoding="utf-8"
+            ) as source:
+                source.write("value = 1\n")
+            with open(
+                os.path.join(tmpdir, f"{dependency}.pyi"), "w", encoding="utf-8"
+            ) as stub:
+                stub.write('value = "stub"\n')
+
+            with (
+                resources.augmented_sys_path([tmpdir]),
+                mock.patch.dict(manager.AstroidManager.brain, prefer_stubs=False),
+            ):
+                consumer_module = global_manager.ast_from_string(
+                    f"import {dependency}\n"
+                    f"result = {dependency}.value + {dependency}.value\n",
+                    consumer,
+                )
+                expression = consumer_module.body[1].value
+                assert isinstance(expression, nodes.BinOp)
+                source_result = next(expression.infer())
+
+                global_manager.prefer_stubs = True
+                stub_result = next(expression.infer())
+
+        self.assertIsInstance(source_result, nodes.Const)
+        self.assertEqual(source_result.value, 2)
+        self.assertIsInstance(stub_result, nodes.Const)
+        self.assertEqual(stub_result.value, "stubstub")
+
     def test_extension_uses_pyi_when_stubs_preferred(self) -> None:
         modname = "compiled_mod_with_stub"
         with tempfile.TemporaryDirectory() as tmpdir:
