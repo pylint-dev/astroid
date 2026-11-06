@@ -1,0 +1,5 @@
+Fix dictionary subscription inference to select the last matching key,
+including duplicate literal keys, constructor keyword overrides, and direct
+lookup through dictionary unpacking.
+
+Refs #3380
