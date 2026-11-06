@@ -54,7 +54,7 @@ def infer_type_sub(
     :param node: node to infer
     :return: the inferred node
     """
-    node_scope, _ = node.scope().lookup("type")
+    node_scope, _ = node.lookup("type")
     if not (isinstance(node_scope, nodes.Module) and node_scope.qname() == "builtins"):
         raise UseInferenceDefault()
     class_src = """
