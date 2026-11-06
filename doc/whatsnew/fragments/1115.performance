@@ -1,0 +1,6 @@
+Cache the result of ``ClassDef.ancestors()`` per node when called with
+``recurs=True``. The recursive walk previously recomputed ancestors of
+shared base classes on every call; the cache eliminates that amplification
+on deep MRO chains.
+
+Closes #1115
