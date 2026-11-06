@@ -1,0 +1,6 @@
+Infer the name bound by a ``type`` statement as a ``typing.TypeAliasType``
+instance instead of the aliased value, so ``__value__`` and the other alias
+attributes are found on it.
+
+Refs #3374
+Refs pylint-dev/pylint#10091

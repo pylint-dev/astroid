@@ -436,6 +436,7 @@ def infer_typing_cast(
 def _typing_transform():
     code = textwrap.dedent("""
     class Generic:
+        __slots__ = ()
         @classmethod
         def __class_getitem__(cls, item):  return cls
     class ParamSpec:
@@ -468,7 +469,19 @@ def _typing_transform():
         @classmethod
         def __class_getitem__(cls, item):  return cls
     """)
+    code += textwrap.dedent("""
+    class TypeAliasType:
+        def __init__(self, name, value, *, type_params=()):
+            self.__name__ = name
+            self.__value__ = value
+            self.__type_params__ = type_params
+            self.__parameters__ = type_params
+        def __getitem__(self, item): return self
+        def __or__(self, other): return self
+        def __ror__(self, other): return self
+    """)
     if PY314_PLUS:
+        code += "    def evaluate_value(self, format=1): return self.__value__\n"
         code += textwrap.dedent("""
     from annotationlib import ForwardRef
     class Union:

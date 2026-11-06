@@ -3734,7 +3734,9 @@ class Subscript(NodeNG):
         to the value's `getitem` method, which should
         handle each supported index type accordingly.
         """
-        from astroid import helpers  # pylint: disable=import-outside-toplevel
+        # pylint: disable-next=import-outside-toplevel
+        from astroid import helpers
+        from astroid.nodes import ClassDef  # pylint: disable=import-outside-toplevel
 
         found_one = False
         for value in self.value.infer(context):
@@ -3754,6 +3756,10 @@ class Subscript(NodeNG):
                     instance_as_index = helpers.class_instance_as_index(index)
                     if instance_as_index:
                         index_value = instance_as_index
+                    elif isinstance(value, ClassDef):
+                        # Subscripting a class, e.g. ``Container[Alias]``,
+                        # takes the index as a type argument, not as an integer.
+                        index_value = index
                 else:
                     index_value = index
 
@@ -4140,7 +4146,7 @@ class TypeAlias(_base_nodes.AssignTypeNode, _base_nodes.Statement):
             ],
             Generator[NodeNG],
         ]
-    ] = protocols.assign_assigned_stmts
+    ] = protocols.type_alias_assigned_stmts
 
 
 class TypeVar(_base_nodes.AssignTypeNode):
