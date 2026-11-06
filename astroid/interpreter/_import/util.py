@@ -26,6 +26,11 @@ def is_namespace(modname: str) -> bool:
     if modname in sys.builtin_module_names:
         return False
 
+    # setuptools' distutils shim answers find_spec("distutils") by importing
+    # setuptools, and distutils is never a namespace package, so don't ask.
+    if modname.partition(".")[0] == "distutils":
+        return False
+
     found_spec = None
 
     # find_spec() attempts to import parent packages when given dotted paths.

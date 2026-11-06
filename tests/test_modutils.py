@@ -4,6 +4,7 @@
 
 """Unit tests for module modutils (module manipulation utilities)."""
 
+import contextlib
 import email
 import importlib.machinery
 import logging
@@ -13,6 +14,7 @@ import sys
 import tempfile
 import unittest
 import xml
+from collections.abc import Iterator
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -21,7 +23,7 @@ from pytest import CaptureFixture, LogCaptureFixture
 
 import astroid
 from astroid import modutils
-from astroid.interpreter._import import spec
+from astroid.interpreter._import import spec, util
 
 from . import resources
 
@@ -675,3 +677,54 @@ def test_no_import_done_for_submodule_sharing_std_lib_name() -> None:
             )
     finally:
         sys.path.pop(0)
+
+
+@contextlib.contextmanager
+def _shadowed_setuptools(tmp_path: Path) -> Iterator[Path]:
+    """Put a setuptools package first on sys.path and yield its import marker.
+
+    setuptools' distutils shim answers ``find_spec("distutils")`` by importing
+    setuptools, which resolves through sys.path like any other import.
+    """
+    if not any(type(f).__name__ == "DistutilsMetaFinder" for f in sys.meta_path):
+        pytest.skip("setuptools' distutils shim is not active")
+    marker = tmp_path / "setuptools_imported"
+    package = tmp_path / "setuptools"
+    package.mkdir()
+    (package / "__init__.py").write_text(f"open({str(marker)!r}, 'w').close()\n")
+    # The shim only imports setuptools while neither it nor distutils is loaded.
+    saved = {
+        name: sys.modules.pop(name)
+        for name in ("setuptools", "distutils")
+        if name in sys.modules
+    }
+    sys.path.insert(0, str(tmp_path))
+    util.is_namespace.cache_clear()
+    try:
+        yield marker
+    finally:
+        sys.path.remove(str(tmp_path))
+        sys.path_importer_cache.pop(str(tmp_path), None)
+        for name in ("setuptools", "distutils"):
+            sys.modules.pop(name, None)
+        sys.modules.update(saved)
+        util.is_namespace.cache_clear()
+
+
+def test_is_namespace_does_not_import_setuptools(tmp_path: Path) -> None:
+    with _shadowed_setuptools(tmp_path) as marker:
+        assert not util.is_namespace("distutils")
+        assert not marker.exists()
+
+
+def test_find_spec_distutils_submodule_does_not_import_setuptools(
+    tmp_path: Path,
+) -> None:
+    distutils_dir = tmp_path / "distutils"
+    distutils_dir.mkdir()
+    (distutils_dir / "__init__.py").touch()
+    (distutils_dir / "util.py").touch()
+    with _shadowed_setuptools(tmp_path) as marker:
+        found = spec.find_spec(["distutils", "util"], [str(tmp_path)])
+        assert found.location == str(distutils_dir / "util.py")
+        assert not marker.exists()
