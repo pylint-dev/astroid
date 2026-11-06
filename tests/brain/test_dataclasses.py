@@ -1630,3 +1630,43 @@ def test_property_default_huge_int_does_not_crash() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0].name == "A"
+
+
+@pytest.mark.parametrize(
+    "module", ["dataclasses", "pydantic.dataclasses", "marshmallow_dataclass"]
+)
+@pytest.mark.parametrize("decorator", ["dataclass", "dataclass(init=False)"])
+@pytest.mark.parametrize("access", ["Youpi", "Youpi()"])
+def test_dataclass_fields_attribute(module: str, decorator: str, access: str) -> None:
+    """Every dataclass has a ``__dataclass_fields__`` dict.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/9183.
+    """
+    node = astroid.extract_node(f"""
+    from {module} import dataclass
+
+    @{decorator}
+    class Youpi:
+        yapi: int
+
+    {access}.__dataclass_fields__  #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Dict)
+
+
+def test_dataclass_fields_attribute_defined_by_the_class_is_kept() -> None:
+    """A ``__dataclass_fields__`` the class defines itself is not replaced."""
+    node = astroid.extract_node("""
+    from dataclasses import dataclass
+
+    @dataclass
+    class Youpi:
+        __dataclass_fields__ = "own"
+        yapi: int
+
+    Youpi.__dataclass_fields__  #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == "own"
