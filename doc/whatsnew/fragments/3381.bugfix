@@ -1,0 +1,4 @@
+Fix ``dict.fromkeys()`` inference discarding an explicit default value.
+Inferred keys retain the supplied default, including shared mutable defaults.
+
+Refs #3381
