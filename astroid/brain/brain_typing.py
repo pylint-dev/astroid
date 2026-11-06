@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import textwrap
 import typing
+import weakref
 from collections.abc import Iterator
 from functools import partial
 from typing import Final
@@ -45,6 +46,12 @@ class {0}(metaclass=Meta):
     pass
 """
 TYPING_MEMBERS = set(getattr(typing, "__all__", []))
+# One synthetic class per typing object. A class can reach the same typing base more than
+# once, e.g. ``class B(A[T], Protocol[T])`` with ``class A(Protocol[T])``, and the C3 merge of
+# the MRO compares bases by identity, so a new class per subscript appears as a duplicate base.
+_TYPING_SUBSCRIPT_CLASSES: weakref.WeakKeyDictionary[object, nodes.NodeNG] = (
+    weakref.WeakKeyDictionary()
+)
 
 TYPING_ALIAS = frozenset(
     (
@@ -194,8 +201,13 @@ def infer_typing_attr(
         node._explicit_inference = lambda node, context: iter([value])
         return iter([value])
 
-    node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
-    return node.infer(context=ctx)
+    class_def = _TYPING_SUBSCRIPT_CLASSES.get(value)
+    if class_def is None:
+        class_def = _extract_single_node(
+            TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1])
+        )
+        _TYPING_SUBSCRIPT_CLASSES[value] = class_def
+    return class_def.infer(context=ctx)
 
 
 def _looks_like_generic_class_pep695(node: nodes.ClassDef) -> bool:
