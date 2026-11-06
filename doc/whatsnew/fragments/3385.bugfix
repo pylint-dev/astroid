@@ -1,0 +1,5 @@
+Container constructor inference preserves uninferable elements instead of dropping
+them, so tuple and list elements keep their original positions. This also keeps
+uncertain elements in inferred set and frozenset contents.
+
+Refs #3385

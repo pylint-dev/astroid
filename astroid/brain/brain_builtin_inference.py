@@ -312,11 +312,10 @@ def _container_generic_transform(
                 if not element:
                     continue
                 inferred = util.safe_infer(element, context=context)
-                if inferred:
-                    evaluated_object = nodes.EvaluatedObject(
-                        original=element, value=inferred
-                    )
-                    elts.append(evaluated_object)
+                evaluated_object = nodes.EvaluatedObject(
+                    original=element, value=inferred or util.Uninferable
+                )
+                elts.append(evaluated_object)
     elif isinstance(arg, nodes.Dict):
         # Dicts need to have consts as strings already.
         elts = [
