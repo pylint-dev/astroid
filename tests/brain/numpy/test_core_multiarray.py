@@ -11,7 +11,7 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
+from astroid import builder, nodes
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -165,3 +165,19 @@ class BrainNumpyCoreMultiarrayTest(unittest.TestCase):
                         inferred_values[-1].pytype() == "builtins.tuple",
                         msg=f"Illicit type for {func_[0]:s} ({inferred_values[-1].pytype()})",
                     )
+
+    def test_unravel_index_result_has_no_fixed_length(self):
+        """``unravel_index`` returns one array per dimension of ``shape``.
+
+        Its result must not infer as a one-element ``Tuple`` node, which made
+        pylint report ``unbalanced-tuple-unpacking`` on ``i, j = unravel_index(...)``
+        (pylint-dev/pylint#10440).
+        """
+        node = builder.extract_node("""
+        import numpy as np
+        np.unravel_index(22, (6, 7))
+        """)
+        inferred_values = list(node.infer())
+        self.assertEqual(len(inferred_values), 1)
+        self.assertEqual(inferred_values[0].pytype(), "builtins.tuple")
+        self.assertNotIsInstance(inferred_values[0], nodes.Tuple)
