@@ -6,7 +6,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator
+from collections.abc import Generator, Hashable
+from typing import cast
 
 from astroid import bases, manager, nodes, objects, raw_building, util
 from astroid.context import CallContext, InferenceContext
@@ -254,6 +255,33 @@ def class_instance_as_index(node: bases.Instance) -> nodes.Const | None:
     return None
 
 
+def _literal_hashable_value(
+    node: nodes.NodeNG, context: InferenceContext | None
+) -> Hashable:
+    """Return a statically known literal value without calling user-defined hashes."""
+    inferred = safe_infer(node, context=context)
+    if isinstance(inferred, nodes.Const) and type(inferred.value) in (
+        str,
+        bytes,
+        int,
+        float,
+        complex,
+        bool,
+        type(None),
+        type(Ellipsis),
+    ):
+        return cast(Hashable, inferred.value)
+    if isinstance(inferred, nodes.Tuple):
+        return tuple(
+            _literal_hashable_value(element, context) for element in inferred.elts
+        )
+    if isinstance(inferred, objects.FrozenSet):
+        return frozenset(
+            _literal_hashable_value(element, context) for element in inferred.elts
+        )
+    raise InferenceError(node=node)
+
+
 def object_len(
     node: SuccessfulInferenceResult, context: InferenceContext | None = None
 ) -> int:
@@ -294,10 +322,15 @@ def object_len(
         inferred_node.value, (bytes, str)
     ):
         return len(inferred_node.value)
-    if isinstance(inferred_node, (nodes.List, nodes.Set, nodes.Tuple, FrozenSet)):
+    if isinstance(inferred_node, (nodes.List, nodes.Tuple)):
         return len(inferred_node.elts)
-    if isinstance(inferred_node, nodes.Dict):
-        return len(inferred_node.items)
+    if isinstance(inferred_node, (nodes.Set, FrozenSet, nodes.Dict)):
+        return len(
+            {
+                _literal_hashable_value(element, context)
+                for element in inferred_node.itered()
+            }
+        )
 
     node_type = object_type(inferred_node, context=context)
     if not node_type:
