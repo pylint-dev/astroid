@@ -4616,6 +4616,14 @@ class DictUnpack(_base_nodes.NoChildrenNode):
     """Represents the unpacking of dicts into dicts using :pep:`448`."""
 
 
+# Functions for the ``conversion`` codes of ``FormattedValue``: ``!s``, ``!r``, ``!a``.
+_FORMAT_CONVERSIONS: dict[int, Callable[[object], str]] = {
+    ord("s"): str,
+    ord("r"): repr,
+    ord("a"): ascii,
+}
+
+
 class FormattedValue(NodeNG):
     """Class representing an :class:`ast.FormattedValue` node.
 
@@ -4729,7 +4737,11 @@ class FormattedValue(NodeNG):
                     uninferable_already_generated = True
                     continue
                 try:
-                    formatted = format(value_to_format, format_spec.value)
+                    convert = _FORMAT_CONVERSIONS.get(self.conversion)
+                    if convert is not None and isinstance(value, Const):
+                        formatted = format(convert(value.value), format_spec.value)
+                    else:
+                        formatted = format(value_to_format, format_spec.value)
                     yield Const(
                         formatted,
                         lineno=self.lineno,
