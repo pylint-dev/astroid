@@ -83,13 +83,32 @@ def _is_a_numpy_module(node: nodes.Name) -> bool:
     )
 
 
+def _is_imported_from_numpy(node: nodes.Name) -> bool:
+    """
+    Returns True if the Name node is bound by an unaliased ``from numpy import``.
+
+    For example in :
+        from numpy import where
+        x = where(cond, 0, 1)
+    the node <Name.where> is the numpy member.
+    """
+    return any(
+        isinstance(stmt, nodes.ImportFrom)
+        and (stmt.modname == "numpy" or stmt.modname.startswith("numpy."))
+        and (node.name, None) in stmt.names
+        for stmt in node.lookup(node.name)[1]
+    )
+
+
 def member_name_looks_like_numpy_member(
     member_names: frozenset[str], node: nodes.Name
 ) -> bool:
     """
     Returns True if the Name node's name matches a member name from numpy
     """
-    return node.name in member_names and node.root().name.startswith("numpy")
+    return node.name in member_names and (
+        node.root().name.startswith("numpy") or _is_imported_from_numpy(node)
+    )
 
 
 def attribute_name_looks_like_numpy_member(

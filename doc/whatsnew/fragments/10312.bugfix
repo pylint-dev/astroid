@@ -1,0 +1,6 @@
+numpy members imported by name (``from numpy import where``) now get the same
+inference as ``np.where``. They used to fall through to numpy's own dispatcher,
+whose body returns its arguments as a tuple, so pylint reported
+``invalid-sequence-index`` on ``where(cond, 0., 1.)[:, newaxis]``.
+
+Closes pylint-dev/pylint#10312
