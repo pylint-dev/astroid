@@ -487,6 +487,18 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
                 module.file.endswith(end), f"{module.file} doesn't endswith {end}"
             )
 
+    def test_ast_from_module_name_builtin_name_in_zip_package(self) -> None:
+        """A builtin name under a package from a zip does not import the package."""
+        with self._restore_package_cache():
+            sys.modules.pop("mypypa", None)
+            sys.path.insert(0, resources.find("data/MyPyPa-0.1.0-py2.5.zip"))
+            try:
+                with self.assertRaises(AstroidImportError):
+                    self.manager.ast_from_module_name("mypypa.sys")
+                self.assertNotIn("mypypa", sys.modules)
+            finally:
+                sys.modules.pop("mypypa", None)
+
     def test_zip_import_data(self) -> None:
         """Check if zip_import_data works."""
         with self._restore_package_cache():
