@@ -1175,6 +1175,65 @@ def test_dataclass_with_field_init_is_false() -> None:
     assert [a.value for a in third_init.args.defaults] == []
 
 
+def test_dataclass_field_made_init_false_in_a_middle_base() -> None:
+    """A field an intermediate base redefines with init=False is not an argument
+    of the grandchild's __init__, although the root base's __init__ lists it.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/10056.
+    """
+    derived, child = astroid.extract_node("""
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class Base:
+        id: int
+        subid: int
+
+    @dataclass
+    class Derived(Base):
+        id: int = field(default=0, init=False)
+
+    @dataclass
+    class Child(Derived):
+        subid: int = field(default=1, init=False)
+
+    Derived.__init__  #@
+    Child.__init__  #@
+    """)
+
+    derived_init: bases.UnboundMethod = next(derived.infer())
+    assert [a.name for a in derived_init.args.args] == ["self", "subid"]
+
+    child_init: bases.UnboundMethod = next(child.infer())
+    assert [a.name for a in child_init.args.args] == ["self"]
+    assert child_init.args.kwonlyargs == []
+
+
+def test_dataclass_kw_only_field_made_init_false_in_a_middle_base() -> None:
+    """The same for a keyword-only field of the root base."""
+    node = astroid.extract_node("""
+    from dataclasses import dataclass, field
+
+    @dataclass(kw_only=True)
+    class Base:
+        id: int
+        name: str
+
+    @dataclass
+    class Derived(Base):
+        id: int = field(default=0, init=False)
+
+    @dataclass
+    class Child(Derived):
+        pass
+
+    Child.__init__  #@
+    """)
+
+    child_init: bases.UnboundMethod = next(node.infer())
+    assert [a.name for a in child_init.args.kwonlyargs] == ["name"]
+
+
 def test_dataclass_with_field_init_is_false_without_default() -> None:
     """A parent field() without a default gives no default to the child."""
     node = astroid.extract_node("""
