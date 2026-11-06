@@ -1,0 +1,7 @@
+Classes with an explicit metaclass that does not define ``__or__``, such as
+``ABCMeta``, now form a ``types.UnionType`` with ``|`` instead of being
+uninferable. This fixes a false positive ``unexpected-keyword-arg`` for a
+dataclass whose generic base is subscripted with such a union.
+
+Refs #3446
+Refs pylint-dev/pylint#9488
