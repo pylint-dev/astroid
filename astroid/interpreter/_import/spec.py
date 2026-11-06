@@ -13,7 +13,6 @@ import os
 import pathlib
 import sys
 import types
-import warnings
 import zipimport
 from collections.abc import Iterable, Iterator, Sequence
 from functools import lru_cache
@@ -168,25 +167,22 @@ class ImportlibFinder(Finder):
                     return ModuleSpec(name=modname, location=file_path, type=type_)
 
         # If the module name matches a stdlib module name, check whether this is a frozen
-        # module. Note that `find_spec` actually imports parent modules, so we want to make
-        # sure we only run this code for stuff that can be expected to be frozen. For now
-        # this is only stdlib.
+        # module. Ask FrozenImporter directly: `importlib.util.find_spec` would import
+        # the parent packages of a dotted name. Fall back to sys.modules for aliases
+        # of frozen modules, e.g. collections.abc on Python >= 3.13.
         if (modname in sys.stdlib_module_names and not processed) or (
             processed and processed[0] in sys.stdlib_module_names
         ):
-            try:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=Warning)
-                    spec = importlib.util.find_spec(".".join((*processed, modname)))
-            except ValueError:
-                spec = None
-
-            if (
-                spec
-                and spec.loader  # type: ignore[comparison-overlap] # noqa: E501
-                is importlib.machinery.FrozenImporter
-            ):
-                return ModuleSpec(  # type: ignore[unreachable]
+            dotted_name = ".".join((*processed, modname))
+            spec = importlib.machinery.FrozenImporter.find_spec(dotted_name)
+            if spec is None:
+                spec = getattr(sys.modules.get(dotted_name), "__spec__", None)
+                if spec is not None and (
+                    spec.loader is not importlib.machinery.FrozenImporter
+                ):
+                    spec = None
+            if spec:
+                return ModuleSpec(
                     name=modname,
                     location=getattr(spec.loader_state, "filename", None),
                     type=ModuleType.PY_FROZEN,
