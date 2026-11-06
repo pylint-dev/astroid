@@ -127,3 +127,23 @@ def test_star_exceptions_infer_exceptions() -> None:
     assert inferred_te.name == "ExceptionGroup"
     assert isinstance(inferred_te.getattr("exceptions")[0], nodes.Tuple)
     assert inferred_te.getattr("exceptions")[0].elts[0].pytype() == "builtins.TypeError"
+
+
+def test_star_exception_handler_binds_exception_group() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/2400.
+
+    In ``except* TypeError as eg``, the bound name ``eg`` is the
+    ``ExceptionGroup`` wrapping the caught exceptions, not a ``TypeError``
+    instance. astroid used to infer it as the exception type listed on the
+    handler.
+    """
+    name = extract_node(textwrap.dedent("""
+        try:
+            raise ExceptionGroup("group", [TypeError("x")])
+        except* TypeError as eg:
+            eg  #@
+    """))
+    inferred = list(name.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].pytype() == "builtins.ExceptionGroup"
