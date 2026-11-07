@@ -1,0 +1,7 @@
+Fix a false positive ``duplicate-bases`` in pylint for a class deriving from a
+class that itself has several ``TypedDict`` bases. Every use of ``TypedDict``
+used to be inferred to a distinct class, so the MRO of such a class held
+several ``TypedDict`` entries and ``ClassDef.mro()`` raised
+``DuplicateBasesError``. ``TypedDict`` is now inferred to a single class.
+
+Closes pylint-dev/pylint#9222
