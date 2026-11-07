@@ -1,0 +1,5 @@
+Infer every value of the first ``yield`` of a ``contextlib.contextmanager``
+generator for the ``as`` target of a ``with`` statement, instead of only the
+first inferred value.
+
+Closes #3440
