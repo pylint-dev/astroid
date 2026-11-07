@@ -397,6 +397,85 @@ def _resolve_looppart(parts, assign_path, context):
                     break
 
 
+def _resolve_generator_looppart(
+    generator: bases.Generator,
+    assign_path: list[int],
+    context: InferenceContext | None,
+) -> Iterator[InferenceResult]:
+    """Infer what a loop target unpacks from the values ``generator`` yields.
+
+    The values are uninferable for an async generator, which a ``for`` loop cannot
+    iterate, and for a generator delegating with ``yield from``, since the values
+    it delegates to are not inferred.
+    """
+    function = generator.parent
+    if isinstance(generator, bases.AsyncGenerator) or any(
+        node.scope() is function for node in function.nodes_of_class(nodes.YieldFrom)
+    ):
+        yield util.Uninferable
+        return
+    context = copy_context(context)
+    # In the body of the generator, names such as ``self`` and the parameters are
+    # bound by its call. The generator can come from the inference cache, so only
+    # that binding is taken from its context, not the inferred nodes it counted for
+    # the inference that created it.
+    call_context = copy_context(context)
+    call_context.callcontext = generator._call_context.callcontext
+    call_context.boundnode = generator._call_context.boundnode
+    call_context.extra_context = generator._call_context.extra_context
+    try:
+        values = list(function.infer_yield_result(copy_context(call_context)))
+    except InferenceError:
+        yield util.Uninferable
+        return
+    for value in values:
+        yield from _unpack_yielded_value(
+            value, assign_path, function, call_context, context
+        )
+
+
+def _unpack_yielded_value(
+    value: InferenceResult,
+    assign_path: list[int],
+    function: nodes.FunctionDef,
+    call_context: InferenceContext,
+    context: InferenceContext,
+) -> Iterator[InferenceResult]:
+    """Infer the part of a yielded ``value`` that ``assign_path`` points to.
+
+    Only tuples and lists are unpacked, anything else gives ``Uninferable``.
+    Elements from the body of the generator ``function`` are inferred in the
+    ``call_context`` of the generator. Other elements, such as those of a tuple
+    returned by another function, are inferred in the ``context`` of the loop, as
+    when an assignment unpacks them.
+    """
+    if not isinstance(value, (nodes.Tuple, nodes.List)):
+        yield util.Uninferable
+        return
+    index, *assign_path = assign_path
+    try:
+        element = value.getitem(nodes.Const(index), context)
+    except AstroidIndexError:
+        # Unpacking this value fails at runtime
+        return
+    if isinstance(element, util.UninferableBase):
+        yield element
+        return
+    element_context = call_context if function.parent_of(element) else context
+    try:
+        inferred = list(element.infer(copy_context(element_context)))
+    except InferenceError:
+        yield util.Uninferable
+        return
+    if not assign_path:
+        yield from inferred
+        return
+    for part in inferred:
+        yield from _unpack_yielded_value(
+            part, assign_path, function, call_context, context
+        )
+
+
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(
     self: nodes.For | nodes.Comprehension,
@@ -417,7 +496,14 @@ def for_assigned_stmts(
             if isinstance(lst, (nodes.Tuple, nodes.List)):
                 yield from lst.elts
     else:
-        yield from _resolve_looppart(self.iter.infer(context), assign_path, context)
+        # assign_path does not count the names after a starred one from the end,
+        # so a target containing a starred name is not unpacked from generators.
+        starred = next(self.target.nodes_of_class(nodes.Starred), None)
+        for iterable in self.iter.infer(context):
+            if isinstance(iterable, bases.Generator) and starred is None:
+                yield from _resolve_generator_looppart(iterable, assign_path, context)
+            else:
+                yield from _resolve_looppart([iterable], assign_path, context)
     return {
         "node": self,
         "unknown": node,
