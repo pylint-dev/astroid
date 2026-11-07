@@ -461,18 +461,19 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
     init_object_node = module.body[-1].mro()[-1]["__init__"]
     super_node = next(init_attr_node.expr.infer())
 
-    # Arbitrarily limit the max number of infered nodes per context
-    InferenceContext.max_inferred = -1
     context = InferenceContext()
+    with mock.patch.object(InferenceContext, "max_inferred", -1):
+        # Exhausted inference must not crash while resolving a super attribute.
+        assert list(bases._infer_stmts([init_object_node], context, frame=super)) == [
+            Uninferable
+        ]
+        assert super_node.getattr("__init__", context=context) == [Uninferable]
 
-    # Try to infer 'object.__init__' > because of limit is impossible
-    for inferred in bases._infer_stmts([init_object_node], context, frame=super):
-        assert inferred == Uninferable
-
-    # Reset inference limit
-    InferenceContext.max_inferred = 100
-    # Check that we don't crash on a previously uninferable node
-    assert super_node.getattr("__init__", context=context)[0] == Uninferable
+    # Restoring the budget must allow the previously uninferable node to resolve.
+    inferred = super_node.getattr("__init__", context=context)
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.BoundMethod)
+    assert inferred[0]._proxied is init_object_node
 
 
 @mock.patch(
