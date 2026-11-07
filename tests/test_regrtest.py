@@ -471,8 +471,11 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
 
     # Reset inference limit
     InferenceContext.max_inferred = 100
-    # Check that we don't crash on a previously uninferable node
-    assert super_node.getattr("__init__", context=context)[0] == Uninferable
+    # Check that we don't crash on a previously uninferable node. The
+    # truncated result must not have been cached, so with the budget restored
+    # the lookup resolves for real instead of replaying ``Uninferable``.
+    # See https://github.com/pylint-dev/pylint/issues/11582.
+    assert super_node.getattr("__init__", context=context)[0] is not Uninferable
 
 
 @mock.patch(
