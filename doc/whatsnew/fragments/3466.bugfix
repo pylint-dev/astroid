@@ -1,0 +1,5 @@
+Infer names bound by an import in an enum class body as enum members, like
+assigned names, instead of as the plain imported object.
+
+Refs #3466
+Closes pylint-dev/pylint#10951
