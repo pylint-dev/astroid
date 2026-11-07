@@ -2460,16 +2460,39 @@ class ClassDef(
         try:
             attributes = self.getattr(name, context, class_context=class_context)
             # If we have more than one attribute, make sure that those starting from
-            # the second one are from the same scope. This is to account for modifications
-            # to the attribute happening *after* the attribute's definition (e.g. AugAssigns on lists)
+            # the second one are bound on the class owning the first one, in its module,
+            # such as ``cls.attr = value`` in one of its methods. This is to account for
+            # modifications to the attribute happening *after* the attribute's
+            # definition (e.g. AugAssigns on lists), while the attributes of the
+            # ancestors stay shadowed. Values bound from another module are left out,
+            # since they would depend on the order in which the modules are built.
             if len(attributes) > 1:
                 first_attr, attributes = attributes[0], attributes[1:]
-                first_scope = first_attr.parent.scope()
-                attributes = [first_attr] + [
-                    attr
-                    for attr in attributes
-                    if attr.parent and attr.parent.scope() == first_scope
-                ]
+                owner = next(
+                    (
+                        klass
+                        for klass in itertools.chain(
+                            (self,), self.ancestors(recurs=True, context=context)
+                        )
+                        if first_attr in klass.locals.get(name, ())
+                    ),
+                    None,
+                )
+                if owner is None:
+                    # The values come from the metaclass: keep those of the same scope.
+                    first_scope = first_attr.parent.scope()
+                    attributes = [first_attr] + [
+                        attr
+                        for attr in attributes
+                        if attr.parent and attr.parent.scope() == first_scope
+                    ]
+                else:
+                    owner_root = owner.root()
+                    attributes = [first_attr] + [
+                        attr
+                        for attr in attributes
+                        if attr in owner.locals[name] and attr.root() is owner_root
+                    ]
             functions = [attr for attr in attributes if isinstance(attr, FunctionDef)]
             setter = None
             for function in functions:
