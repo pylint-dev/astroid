@@ -670,9 +670,11 @@ class SuperTests(unittest.TestCase):
         inferred = next(zero_arg.value.infer())
         self.assertIsInstance(inferred, bases.Instance)
         self.assertEqual(inferred.qname(), "builtins.super")
+        # ``cls`` is not known outside a class, so the two argument form
+        # falls back to the default inference too.
         inferred = next(two_arg.value.infer())
-        self.assertIsInstance(inferred, Super)
-        self.assertEqual(inferred.mro_pointer.name, "C")
+        self.assertIsInstance(inferred, bases.Instance)
+        self.assertEqual(inferred.qname(), "builtins.super")
 
     def test_super_invalid_types(self) -> None:
         node = builder.extract_node("""

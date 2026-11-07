@@ -493,7 +493,10 @@ def _arguments_infer_argname(
             ):
                 cls = bound_cls
         if is_metaclass or functype == "classmethod":
-            yield cls
+            # A classmethod defined outside a class body, e.g. in a factory
+            # function that attaches it to classes later, has no class to
+            # bind to here: do not mistake the enclosing scope for one.
+            yield cls if isinstance(cls, nodes.ClassDef) else util.Uninferable
             return
         if functype == "method":
             yield cls.instantiate_class()

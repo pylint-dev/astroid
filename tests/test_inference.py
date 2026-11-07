@@ -6691,6 +6691,73 @@ def test_classmethod_returned_tuple_subscript_ignores_unrelated_boundnode() -> N
     assert inferred.name == "A"
 
 
+@pytest.mark.parametrize(
+    "code",
+    [
+        pytest.param(
+            """
+            def make_factory():
+                @classmethod
+                def from_value(cls, value):
+                    cls #@
+            """,
+            id="nested-in-function",
+        ),
+        pytest.param(
+            """
+            @classmethod
+            def from_value(cls, value):
+                cls #@
+            """,
+            id="module-level",
+        ),
+        pytest.param(
+            """
+            def deco(func):
+                if isinstance(func, classmethod):
+                    return classmethod(deco(func.__func__))
+                return func
+
+            def make_factory():
+                @deco
+                def from_value(cls, value):
+                    cls #@
+            """,
+            id="decorator-returning-classmethod",
+        ),
+    ],
+)
+def test_classmethod_defined_outside_class_has_uninferable_cls(code: str) -> None:
+    """A classmethod outside a class body has no class to bind ``cls`` to.
+
+    ``cls`` was inferred as the enclosing function or module instead.
+    Regression test for https://github.com/pylint-dev/pylint/issues/7487
+    """
+    node = extract_node(code)
+    assert list(node.infer()) == [util.Uninferable]
+
+
+def test_classmethod_defined_outside_class_called_through_class() -> None:
+    node = extract_node("""
+    def make_factory():
+        @classmethod
+        def from_value(cls, value):
+            return cls(value)
+        return from_value
+
+    class Widget:
+        def __init__(self, value):
+            self.value = value
+
+        from_value = make_factory()
+
+    Widget.from_value(3) #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "Widget"
+
+
 def test_property_inference() -> None:
     code = """
     class A:
