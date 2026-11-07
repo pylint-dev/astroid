@@ -846,8 +846,9 @@ class SyntaxErrorInstanceModel(ExceptionInstanceModel):
 
 class GroupExceptionInstanceModel(ExceptionInstanceModel):
     @property
-    def attr_exceptions(self) -> nodes.Tuple:
-        return node_classes.Tuple(parent=self._instance)
+    def attr_exceptions(self) -> bases.Instance:
+        builtins_ast_module = AstroidManager().builtins_module
+        return builtins_ast_module["tuple"].instantiate_class()
 
 
 class OSErrorInstanceModel(ExceptionInstanceModel):
@@ -884,6 +885,7 @@ class UnicodeDecodeErrorInstanceModel(ExceptionInstanceModel):
 
 BUILTIN_EXCEPTIONS = {
     "builtins.SyntaxError": SyntaxErrorInstanceModel,
+    "builtins.BaseExceptionGroup": GroupExceptionInstanceModel,
     "builtins.ExceptionGroup": GroupExceptionInstanceModel,
     "builtins.ImportError": ImportErrorInstanceModel,
     "builtins.UnicodeDecodeError": UnicodeDecodeErrorInstanceModel,
