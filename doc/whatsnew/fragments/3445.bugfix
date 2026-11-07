@@ -1,0 +1,6 @@
+``is_namespace()`` accepts an optional search path and only considers the portions of
+the package located under it, so ``modpath_from_file()`` resolves a namespace package that
+also exists in ``site-packages`` from the directory it is imported from.
+
+Refs #3445
+Closes pylint-dev/pylint#10278
