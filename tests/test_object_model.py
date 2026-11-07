@@ -9,7 +9,7 @@ import pytest
 
 import astroid
 from astroid import bases, builder, nodes, objects, util
-from astroid.exceptions import InferenceError
+from astroid.exceptions import AttributeInferenceError, InferenceError
 
 try:
     import six  # type: ignore[import]  # pylint: disable=unused-import
@@ -765,6 +765,21 @@ class GeneratorModelTest(unittest.TestCase):
 
         exit_node = next(ast_nodes[6].infer())
         assert isinstance(exit_node, astroid.BoundMethod)
+
+
+@pytest.mark.parametrize("func_def", ["def", "async def"])
+def test_generator_has_no_descriptor_get(func_def: str) -> None:
+    node = builder.extract_node(f"""
+    {func_def} func():
+        yield
+    func() #@
+    """)
+    generator = next(node.infer())
+    assert isinstance(generator, bases.Generator)
+    with pytest.raises(AttributeInferenceError):
+        generator.getattr("__get__")
+    with pytest.raises(InferenceError):
+        list(generator.igetattr("__get__"))
 
 
 class ExceptionModelTest(unittest.TestCase):
