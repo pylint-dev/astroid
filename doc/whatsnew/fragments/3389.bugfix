@@ -1,0 +1,4 @@
+Prevent a ``TypeError`` in ``infer_typing_alias`` when ``_alias()`` is called with
+a non-integer constant second argument.
+
+Closes #3389
