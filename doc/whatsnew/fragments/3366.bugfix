@@ -1,0 +1,6 @@
+Fix ``TypeError`` in ``ClassDef.ancestors()`` when ``typing.Tuple`` or
+``typing.Callable`` is first inferred with an exhausted inference context.
+The aliased class was then uninferable and ended up in the bases of the
+synthesized class.
+
+Closes #3366

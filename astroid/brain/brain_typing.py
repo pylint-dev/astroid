@@ -398,7 +398,9 @@ def infer_special_alias(
         end_lineno=assign_name.end_lineno,
         end_col_offset=assign_name.end_col_offset,
     )
-    class_def.postinit(bases=[res], body=[], decorators=None)
+    # ``res`` is Uninferable if the inference budget of ``ctx`` is exhausted.
+    bases = [res] if isinstance(res, nodes.ClassDef) else []
+    class_def.postinit(bases=bases, body=[], decorators=None)
     func_to_add = _extract_single_node(CLASS_GETITEM_TEMPLATE)
     class_def.locals["__class_getitem__"] = [func_to_add]
     # Avoid re-instantiating this class every time it's seen
