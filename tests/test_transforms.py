@@ -41,6 +41,87 @@ class TestTransforms(unittest.TestCase):
         module = parse(code, apply_transforms=False)
         return self.transformer.visit(module)
 
+    def test_transform_none_continues_chain(self) -> None:
+        original = nodes.Const(1)
+
+        def increment(node: nodes.Const) -> None:
+            node.value += 1
+
+        def double(node: nodes.Const) -> None:
+            node.value *= 2
+
+        self.transformer.register_transform(nodes.Const, increment)
+        self.transformer.register_transform(nodes.Const, double)
+
+        result = self.transformer.visit(original)
+
+        self.assertIs(result, original)
+        self.assertEqual(result.value, 4)
+
+    def test_transform_same_type_continues_chain(self) -> None:
+        original = nodes.Const(1)
+        replacement = nodes.Const(2)
+
+        def replace(node: nodes.Const) -> nodes.Const:
+            return replacement
+
+        def double(node: nodes.Const) -> None:
+            node.value *= 2
+
+        self.transformer.register_transform(nodes.Const, replace)
+        self.transformer.register_transform(
+            nodes.Const, double, lambda node: node.value == 2
+        )
+
+        result = self.transformer.visit(original)
+
+        self.assertIs(result, replacement)
+        self.assertEqual(result.value, 4)
+        self.assertEqual(original.value, 1)
+
+    def test_transform_different_type_stops_chain(self) -> None:
+        replacement = parse("[]", apply_transforms=False).body[0].value
+
+        def replace(node: nodes.Const) -> nodes.List:
+            return replacement
+
+        def unexpected_transform(node: nodes.Const) -> None:
+            self.fail("A transform for the original type must not run")
+
+        self.transformer.register_transform(nodes.Const, replace)
+        self.transformer.register_transform(nodes.Const, unexpected_transform)
+
+        self.assertIs(self.transformer.visit(nodes.Const(1)), replacement)
+
+    def test_transform_false_predicate_continues_chain(self) -> None:
+        def unexpected_transform(node: nodes.Const) -> None:
+            self.fail("A transform with a false predicate must not run")
+
+        def double(node: nodes.Const) -> None:
+            node.value *= 2
+
+        self.transformer.register_transform(
+            nodes.Const, unexpected_transform, lambda node: node.value == 2
+        )
+        self.transformer.register_transform(nodes.Const, double)
+
+        result = self.transformer.visit(nodes.Const(1))
+
+        self.assertEqual(result.value, 2)
+
+    def test_transform_replacement_invalidates_inference_cache(self) -> None:
+        module = parse("value = 1\nvalue", apply_transforms=False)
+        name = module.body[1].value
+        self.assertEqual([inferred.value for inferred in name.infer()], [1])
+
+        def replace(node: nodes.Const) -> nodes.Const:
+            return nodes.Const(2, parent=node.parent)
+
+        self.transformer.register_transform(nodes.Const, replace)
+        self.transformer.visit(module)
+
+        self.assertEqual([inferred.value for inferred in name.infer()], [2])
+
     def test_function_inlining_transform(self) -> None:
         def transform_call(node: nodes.Call) -> nodes.Const:
             # Let's do some function inlining

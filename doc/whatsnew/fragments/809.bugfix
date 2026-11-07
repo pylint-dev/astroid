@@ -1,0 +1,4 @@
+Keep applying subsequent transforms when a transform returns ``None``, preserving
+the current node instead of stopping the transform chain.
+
+Closes #809
