@@ -690,3 +690,50 @@ class EnumBrainTest(unittest.TestCase):
         # ``a.b`` is an ``AssignAttr`` target with no ``name`` attribute.
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)
+
+    def test_enum_members_from_imports_in_class_body(self) -> None:
+        """Names bound by an import in the class body are enum members.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/10951
+        """
+        member, value, alias_value, module_member, members = builder.extract_node("""
+        import enum
+
+        class LogLevel(enum.IntEnum):
+            from logging import (
+                CRITICAL as CRITICAL_LEVEL,
+                DEBUG,
+            )
+
+        class Modules(enum.Enum):
+            import os.path
+            import json as JSON
+
+        LogLevel.DEBUG #@
+        LogLevel.DEBUG.value #@
+        LogLevel.CRITICAL_LEVEL.value #@
+        Modules.JSON #@
+        LogLevel.__members__ #@
+        """)
+        inferred_member = next(member.infer())
+        assert isinstance(inferred_member, bases.Instance)
+        assert inferred_member.pytype() == ".LogLevel.DEBUG"
+
+        inferred_value = next(value.infer())
+        assert isinstance(inferred_value, nodes.Const)
+        assert inferred_value.value == 10
+
+        inferred_alias_value = next(alias_value.infer())
+        assert isinstance(inferred_alias_value, nodes.Const)
+        assert inferred_alias_value.value == 50
+
+        inferred_module_member = next(module_member.infer())
+        assert isinstance(inferred_module_member, bases.Instance)
+        assert inferred_module_member.pytype() == ".Modules.JSON"
+        assert isinstance(next(inferred_module_member.igetattr("value")), nodes.Module)
+
+        inferred_members = next(members.infer())
+        assert [key.value for key, _ in inferred_members.items] == [
+            "CRITICAL_LEVEL",
+            "DEBUG",
+        ]
