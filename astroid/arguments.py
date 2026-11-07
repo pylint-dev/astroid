@@ -226,7 +226,14 @@ class CallSite:
                     # `cls.metaclass_method`. In this case, the
                     # first argument is always the class.
                     method_scope = funcnode.parent.scope()
-                    if method_scope is boundnode.metaclass(context=context):
+                    # Match by qualified name, not identity: a brain can build a
+                    # fresh metaclass node on each inference (e.g. the typing
+                    # ``Meta`` template), and the method may come from a base
+                    # metaclass of the class's metaclass.
+                    metaclass = boundnode.metaclass(context=context)
+                    if metaclass is not None and metaclass.is_subtype_of(
+                        method_scope.qname()
+                    ):
                         return iter((boundnode,))
 
                 if funcnode.type == "method":

@@ -1,0 +1,8 @@
+Infer a subscripted subclass of a subscripted ``typing`` alias, such as
+``Z[str]`` for ``class Z(typing.IO[AnyStr])``, as the class instead of an
+instance of it. A metaclass method reached through a class now binds the class
+even when the metaclass node was rebuilt by a brain or the method comes from a
+base metaclass.
+
+Refs #3371
+Closes pylint-dev/pylint#10042
