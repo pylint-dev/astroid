@@ -2185,6 +2185,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         module = astroid_builder.module_build(difflib)
         self.assertFalse(module["SequenceMatcher"].has_dynamic_getattr())
 
+    def test_has_dynamic_getattr_uninferable_in_metaclass(self) -> None:
+        """An uninferable ``__getattr__`` found in the metaclass is not dynamic.
+
+        The result used to be ``Uninferable`` instead of a bool.
+        """
+        node = builder.extract_node("""
+        class Meta(type):
+            __getattr__ = undefined_name
+
+        class A(metaclass=Meta):  #@
+            pass
+        """)
+        self.assertIs(node.has_dynamic_getattr(), False)
+
     def test_duplicate_bases_namedtuple(self) -> None:
         module = builder.parse("""
         import collections
