@@ -10,6 +10,7 @@ Helps with understanding everything imported from 'gi.repository'
 # pylint:disable=import-error,import-outside-toplevel
 
 import enum
+import importlib.util
 import inspect
 import itertools
 import re
@@ -20,6 +21,7 @@ from astroid import nodes
 from astroid.builder import AstroidBuilder
 from astroid.exceptions import AstroidBuildingError
 from astroid.manager import AstroidManager
+from astroid.modutils import is_library_path
 
 _inspected_modules = {}
 
@@ -205,12 +207,31 @@ def _gi_build_stub(parent):  # noqa: C901
     return ret
 
 
+def _gi_is_installed() -> bool:
+    """Check that ``import gi`` would load an installed library.
+
+    The analysed project comes first on sys.path, so a ``gi`` package shipped
+    with it would otherwise be executed by the imports below.
+    """
+    try:
+        spec = importlib.util.find_spec("gi")
+    except ValueError:
+        return False
+    if spec is None or spec.origin is None:
+        return False
+    return is_library_path(spec.origin) or AstroidManager()._can_load_extension(
+        "gi", spec.origin
+    )
+
+
 def _import_gi_module(modname):
     # we only consider gi.repository submodules
     if not modname.startswith("gi.repository."):
         raise AstroidBuildingError(modname=modname)
     # build astroid representation unless we already tried so
     if modname not in _inspected_modules:
+        if not _gi_is_installed():
+            raise AstroidBuildingError(modname=modname)
         modnames = [modname]
         optional_modnames = []
 
@@ -301,6 +322,8 @@ def _looks_like_require_version(node) -> bool:
 
 def _register_require_version(node):
     # Load the gi.require_version locally
+    if not _gi_is_installed():
+        return node
     try:
         import gi
 

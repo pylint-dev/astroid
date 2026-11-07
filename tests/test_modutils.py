@@ -482,6 +482,25 @@ class IsStdLibPathTest(unittest.TestCase):
             assert not modutils.is_stdlib_path(planted)
 
 
+class IsLibraryPathTest(unittest.TestCase):
+    """
+    Return true if the file is located in the standard library or site-packages
+    """
+
+    def test_stdlib(self) -> None:
+        assert modutils.is_library_path(os.__file__)
+
+    def test_site_packages(self) -> None:
+        for site_dir in modutils.SITE_PACKAGES_DIRS:
+            assert modutils.is_library_path(os.path.join(site_dir, "gi", "__init__.py"))
+
+    def test_other_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            assert not modutils.is_library_path(
+                os.path.join(tmpdir, "gi", "__init__.py")
+            )
+
+
 class ModuleInPathTest(resources.SysPathSetup, unittest.TestCase):
     """
     Return true if the module is imported from the specified path
