@@ -1,0 +1,4 @@
+Fix a crash when inferring ``len()`` on an instance whose ``__len__`` is not
+callable, such as a module. The call is now uninferable instead.
+
+Refs #3426
