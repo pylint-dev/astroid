@@ -1,0 +1,8 @@
+The numpy brains now detect the version of the installed numpy in a single place
+and describe the matching numpy API, instead of repeating ad hoc version checks.
+Versions are compared as numbers, so numpy 1.9 is no longer mistaken for a version
+that supports subscripting scalar types; the version is read from the distribution
+metadata instead of importing numpy; and the most recent API is assumed when numpy
+is not installed.
+
+Refs #2710
