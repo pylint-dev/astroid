@@ -1190,6 +1190,39 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         first = next(ast_node.infer())
         self.assertEqual(first, util.Uninferable)
 
+    def test_binary_op_int_and_bool_keeps_operand_order(self) -> None:
+        """bool is a subclass of int, so the reflected method of the right
+        operand is tried first. It must not swap the operands.
+        """
+        ast_nodes = extract_node("""
+        10 % True #@
+        7 - True #@
+        7 // True #@
+        3 / True #@
+        2 ** True #@
+        255 << False #@
+        1.5 - True #@
+        x = 7
+        x -= True
+        x #@
+        """)
+        expected = [0, 6, 7, 3.0, 2, 255, 0.5, 6]
+        for node, expected_value in zip(ast_nodes, expected, strict=True):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, expected_value)
+
+    def test_binary_op_reflected_str_mod_does_not_format(self) -> None:
+        """str.__rmod__ and bytes.__rmod__ return NotImplemented."""
+        ast_nodes = extract_node("""
+        () % 'abc' #@
+        None % 'x%s' #@
+        () % b'x' #@
+        """)
+        for node in ast_nodes:
+            self.assertEqual(next(node.infer()), util.Uninferable)
+            self.assertEqual(len(node.type_errors()), 1)
+
     @pytest.mark.filterwarnings("error::DeprecationWarning")
     def test_binary_op_not_used_in_boolean_context(self) -> None:
         ast_node = extract_node("not NotImplemented")

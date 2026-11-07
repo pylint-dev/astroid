@@ -1,0 +1,5 @@
+Inference of a binary operation that goes through the reflected method of a
+constant now keeps the operands in order, so ``10 % True`` is inferred as ``0``
+rather than ``1``, and ``() % "abc"`` is no longer inferred as ``"abc"``.
+
+Refs #3465
