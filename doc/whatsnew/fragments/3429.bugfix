@@ -1,0 +1,4 @@
+Fix ``AttributeError`` when inferring the call result of a subclass of
+``type`` without a caller.
+
+Refs #3429

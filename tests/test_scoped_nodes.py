@@ -2692,6 +2692,19 @@ def test_metaclass_call_result_without_context() -> None:
         assert [getattr(n, "value", None) for n in inferred] == [42]
 
 
+def test_type_subclass_call_result_without_caller() -> None:
+    # Regression: ClassDef.infer_call_result may be called through the public
+    # API without a caller (it accepts None). For a subclass of ``type``, the
+    # three-argument ``type(name, bases, dict)`` check read ``caller.args``
+    # unguarded, crashing with "AttributeError: 'NoneType' object has no
+    # attribute 'args'". It should infer an instance of the metaclass instead.
+    node = builder.extract_node("class Meta(type): pass")
+    inferred = list(node.infer_call_result(caller=None))
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], Instance)
+    assert inferred[0].qname() == ".Meta"
+
+
 @pytest.mark.parametrize(
     "func",
     [

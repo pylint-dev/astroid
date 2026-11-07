@@ -2089,7 +2089,11 @@ class ClassDef(
         context: InferenceContext | None = None,
     ) -> Iterator[InferenceResult]:
         """infer what a class is returning when called"""
-        if self.is_subtype_of("builtins.type", context) and len(caller.args) == 3:
+        if (
+            caller is not None
+            and self.is_subtype_of("builtins.type", context)
+            and len(caller.args) == 3
+        ):
             result = self._infer_type_call(caller, context)
             yield result
             return
