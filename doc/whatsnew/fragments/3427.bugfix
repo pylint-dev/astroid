@@ -1,0 +1,5 @@
+Fix ``AttributeError`` when calling ``qname()`` on a generator expression or a
+list, set or dict comprehension. They are now named ``<genexpr>``, ``<listcomp>``,
+``<setcomp>`` and ``<dictcomp>``, like ``<lambda>``, which also shows in their repr.
+
+Refs #3427

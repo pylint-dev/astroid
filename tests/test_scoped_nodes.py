@@ -480,6 +480,28 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse("lmbd = lambda: None", __name__)
         self.assertEqual(f"{__name__}.<lambda>", astroid["lmbd"].parent.value.qname())
 
+    def test_comprehension_qname(self) -> None:
+        module = builder.parse(
+            """
+            def func():
+                (x for x in y)
+                [x for x in y]
+                {x for x in y}
+                {x: x for x in y}
+            """,
+            __name__,
+        )
+        names = [stmt.value.qname() for stmt in module["func"].body]
+        self.assertEqual(
+            names,
+            [
+                f"{__name__}.func.<genexpr>",
+                f"{__name__}.func.<listcomp>",
+                f"{__name__}.func.<setcomp>",
+                f"{__name__}.func.<dictcomp>",
+            ],
+        )
+
     def test_lambda_getattr(self) -> None:
         astroid = builder.parse("lmbd = lambda: None")
         self.assertIsInstance(
