@@ -1,0 +1,7 @@
+Do not treat values wrapped in ``enum.nonmember()`` as members of the enum.
+They were listed in ``__members__``, so pylint reported ``invalid-enum-extension``
+when such a class was extended, for example on any Django 6 ``models.Choices``
+subclass.
+
+Refs #3467
+Refs pylint-dev/pylint#6887

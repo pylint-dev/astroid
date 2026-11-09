@@ -452,6 +452,21 @@ def _binds_descriptor(stmt: nodes.Import | nodes.ImportFrom, name: str) -> bool:
     )
 
 
+def _is_enum_nonmember(value: nodes.NodeNG | None) -> bool:
+    """Whether ``value`` is an ``enum.nonmember()`` call, which creates no member."""
+    match value:
+        # Cheap name check first, then confirm with inference.
+        case nodes.Call(
+            func=nodes.Name(name="nonmember") | nodes.Attribute(attrname="nonmember")
+        ):
+            inferred = util.safe_infer(value.func)
+            return (
+                isinstance(inferred, nodes.ClassDef)
+                and inferred.qname() == "enum.nonmember"
+            )
+    return False
+
+
 def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
     try:
@@ -502,6 +517,9 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
             elif isinstance(stmt, nodes.AnnAssign):
                 targets = [stmt.target]
             else:
+                continue
+
+            if not import_stmt and _is_enum_nonmember(stmt.value):
                 continue
 
             inferred_return_value = None
