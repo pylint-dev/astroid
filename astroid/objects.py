@@ -316,6 +316,10 @@ class PartialFunction(scoped_nodes.FunctionDef):
 
         self.filled_positionals = len(self.filled_args)
 
+    def implicit_parameters(self) -> Literal[0]:
+        # The partial object is never bound by itself: no implicit argument.
+        return 0
+
     def infer_call_result(
         self,
         caller: SuccessfulInferenceResult | None,

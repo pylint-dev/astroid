@@ -1,0 +1,3 @@
+Fix a false positive for ``functools.partial`` objects stored as class attributes: before Python 3.14, accessing one through an instance does not bind ``self``, and astroid no longer infers a bound method for it.
+
+Closes pylint-dev/pylint#2271
