@@ -38,6 +38,22 @@ TYPING_NAMEDTUPLE_BASENAMES: Final = {
     "typing.NamedTuple",
     "typing_extensions.NamedTuple",
 }
+# The class ``typing.NamedTuple`` infers to, as typeshed declares it. A subclass
+# keeps it among its ancestors, so ``self`` in a method of the subclass finds the
+# namedtuple API and the tuple methods through it. ``__new__`` builds a tuple or
+# dict whose items are unknown, where ``()`` or ``{}`` would be read as empty.
+TYPING_NAMEDTUPLE_CLASS: Final = """
+class NamedTuple(tuple):
+    _field_defaults = dict.__new__(dict)
+    _fields = tuple.__new__(tuple)
+    @classmethod
+    def _make(cls, iterable):
+        return tuple.__new__(cls, iterable)
+    def _asdict(self):
+        return dict.__new__(dict)
+    def _replace(self, **kwargs):
+        return self
+"""
 
 
 def _infer_first(node, context):
@@ -606,13 +622,30 @@ def infer_typing_namedtuple_function(node, context: InferenceContext | None = No
     """
     Starting with python3.9, NamedTuple is a function of the typing module.
     The class NamedTuple is build dynamically through a call to `type` during
-    initialization of the `_NamedTuple` variable.
+    initialization of the `_NamedTuple` variable, which
+    `_typing_namedtuple_transform` replaces with the class typeshed declares.
     """
     klass = extract_node("""
         from typing import _NamedTuple
         _NamedTuple
         """)
     return klass.infer(context)
+
+
+def _typing_namedtuple_transform(node: nodes.Module) -> nodes.Module:
+    """Define ``typing._NamedTuple`` as the class typeshed declares for NamedTuple.
+
+    At runtime it is an empty class, whose metaclass builds a namedtuple from
+    the subclass. Astroid keeps the subclass as written instead, so the class
+    has to provide the namedtuple API and the tuple base for it.
+    """
+    class_node = _extract_single_node(TYPING_NAMEDTUPLE_CLASS)
+    class_node.parent = node
+    node.locals["_NamedTuple"] = [class_node]
+    # The transform visitor stops at a transform that returns None, which would
+    # skip the ones registered after this one, such as the typing module
+    # extender of brain_typing.
+    return node
 
 
 def infer_typing_namedtuple(
@@ -706,6 +739,11 @@ def register(manager: AstroidManager) -> None:
         inference_tip(infer_typing_namedtuple_function),
         lambda node: node.name == "NamedTuple"
         and getattr(node.root(), "name", None) == "typing",
+    )
+    manager.register_transform(
+        nodes.Module,
+        _typing_namedtuple_transform,
+        lambda node: node.name == "typing",
     )
     manager.register_transform(
         nodes.Call,
