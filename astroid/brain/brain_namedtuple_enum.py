@@ -213,14 +213,17 @@ def infer_named_tuple(
     func = util.safe_infer(
         _extract_single_node("import collections; collections.namedtuple")
     )
-    assert isinstance(func, nodes.NodeNG)
-    try:
-        rename_arg_bool_value = next(
-            call_site.infer_argument(func, "rename", context or InferenceContext())
-        ).bool_value()
-        rename = rename_arg_bool_value is True
-    except (InferenceError, StopIteration):
-        rename = False
+    # Without the factory signature ``rename=`` cannot be bound: assume the
+    # default rather than throwing the whole namedtuple away.
+    rename = False
+    if isinstance(func, nodes.NodeNG):
+        try:
+            rename_arg_bool_value = next(
+                call_site.infer_argument(func, "rename", context or InferenceContext())
+            ).bool_value()
+            rename = rename_arg_bool_value is True
+        except (InferenceError, StopIteration):
+            pass
 
     try:
         attributes = _check_namedtuple_attributes(name, attributes, rename)
