@@ -10,6 +10,7 @@ from various source and using a cache of built modules)
 from __future__ import annotations
 
 import collections
+import copy
 import os
 import types
 import zipimport
@@ -46,6 +47,16 @@ def safe_repr(obj: Any) -> str:
         return repr(obj)
     except Exception:  # pylint: disable=broad-except
         return "???"
+
+
+def _uncached(error: AstroidImportError) -> AstroidImportError:
+    """Return a copy of a cached ``error`` that is safe to raise.
+
+    As an exception propagates, Python attaches a fresh traceback to the object
+    being raised. Raising the cached instance itself would pin the whole caller
+    stack in the cache, and re-pin a new one on every cache hit.
+    """
+    return copy.copy(error).with_traceback(None)
 
 
 class AstroidManager:
@@ -343,12 +354,11 @@ class AstroidManager:
                     error=e.with_traceback(None),
                 )
                 self._mod_file_cache[cache_key] = error
-                raise error from None
+                raise _uncached(error) from None
             self._mod_file_cache[cache_key] = module_spec
             return module_spec
         if isinstance(cached, AstroidImportError):
-            # we remove the traceback here to save on memory usage (since these exceptions are cached)
-            raise cached.with_traceback(None)
+            raise _uncached(cached)
         return cached
 
     def ast_from_module(
