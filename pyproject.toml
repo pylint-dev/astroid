@@ -221,6 +221,8 @@ ignore_missing_imports = true
 
 [tool.pyright]
 include = [ "astroid" ]
+# astroid modules share underscore-prefixed helpers on purpose.
+reportPrivateUsage = false
 # Files with errors to fix. Remove a file from this list once it is clean.
 exclude = [
   "astroid/arguments.py",

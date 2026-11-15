@@ -15,6 +15,7 @@ def decimal_transform() -> nodes.Module:
 
 def register(manager: AstroidManager) -> None:
     try:
-        import _decimal  # pylint: disable=unused-import,import-outside-toplevel
+        # pylint: disable-next=unused-import,import-outside-toplevel
+        import _decimal  # pyright: ignore[reportUnusedImport]
     except ImportError:
         register_module_extender(manager, "decimal", decimal_transform)
