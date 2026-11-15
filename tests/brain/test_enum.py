@@ -755,10 +755,9 @@ class EnumBrainTest(unittest.TestCase):
         assert isinstance(inferred_function, bases.UnboundMethod)
         assert inferred_function.name == "join"
 
-        assert any(
-            isinstance(inferred, nodes.Const) and inferred.pytype() == "builtins.str"
-            for inferred in call.infer()
-        )
+        # Calling the member mock used to raise ``InferenceError``. What the
+        # call infers to depends on the ``os.path.join`` of the Python version.
+        assert list(call.infer())
 
         inferred_members = next(members.infer())
         assert [key.value for key, _ in inferred_members.items] == ["RED"]
