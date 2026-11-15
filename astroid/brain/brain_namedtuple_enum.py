@@ -447,18 +447,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
 
             inferred_return_value = None
             if stmt.value is not None:
-                if not isinstance(stmt.value, nodes.Const):
-                    inferred_return_value = stmt.value.as_string()
-                elif isinstance(stmt.value.value, str):
-                    inferred_return_value = repr(stmt.value.value)
-                else:
-                    try:
-                        inferred_return_value = str(stmt.value.value)
-                    except ValueError:
-                        # An int past sys.get_int_max_str_digits() can't be
-                        # rendered in decimal, but the tokenizer accepts a
-                        # hex literal of any length.
-                        inferred_return_value = hex(stmt.value.value)
+                inferred_return_value = stmt.value.as_string()
 
             new_targets = []
             for target in targets:
