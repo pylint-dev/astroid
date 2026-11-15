@@ -450,13 +450,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
 
             inferred_return_value = None
             if stmt.value is not None:
-                if isinstance(stmt.value, nodes.Const):
-                    if isinstance(stmt.value.value, str):
-                        inferred_return_value = repr(stmt.value.value)
-                    else:
-                        inferred_return_value = stmt.value.value
-                else:
-                    inferred_return_value = stmt.value.as_string()
+                inferred_return_value = stmt.value.as_string()
 
             new_targets = []
             for target in targets:

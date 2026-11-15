@@ -1,0 +1,4 @@
+Infer an ``enum`` member whose integer value is past the int-to-str conversion
+limit, such as ``A = 0xff...`` (a large hex literal the tokenizer accepts).
+
+Refs #3256
