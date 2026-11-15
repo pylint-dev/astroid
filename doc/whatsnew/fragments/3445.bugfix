@@ -1,0 +1,6 @@
+``modpath_from_file()`` no longer raises ``ImportError`` for a module inside a namespace
+package that also exists in ``site-packages``: the namespace package is now looked up from
+the directory the module is resolved from.
+
+Refs #3445
+Refs pylint-dev/pylint#10278

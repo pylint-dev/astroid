@@ -15,7 +15,13 @@ from astroid.const import IS_PYPY
 
 
 @lru_cache(maxsize=4096)
-def is_namespace(modname: str) -> bool:
+def is_namespace(modname: str, path: str | None = None) -> bool:
+    """Tell whether modname is a namespace package.
+
+    When path is given, modname is searched from that directory instead of
+    sys.path, so that a namespace package that also exists in site-packages is
+    still recognised from the directory it is resolved from.
+    """
     from astroid.modutils import (  # pylint: disable=import-outside-toplevel
         EXT_LIB_DIRS,
         STD_LIB_DIRS,
@@ -33,7 +39,9 @@ def is_namespace(modname: str) -> bool:
     # not, but requires instead that each single parent ('astroid', 'nodes', etc.)
     # be specced from left to right.
     processed_components = []
-    last_submodule_search_locations: _NamespacePath | None = None
+    last_submodule_search_locations: list[str] | _NamespacePath | None = (
+        None if path is None else [path]
+    )
     for component in modname.split("."):
         processed_components.append(component)
         working_modname = ".".join(processed_components)
