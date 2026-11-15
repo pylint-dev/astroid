@@ -1,0 +1,5 @@
+Fix a crash when inferring an attribute that resolves to a method proxying
+something other than a function.
+
+Refs #3370
+Refs pylint-dev/pylint#10345
