@@ -737,3 +737,28 @@ class EnumBrainTest(unittest.TestCase):
             "CRITICAL_LEVEL",
             "DEBUG",
         ]
+
+    def test_enum_function_imported_in_class_body_is_not_a_member(self) -> None:
+        """A function is a descriptor, so importing one does not make a member."""
+        function, call, members = builder.extract_node("""
+        import enum
+
+        class Color(enum.Enum):
+            from os.path import join
+            RED = 1
+
+        Color.join #@
+        Color.join("a", "b") #@
+        Color.__members__ #@
+        """)
+        inferred_function = next(function.infer())
+        assert isinstance(inferred_function, bases.UnboundMethod)
+        assert inferred_function.name == "join"
+
+        assert any(
+            isinstance(inferred, nodes.Const) and inferred.pytype() == "builtins.str"
+            for inferred in call.infer()
+        )
+
+        inferred_members = next(members.infer())
+        assert [key.value for key, _ in inferred_members.items] == ["RED"]

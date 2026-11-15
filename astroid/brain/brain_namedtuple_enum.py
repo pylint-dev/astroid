@@ -416,6 +416,17 @@ INT_FLAG_ADDITION_METHODS = """
 """
 
 
+def _binds_function(stmt: nodes.Import | nodes.ImportFrom, name: str) -> bool:
+    """Return whether ``name``, bound by the import ``stmt``, is a function.
+
+    A function is a descriptor, so ``Enum`` keeps it as a plain method
+    rather than turning it into a member.
+    """
+    context = InferenceContext()
+    context.lookupname = name
+    return isinstance(util.safe_infer(stmt, context), (nodes.FunctionDef, nodes.Lambda))
+
+
 def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
     """Specific inference for enums."""
     try:
@@ -443,6 +454,8 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 # just like a name bound by an assignment. Its value is
                 # whatever the import binds, so replay the import when
                 # inferring ``value``.
+                if _binds_function(stmt, local):
+                    continue
                 import_stmt = stmt.as_string()
                 targets = [
                     nodes.AssignName(
