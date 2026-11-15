@@ -126,7 +126,7 @@ def infer_func_form(
                         attributes = [
                             _infer_first(const.elts[0], context).value
                             for const in names.elts
-                            if isinstance(const, nodes.Tuple)
+                            if const.elts
                         ]
                     else:
                         attributes = [

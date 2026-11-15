@@ -216,6 +216,18 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``TypeError``; it falls back to default.
         assert next(node.infer()) is util.Uninferable
 
+    def test_enum_func_form_empty_tuple_member_no_crash(self) -> None:
+        """A functional Enum member given as an empty tuple is invalid.
+
+        Reading the member name via ``const.elts[0]`` used to raise an
+        uncaught ``IndexError``.
+        """
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum("E", [()])  #@
+        """)
+        assert next(node.infer()) is util.Uninferable
+
     def test_infer_enum_value_as_the_right_type(self) -> None:
         string_value, int_value = builder.extract_node("""
         from enum import Enum
