@@ -1,0 +1,5 @@
+``as_string()`` now parenthesizes the operands of ``await``, ``*`` and ``**``
+unpacking when precedence requires it, so the rendered code round-trips instead
+of changing meaning (``await (a + b)``) or failing to reparse (``[*(a or b)]``).
+
+Refs #3324
