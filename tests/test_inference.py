@@ -6705,6 +6705,22 @@ def test_class_attribute_bound_to_foreign_lambda_method() -> None:
         assert isinstance(inferred, BoundMethod)
 
 
+def test_dunder_bound_to_foreign_lambda_method() -> None:
+    """``bool()`` and ``not`` look up ``__bool__`` through ``_is_property`` too."""
+    bool_call, not_op = extract_node("""
+    class A:
+        f = lambda self: False
+
+    class B:
+        __bool__ = A().f
+
+    bool(B()) #@
+    not B() #@
+    """)
+    assert next(bool_call.infer()).value is False
+    assert next(not_op.infer()).value is True
+
+
 def test_is_property_method_proxying_uninferable() -> None:
     """An ``UnboundMethod`` can proxy ``Uninferable``, whose
     ``decoratornames()`` is ``Uninferable`` rather than a set.

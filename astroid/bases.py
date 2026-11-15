@@ -70,8 +70,9 @@ POSSIBLE_PROPERTIES = {
 def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
 ) -> bool:
-    # An UnboundMethod can proxy a plain Lambda (a lambda assigned in a class
-    # body) or even Uninferable, neither of which can carry decorators.
+    # An UnboundMethod can proxy a Lambda (a lambda already bound to an
+    # instance, like ``A().f``, then assigned in another class body) or even
+    # Uninferable, neither of which can carry decorators.
     target = meth
     while isinstance(target, UnboundMethod):
         target = target._proxied
@@ -449,7 +450,7 @@ class Instance(BaseInstance):
 class UnboundMethod(Proxy):
     """A special node representing a method not bound to an instance."""
 
-    _proxied: nodes.FunctionDef | UnboundMethod
+    _proxied: nodes.FunctionDef | nodes.Lambda | UnboundMethod | UninferableBase
 
     special_attributes: (
         objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel
