@@ -15,6 +15,7 @@ import tempfile
 import textwrap
 import unittest
 import unittest.mock
+from io import TextIOWrapper
 
 import pytest
 
@@ -838,6 +839,86 @@ class FileBuildTest(unittest.TestCase):
             resources.build_file("data/invalid_encoding.py")
 
 
+@pytest.mark.parametrize("invalid_encoding", [False, True], ids=["valid", "invalid"])
+def test_file_build_closes_source_stream(
+    tmp_path: pathlib.Path, invalid_encoding: bool
+) -> None:
+    source = tmp_path / "source_stream.py"
+    content = b"# coding: utf-8\n\nvalue = "
+    content += b"'\xff'\n" if invalid_encoding else b"42\n"
+    source.write_bytes(content)
+    astroid_builder = builder.AstroidBuilder(AstroidManager())
+    streams = []
+
+    def track_open(*args, **kwargs):
+        # Forward the builder's arguments and stream ownership unchanged.
+        # pylint: disable-next=consider-using-with,unspecified-encoding
+        stream = open(*args, **kwargs)
+        streams.append(stream)
+        return stream
+
+    try:
+        with unittest.mock.patch("astroid.builder.open", side_effect=track_open):
+            if invalid_encoding:
+                with pytest.raises(AstroidBuildingError) as exc_info:
+                    astroid_builder.file_build(str(source), "source_stream")
+                assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
+            else:
+                module = astroid_builder.file_build(str(source), "source_stream")
+                assert module.name == "source_stream"
+                assert module.file_encoding == "utf-8"
+                value = next(module["value"].infer())
+                assert isinstance(value, nodes.Const)
+                assert value.value == 42
+        assert len(streams) == 2
+        assert isinstance(streams[1], TextIOWrapper)
+        assert all(stream.closed for stream in streams)
+    finally:
+        for stream in streams:
+            stream.close()
+
+
+def test_open_source_file_returns_open_stream(tmp_path: pathlib.Path) -> None:
+    source = tmp_path / "source.py"
+    source.write_bytes(b"# coding: utf-8\r\nvalue = '\xc3\xa9'\r\n")
+
+    stream, encoding, data = builder.open_source_file(str(source))
+    try:
+        assert isinstance(stream, TextIOWrapper)
+        assert not stream.closed
+        assert encoding == "utf-8"
+        assert data == "# coding: utf-8\nvalue = 'é'\n"
+    finally:
+        stream.close()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [OSError("read failed"), KeyboardInterrupt()],
+    ids=["oserror", "interrupted"],
+)
+def test_open_source_file_closes_stream_on_read_error(
+    tmp_path: pathlib.Path, error: BaseException
+) -> None:
+    source = tmp_path / "source.py"
+    source.write_text("# coding: utf-8\nvalue = 42\n", encoding="utf-8")
+    with (
+        open(source, "rb") as byte_stream,
+        open(source, encoding="utf-8") as stream,
+    ):
+        with (
+            unittest.mock.patch(
+                "astroid.builder.open", side_effect=[byte_stream, stream]
+            ),
+            unittest.mock.patch.object(stream, "read", side_effect=error),
+        ):
+            with pytest.raises(type(error)) as exc_info:
+                builder.open_source_file(str(source))
+        assert exc_info.value is error
+        # Check before the test's context managers perform fallback cleanup.
+        assert stream.closed
+
+
 def test_module_build_dunder_file() -> None:
     """Test that module_build() can work with modules that have the *__file__*
     attribute.
@@ -937,3 +1018,108 @@ class HermeticInterpreterTest(unittest.TestCase):
                 my_builder.module_build(
                     self.imported_module, modname=self.imported_module_path.stem
                 )
+
+
+class StubBuildTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.manager = test_utils.brainless_manager()
+        self.builder = builder.AstroidBuilder(self.manager)
+
+    def test_is_stub_false_for_py(self) -> None:
+        module = self.builder.string_build("x = 1")
+        assert module.is_stub is False
+
+    def test_is_stub_detected_from_path(self) -> None:
+        module = self.builder.string_build("x: int", path="foo.pyi")
+        assert module.is_stub is True
+
+    def test_is_stub_not_detected_from_py_path(self) -> None:
+        module = self.builder.string_build("x: int", path="foo.py")
+        assert module.is_stub is False
+
+    def test_is_stub_explicit_override(self) -> None:
+        module = self.builder.string_build("x: int", is_stub=True)
+        assert module.is_stub is True
+
+    def test_is_stub_explicit_false_overrides_path(self) -> None:
+        module = self.builder.string_build("x: int", path="foo.pyi", is_stub=False)
+        assert module.is_stub is False
+
+    def test_parse_is_stub(self) -> None:
+        module = builder.parse("x: int", is_stub=True)
+        assert module.is_stub is True
+
+    def test_stub_annassign_ellipsis_preserved(self) -> None:
+        module = builder.parse("x: int = ...", is_stub=True)
+        ann = module.body[0]
+        assert isinstance(ann, nodes.AnnAssign)
+        assert isinstance(ann.value, nodes.Const)
+        assert ann.value.value is ...
+
+    def test_nonstub_annassign_ellipsis_preserved(self) -> None:
+        module = builder.parse("x: int = ...")
+        ann = module.body[0]
+        assert isinstance(ann, nodes.AnnAssign)
+        assert isinstance(ann.value, nodes.Const)
+        assert ann.value.value is ...
+
+    def test_stub_annassign_nonellipsis_preserved(self) -> None:
+        module = builder.parse("x: int = 0", is_stub=True)
+        ann = module.body[0]
+        assert isinstance(ann, nodes.AnnAssign)
+        assert isinstance(ann.value, nodes.Const)
+        assert ann.value.value == 0
+
+    def test_stub_assign_ellipsis_preserved(self) -> None:
+        module = builder.parse("MULTILINE = ...", is_stub=True)
+        assign = module.body[0]
+        assert isinstance(assign, nodes.Assign)
+        assert isinstance(assign.value, nodes.Const)
+        assert assign.value.value is ...
+
+    def test_nonstub_assign_ellipsis_preserved(self) -> None:
+        module = builder.parse("MULTILINE = ...")
+        assign = module.body[0]
+        assert isinstance(assign, nodes.Assign)
+        assert isinstance(assign.value, nodes.Const)
+        assert assign.value.value is ...
+
+    def test_stub_funcdef_ellipsis_body_preserved(self) -> None:
+        module = builder.parse("def f() -> int: ...", is_stub=True)
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert func.body
+        compile(module.as_string(), "<stub>", "exec")
+
+    def test_stub_funcdef_pass_body_preserved(self) -> None:
+        module = builder.parse("def f() -> int: pass", is_stub=True)
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert len(func.body) == 1
+        assert isinstance(func.body[0], nodes.Pass)
+
+    def test_stub_funcdef_raise_body_preserved(self) -> None:
+        module = builder.parse(
+            "def f() -> int: raise NotImplementedError", is_stub=True
+        )
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert len(func.body) == 1
+        assert isinstance(func.body[0], nodes.Raise)
+
+    def test_stub_funcdef_default_ellipsis_preserved(self) -> None:
+        module = builder.parse("def f(x: int = ...) -> None: ...", is_stub=True)
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        default = func.args.defaults[0]
+        assert isinstance(default, nodes.Const)
+        assert default.value is ...
+
+    def test_nonstub_funcdef_ellipsis_body_preserved(self) -> None:
+        module = builder.parse("def f() -> int: ...")
+        func = module.body[0]
+        assert isinstance(func, nodes.FunctionDef)
+        assert len(func.body) == 1
+        assert isinstance(func.body[0], nodes.Expr)
+        assert isinstance(func.body[0].value, nodes.Const)
+        assert func.body[0].value.value is ...

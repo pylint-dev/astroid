@@ -87,7 +87,7 @@ def inference_tip(
     """Given an instance specific inference function, return a function to be
     given to AstroidManager().register_transform to set this inference function.
 
-    :param bool raise_on_overwrite: Raise an `InferenceOverwriteError`
+    :param raise_on_overwrite: Raise an `InferenceOverwriteError`
         if the inference tip will overwrite another. Used for debugging
 
     Typical usage

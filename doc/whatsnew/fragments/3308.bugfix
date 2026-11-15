@@ -1,0 +1,4 @@
+The numpy brain no longer imports ``numpy`` to find out its version but reads
+from the installed package metadata instead.
+
+Refs #3308

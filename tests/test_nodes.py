@@ -25,13 +25,13 @@ from astroid import (
     builder,
     extract_node,
     nodes,
+    objects,
     parse,
     transforms,
     util,
 )
 from astroid.const import (
     IS_PYPY,
-    PY311_PLUS,
     PY312_PLUS,
     PY313_PLUS,
     PY314_PLUS,
@@ -44,10 +44,12 @@ from astroid.exceptions import (
     AstroidSyntaxError,
     AstroidTypeError,
     AttributeInferenceError,
+    NoDefault,
     StatementMissing,
 )
 from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
 from astroid.nodes.scoped_nodes import SYNTHETIC_ROOT
+from astroid.typing import SuccessfulInferenceResult
 from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
@@ -82,6 +84,14 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(binop.infer())
         self.assertEqual(inferred.as_string(), "[Uninferable]")
         self.assertEqual(binop.as_string(), "[arg] * 1")
+
+    def test_as_string_int_past_str_digits_limit(self) -> None:
+        # repr() of this int raises ValueError under the default
+        # sys.get_int_max_str_digits() limit; hex is exempt and round-trips.
+        node = builder.extract_node("10 ** 5000")
+        inferred = next(node.infer())
+        self.assertEqual(inferred.as_string(), hex(10**5000))
+        self.assertEqual(builder.extract_node(inferred.as_string()).value, 10**5000)
 
     def test_frozenset_as_string(self) -> None:
         ast_nodes = builder.extract_node("""
@@ -731,6 +741,31 @@ class ConstNodeTest(unittest.TestCase):
     def test_str(self) -> None:
         self._test("a")
 
+    def test_self_referencing_containers(self) -> None:
+        loop: list[Any] = [1]
+        loop.append(loop)
+        mapping: dict[str, Any] = {"loop": loop}
+        mapping["mapping"] = (mapping,)
+
+        node = nodes.const_factory(mapping)
+
+        assert isinstance(node, nodes.Dict)
+        (_, loop_node), (_, tuple_node) = node.items
+        assert isinstance(loop_node, nodes.List)
+        assert isinstance(loop_node.elts[0], nodes.Const)
+        assert isinstance(loop_node.elts[1], nodes.EmptyNode)
+        assert loop_node.elts[1].object is loop
+        assert isinstance(tuple_node, nodes.Tuple)
+        assert isinstance(tuple_node.elts[0], nodes.EmptyNode)
+        assert tuple_node.elts[0].object is mapping
+
+    def test_shared_container_is_not_a_cycle(self) -> None:
+        shared = [1]
+        node = nodes.const_factory([shared, shared])
+        assert isinstance(node, nodes.List)
+        assert [type(elt) for elt in node.elts] == [nodes.List, nodes.List]
+        assert [elt.elts[0].value for elt in node.elts] == [1, 1]
+
     def test_unicode(self) -> None:
         self._test("a")
 
@@ -1029,7 +1064,6 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_py311(self) -> None:
         # Test to make sure the Python-provided property decorators
         # are properly interpreted as properties
@@ -1118,6 +1152,43 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
+    def test_possible_property_name_outside_class(self) -> None:
+        # A decorator with a POSSIBLE_PROPERTIES name only makes a property
+        # in a class body: elsewhere, the function stays a callable function.
+        ast = builder.parse("""
+        def lazy(func): return func
+        def reify(func): return func
+
+        @lazy
+        def lazy_function(): return 42
+
+        @reify
+        def reified_function(): return 42
+
+        def outer():
+            @lazy
+            def inner(): return 42
+            return inner
+        """)
+        for function in (
+            ast["lazy_function"],
+            ast["reified_function"],
+            ast["outer"].body[0],
+        ):
+            inferred = next(function.infer())
+            self.assertNotIsInstance(inferred, objects.Property, function.name)
+            self.assertTrue(inferred.callable(), function.name)
+
+    def test_standard_property_outside_class(self) -> None:
+        # A real property object is not callable, wherever it is defined
+        ast = builder.parse("""
+        @property
+        def color(): return "red"
+        """)
+        inferred = next(ast["color"].infer())
+        self.assertIsInstance(inferred, objects.Property)
+        self.assertFalse(inferred.callable())
+
     def test_is_standard_property_subclass(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
@@ -1159,7 +1230,6 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_subclass_py311(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
@@ -1484,6 +1554,7 @@ def test_unknown() -> None:
     assert isinstance(next(UNATTACHED_UNKNOWN.infer()), type(util.Uninferable))
     assert isinstance(UNATTACHED_UNKNOWN.name, str)
     assert isinstance(UNATTACHED_UNKNOWN.qname(), str)
+    assert isinstance(UNATTACHED_UNKNOWN.pytype(), str)
 
 
 def test_type_comments_with() -> None:
@@ -1876,6 +1947,36 @@ def test_parse_fstring_debug_mode() -> None:
     node = astroid.extract_node('f"{3=}"')
     assert isinstance(node, nodes.JoinedStr)
     assert node.as_string() == "f'3={3!r}'"
+
+
+def test_fstring_as_string_roundtrip_with_mixed_quotes() -> None:
+    # Adjacent f-strings merge into one JoinedStr whose parts together contain
+    # every candidate quote style, so as_string() must not pick a delimiter that
+    # reappears in the body: that would terminate the f-string early and let the
+    # tail reparse as a different expression.
+    node = astroid.extract_node("""
+    f'\"""{v}' f"'''"
+    """)
+    assert isinstance(node, nodes.JoinedStr)
+    reparsed = astroid.extract_node(node.as_string())
+    assert isinstance(reparsed, nodes.JoinedStr)
+    assert reparsed.as_string() == node.as_string()
+
+    # A body crafted to inject an operator must still round-trip to an f-string.
+    injected = astroid.extract_node("""
+    f"A'''+BAD+'''B{v}" f'\"""'
+    """)
+    assert isinstance(astroid.extract_node(injected.as_string()), nodes.JoinedStr)
+
+    # Both single-character quotes occur inside the expression part, so the
+    # fallback must move on to a triple-quoted delimiter.
+    mixed = astroid.extract_node("""
+    f"'''" f'\"""' f'''{d["it's"]}'''
+    """)
+    assert isinstance(mixed, nodes.JoinedStr)
+    reparsed = astroid.extract_node(mixed.as_string())
+    assert isinstance(reparsed, nodes.JoinedStr)
+    assert reparsed.as_string() == mixed.as_string()
 
 
 def test_parse_type_comments_with_proper_parent() -> None:
@@ -2293,6 +2394,33 @@ def test_arguments_default_value():
     assert node.args.default_value("flavor").value == "good"
 
 
+@pytest.mark.parametrize("func", ["def f(x, *y, y): ...", "def f(x, *, y, **y): ..."])
+def test_arguments_default_value_name_shared_with_vararg(func: str) -> None:
+    """An argument may repeat the name of ``*args`` or ``**kwargs``.
+
+    Such a definition parses even though it does not compile, so the name of a
+    variadic argument does not identify it on its own.
+    """
+    node = extract_node(func)
+    with pytest.raises(NoDefault):
+        node.args.default_value("x")
+    with pytest.raises(NoDefault):
+        node.args.default_value("y")
+
+
+def test_arguments_default_value_positional_shares_vararg_name() -> None:
+    """The default of a positional argument shadowed by ``*args`` is still found."""
+    node = extract_node("def f(y=1, *y): ...")
+    assert node.args.default_value("y").value == 1
+
+
+def test_infer_argument_sharing_vararg_name() -> None:
+    """Inferring such an argument yields ``Uninferable`` rather than crashing."""
+    node = extract_node("def f(x, *y, y: tuple[x]): ...")
+    subscript = node.args.kwonlyargs_annotations[0]
+    assert next(subscript.slice.infer()) is Uninferable
+
+
 def test_arguments_annotations():
     node = extract_node(
         "def fruit(eat: str, /, peel: bool, *args: int, trim: float, **kwargs: bytes): ..."
@@ -2371,6 +2499,125 @@ def test_slice_qname() -> None:
     assert node.slice.qname() == "builtins.slice"
 
 
+INFERRED_VALUES = """
+import collections
+import functools
+import abc
+
+def function(): ...
+async def coroutine_function(): ...
+def generator_function():
+    yield
+async def async_generator_function():
+    yield
+
+class Class:
+    def method(self): ...
+    @classmethod
+    def class_method(cls): ...
+    @property
+    def prop(self): ...
+    def __init__(self):
+        super()  #@
+
+1  #@
+"text"  #@
+b"bytes"  #@
+...  #@
+None  #@
+[1]  #@
+(1,)  #@
+{1}  #@
+frozenset()  #@
+{1: 2}  #@
+{}.keys()  #@
+{}.values()  #@
+{}.items()  #@
+slice(1, 2)  #@
+lambda: 1  #@
+function  #@
+coroutine_function  #@
+generator_function()  #@
+async_generator_function()  #@
+Class  #@
+Class()  #@
+Class().method  #@
+Class.method  #@
+Class.class_method  #@
+Class.prop  #@
+collections  #@
+functools.partial(function)  #@
+ValueError()  #@
+int | str  #@
+abc.ABCMeta  #@
+"""
+
+
+def _inferred_values(code: str) -> list[tuple[str, SuccessfulInferenceResult]]:
+    return [
+        (node.as_string(), inferred)
+        for node in extract_node(code)
+        for inferred in node.infer()
+        if not isinstance(inferred, util.UninferableBase)
+    ]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        pytest.param(INFERRED_VALUES, id="values"),
+    ],
+)
+def test_inferred_values_are_named(code: str) -> None:
+    """Every value inference returns has a name, a qualified name and a type,
+    so that code reading them on an inferred value does not need to guard.
+    """
+    inferred_values = _inferred_values(code)
+    assert len({source for source, _ in inferred_values}) == code.count("#@")
+    for source, inferred in inferred_values:
+        assert isinstance(inferred.name, str), source
+        assert isinstance(inferred.qname(), str), source
+        assert isinstance(inferred.pytype(), str), source
+
+
+SCOPES = """
+def function(): ...
+async def coroutine_function(): ...
+class Class: ...
+lambda: 1
+(x for x in y)
+[x for x in y]
+{x for x in y}
+{x: x for x in y}
+"""
+
+
+def test_scopes_are_named() -> None:
+    """Every scope has a name and a qualified name, so that code reading them
+    on ``node.scope()`` does not need to guard.
+    """
+    scopes = list(parse(SCOPES).nodes_of_class(nodes.LocalsDictNodeNG))
+    scope_classes = {
+        node_class
+        for node_class in nodes.ALL_NODE_CLASSES
+        if isinstance(node_class, type)
+        and issubclass(node_class, nodes.LocalsDictNodeNG)
+    } - {nodes.LocalsDictNodeNG, nodes.ComprehensionScope}
+    assert {type(scope) for scope in scopes} == scope_classes
+    for scope in scopes:
+        assert isinstance(scope.name, str), scope
+        assert isinstance(scope.qname(), str), scope
+
+
+def test_slice_name() -> None:
+    """An inferred ``slice`` object has the name of its type, like other builtins."""
+    node = extract_node("slice(1, 2)")
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Slice)
+    assert inferred.name == "slice"
+    assert inferred.name == inferred.pytype().rsplit(".", 1)[-1]
+
+
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
 @pytest.mark.parametrize(
     "source,node_type,qname",
@@ -2436,3 +2683,32 @@ def test_self_inferring_nodes_have_a_type() -> None:
         ]
 
     assert not missing
+
+
+def test_chained_attribute_parent_pointer() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/272.
+
+    The inner Attribute (``removed.tags``) in a chained call ``removed.tags.extend()``
+    used to have its ``.parent`` pointing to the wrong node instead of the
+    enclosing outer Attribute.
+    """
+    module = astroid.parse(textwrap.dedent("""
+            class Tags:
+                def extend(self): return 42
+            class Removed:
+                def __init__(self):
+                    self.tags = Tags()
+
+            removed = Removed()
+            removed.tags.extend()
+            """))
+    expr = module.body[-1]
+    callfunc = expr.value
+    assert isinstance(callfunc, nodes.Call)
+    outer_attr = callfunc.func
+    assert isinstance(outer_attr, nodes.Attribute)
+    assert outer_attr.attrname == "extend"
+    inner_attr = outer_attr.expr
+    assert isinstance(inner_attr, nodes.Attribute)
+    assert inner_attr.attrname == "tags"
+    assert inner_attr.parent is outer_attr

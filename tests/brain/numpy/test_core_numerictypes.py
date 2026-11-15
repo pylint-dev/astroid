@@ -4,8 +4,13 @@
 
 from __future__ import annotations
 
+import os
+import sys
+import tempfile
 import unittest
+from importlib import metadata
 from typing import ClassVar
+from unittest import mock
 
 try:
     import numpy  # pylint: disable=unused-import
@@ -19,7 +24,9 @@ from astroid.brain.brain_numpy_utils import (
     NUMPY_VERSION_TYPE_HINTS_SUPPORT,
     _get_numpy_version,
     numpy_supports_type_hints,
+    numpy_version_2_or_later,
 )
+from astroid.exceptions import InferenceError
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -34,9 +41,11 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         "float32",
         "float64",
         "float96",
+        "float128",
         "complex64",
         "complex128",
         "complex192",
+        "complex256",
         "timedelta64",
         "datetime64",
         "unicode_",
@@ -79,6 +88,22 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         "void0",
     ]
 
+    # Aliases removed in NumPy 2.0.
+    removed_in_numpy_2 = (
+        "bool8",
+        "bytes0",
+        "cfloat",
+        "clongfloat",
+        "int0",
+        "longcomplex",
+        "longfloat",
+        "singlecomplex",
+        "str0",
+        "uint0",
+        "unicode_",
+        "void0",
+    )
+
     def _inferred_numpy_attribute(self, attrib):
         node = builder.extract_node(f"""
         import numpy.core.numerictypes as tested_module
@@ -87,7 +112,10 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
 
     def test_numpy_core_types(self):
         """Test that all defined types have ClassDef type."""
-        for typ in self.all_types:
+        types = self.all_types
+        if numpy_version_2_or_later():
+            types = [t for t in types if t not in self.removed_in_numpy_2]
+        for typ in types:
             with self.subTest(typ=typ):
                 inferred = self._inferred_numpy_attribute(typ)
                 self.assertIsInstance(inferred, nodes.ClassDef)
@@ -169,6 +197,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
             "character",
             "complex128",
             "complex192",
+            "complex256",
             "complex64",
             "complexfloating",
             "datetime64",
@@ -177,6 +206,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
             "float32",
             "float64",
             "float96",
+            "float128",
             "floating",
             "generic",
             "inexact",
@@ -227,6 +257,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
             "character",
             "complex128",
             "complex192",
+            "complex256",
             "complex64",
             "complexfloating",
             "datetime64",
@@ -235,6 +266,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
             "float32",
             "float64",
             "float96",
+            "float128",
             "floating",
             "generic",
             "inexact",
@@ -269,6 +301,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         for type_ in (
             "float64",
             "float96",
+            "float128",
             "floating",
             "int16",
             "int32",
@@ -340,6 +373,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
             "character",
             "complex128",
             "complex192",
+            "complex256",
             "complex64",
             "complexfloating",
             "datetime64",
@@ -348,6 +382,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
             "float32",
             "float64",
             "float96",
+            "float128",
             "floating",
             "generic",
             "inexact",
@@ -379,6 +414,52 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 self.assertIsInstance(cls_node, nodes.ClassDef)
                 self.assertEqual(cls_node.name, type_)
 
+    @unittest.skipUnless(
+        HAS_NUMPY and numpy_version_2_or_later(),
+        "This test requires the numpy library with version 2 or later.",
+    )
+    def test_numpy_2_ulong_is_subscriptable(self):
+        """Test that the ulong type added in NumPy 2.0 is subscriptable."""
+        node = builder.extract_node("""
+        import numpy as np
+        np.ulong[int]
+        """)
+        cls_node = node.inferred()[0]
+        self.assertIsInstance(cls_node, nodes.ClassDef)
+        self.assertEqual(cls_node.name, "ulong")
+
+    @unittest.skipUnless(
+        HAS_NUMPY and numpy_version_2_or_later(),
+        "This test requires the numpy library with version 2 or later.",
+    )
+    def test_numpy_2_removed_aliases_are_absent(self):
+        """Test that aliases removed in NumPy 2.0 are no longer inferred."""
+        for alias in (
+            "bool8",
+            "bytes0",
+            "cfloat",
+            "clongfloat",
+            "complex_",
+            "float_",
+            "int0",
+            "longcomplex",
+            "longfloat",
+            "object0",
+            "singlecomplex",
+            "str0",
+            "string_",
+            "uint0",
+            "unicode",
+            "unicode_",
+            "void0",
+        ):
+            with self.subTest(alias=alias):
+                node = builder.extract_node(f"""
+                import numpy as np
+                np.{alias:s}
+                """)
+                self.assertRaises(InferenceError, next, node.infer())
+
 
 @unittest.skipIf(
     HAS_NUMPY, "Those tests check that astroid does not crash if numpy is not available"
@@ -408,3 +489,34 @@ class NumpyBrainUtilsTest(unittest.TestCase):
         node = builder.extract_node(src)
         cls_node = node.inferred()[0]
         self.assertIs(cls_node, Uninferable)
+
+
+class NumpyVersionTest(unittest.TestCase):
+    def test_get_numpy_version_does_not_import_numpy(self) -> None:
+        """A numpy.py in the analysed project must not be executed."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with open(os.path.join(tmpdir, "numpy.py"), "w", encoding="utf-8") as f:
+                f.write("raise AssertionError('numpy was imported')\n")
+            sys.path.insert(0, tmpdir)
+            _get_numpy_version.cache_clear()
+            try:
+                with mock.patch.dict(sys.modules):
+                    for name in [n for n in sys.modules if n.split(".")[0] == "numpy"]:
+                        del sys.modules[name]
+                    version = _get_numpy_version()
+                    self.assertNotIn("numpy", sys.modules)
+            finally:
+                sys.path.remove(tmpdir)
+                _get_numpy_version.cache_clear()
+        if HAS_NUMPY:
+            self.assertNotEqual(version, ("0", "0", "0"))
+
+    def test_get_numpy_version_without_numpy(self) -> None:
+        _get_numpy_version.cache_clear()
+        try:
+            with mock.patch.object(
+                metadata, "version", side_effect=metadata.PackageNotFoundError
+            ):
+                self.assertEqual(_get_numpy_version(), ("0", "0", "0"))
+        finally:
+            _get_numpy_version.cache_clear()

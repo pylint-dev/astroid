@@ -388,6 +388,11 @@ def infer_special_alias(
         res = next(node.args[0].infer(context=ctx))
     except StopIteration as e:
         raise InferenceError(node=node.args[0], context=ctx) from e
+    if not isinstance(res, nodes.ClassDef):
+        # e.g. Uninferable when the inference budget of ``ctx`` is exhausted.
+        # Don't build and pin a class without its base: a later inference
+        # with a fresh context must still get the right one.
+        raise UseInferenceDefault
 
     assign_name = node.parent.targets[0]
     class_def = nodes.ClassDef(
@@ -436,6 +441,7 @@ def infer_typing_cast(
 def _typing_transform():
     code = textwrap.dedent("""
     class Generic:
+        __slots__ = ()
         @classmethod
         def __class_getitem__(cls, item):  return cls
     class ParamSpec:
@@ -468,7 +474,19 @@ def _typing_transform():
         @classmethod
         def __class_getitem__(cls, item):  return cls
     """)
+    code += textwrap.dedent("""
+    class TypeAliasType:
+        def __init__(self, name, value, *, type_params=()):
+            self.__name__ = name
+            self.__value__ = value
+            self.__type_params__ = type_params
+            self.__parameters__ = type_params
+        def __getitem__(self, item): return self
+        def __or__(self, other): return self
+        def __ror__(self, other): return self
+    """)
     if PY314_PLUS:
+        code += "    def evaluate_value(self, format=1): return self.__value__\n"
         code += textwrap.dedent("""
     from annotationlib import ForwardRef
     class Union:

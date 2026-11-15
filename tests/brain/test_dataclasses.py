@@ -1175,6 +1175,27 @@ def test_dataclass_with_field_init_is_false() -> None:
     assert [a.value for a in third_init.args.defaults] == []
 
 
+def test_dataclass_with_field_init_is_false_without_default() -> None:
+    """A parent field() without a default gives no default to the child."""
+    node = astroid.extract_node("""
+    from dataclasses import dataclass, field
+
+    @dataclass
+    class Parent:
+        a: int = field(init=False)
+
+    @dataclass
+    class Child(Parent):
+        a: int
+
+    Child.__init__  #@
+    """)
+
+    child_init: bases.UnboundMethod = next(node.infer())
+    assert [a.name for a in child_init.args.args] == ["self", "a"]
+    assert child_init.args.defaults == []
+
+
 def test_dataclass_inits_of_non_dataclasses() -> None:
     """Regression test for __init__ mangling for non dataclasses.
 
@@ -1580,3 +1601,32 @@ def test_replace_frozen_dataclass() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0].name == "FrozenPoint"
+
+
+def test_property_default_huge_int_does_not_crash() -> None:
+    """A field shadowed by a property returning an integer too large to ``repr()``
+    (past ``sys.get_int_max_str_digits()``) must not crash the dataclass
+    transform, and the generated ``__init__`` keeps that integer as the default.
+    """
+    klass, call = astroid.extract_node("""
+    from dataclasses import dataclass
+
+    @dataclass
+    class A:  #@
+        x: int
+        @property
+        def x(self):
+            return 10 ** 5000
+
+    A(1)  #@
+    """)
+    init = klass.locals["__init__"][0]
+    assert [a.name for a in init.args.args] == ["self", "x"]
+    default = init.args.defaults[0]
+    assert isinstance(default, nodes.Const)
+    assert default.value == 10**5000
+
+    inferred = list(call.infer())
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], bases.Instance)
+    assert inferred[0].name == "A"

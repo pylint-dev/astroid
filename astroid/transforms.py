@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import warnings
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, TypeVar, Union, cast, overload
 
 from astroid.context import _invalidate_cache
@@ -25,11 +25,7 @@ _Vistables = Union[
     "nodes.NodeNG", list["nodes.NodeNG"], tuple["nodes.NodeNG", ...], str, None
 ]
 _VisitReturns = (
-    SuccessfulInferenceResult
-    | list[SuccessfulInferenceResult]
-    | tuple[SuccessfulInferenceResult, ...]
-    | str
-    | None
+    SuccessfulInferenceResult | Sequence[SuccessfulInferenceResult] | str | None
 )
 
 

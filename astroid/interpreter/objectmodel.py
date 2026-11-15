@@ -603,7 +603,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___bases__(self):
-        obj = node_classes.Tuple()
+        obj = node_classes.Tuple(parent=self._instance)
         context = InferenceContext()
         elts = list(self._instance._inferred_bases(context))
         obj.postinit(elts=elts)
@@ -778,6 +778,11 @@ class GeneratorBaseModel(FunctionModel, ContextManagerModel):
             setattr(type(self), IMPL_PREFIX + name, property(patched))
 
     @property
+    def attr___get__(self):
+        # Generators are not descriptors
+        raise AttributeInferenceError(target=self._instance, attribute="__get__")
+
+    @property
     def attr___name__(self):
         return node_classes.Const(
             value=self._instance.parent.name, parent=self._instance
@@ -824,8 +829,12 @@ class InstanceModel(ObjectModel):
 
 class ExceptionInstanceModel(InstanceModel):
     @property
-    def attr_args(self) -> nodes.Tuple:
-        return nodes.Tuple(parent=self._instance)
+    def attr_args(self) -> bases.Instance:
+        # The arguments an exception was created with are not known from the
+        # instance alone, so ``args`` is a tuple of unknown contents rather
+        # than a known empty tuple.
+        builtins_ast_module = AstroidManager().builtins_module
+        return builtins_ast_module["tuple"].instantiate_class()
 
     @property
     def attr___traceback__(self):

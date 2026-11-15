@@ -1,0 +1,7 @@
+Fix a hang when inferring a class whose ``__bool__`` reads attributes that are
+narrowed by a truthiness guard (``if self.left:``). The truthiness constraint
+now passes the inference context to ``bool_value()``, so the recursion guard
+applies.
+
+Refs #3473
+Closes pylint-dev/pylint#11807

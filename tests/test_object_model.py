@@ -9,8 +9,7 @@ import pytest
 
 import astroid
 from astroid import bases, builder, nodes, objects, util
-from astroid.const import PY311_PLUS
-from astroid.exceptions import InferenceError
+from astroid.exceptions import AttributeInferenceError, InferenceError
 
 try:
     import six  # type: ignore[import]  # pylint: disable=unused-import
@@ -303,6 +302,8 @@ class ClassModelTest(unittest.TestCase):
         base_nodes = next(ast_nodes[6].infer())
         self.assertIsInstance(base_nodes, nodes.Tuple)
         self.assertEqual([cls.name for cls in base_nodes.elts], ["object"])
+        self.assertIsInstance(base_nodes.parent, nodes.ClassDef)
+        self.assertEqual(base_nodes.root().name, "fake_module")
 
         cls = next(ast_nodes[7].infer())
         self.assertIsInstance(cls, nodes.ClassDef)
@@ -314,6 +315,24 @@ class ClassModelTest(unittest.TestCase):
         subclasses = next(ast_nodes[9].infer())
         self.assertIsInstance(subclasses, nodes.List)
         self.assertEqual([cls.name for cls in subclasses.elts], ["B", "C"])
+
+    def test_class_bases_has_module_root(self) -> None:
+        """Regression test for pylint-dev/pylint#11491.
+
+        Inferring ``Class.__bases__`` must return a Tuple parented to the class so
+        callers can safely use ``.root()`` (e.g. pylint's stdlib checker).
+        """
+        node = builder.extract_node("""
+            class C:
+                pass
+            C.__bases__  #@
+            """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Tuple)
+        self.assertIsInstance(inferred.parent, nodes.ClassDef)
+        self.assertEqual(inferred.parent.name, "C")
+        # Must not raise AssertionError from NodeNG.root().
+        self.assertIsInstance(inferred.root(), nodes.Module)
 
 
 class ModuleModelTest(unittest.TestCase):
@@ -748,6 +767,21 @@ class GeneratorModelTest(unittest.TestCase):
         assert isinstance(exit_node, astroid.BoundMethod)
 
 
+@pytest.mark.parametrize("func_def", ["def", "async def"])
+def test_generator_has_no_descriptor_get(func_def: str) -> None:
+    node = builder.extract_node(f"""
+    {func_def} func():
+        yield
+    func() #@
+    """)
+    generator = next(node.infer())
+    assert isinstance(generator, bases.Generator)
+    with pytest.raises(AttributeInferenceError):
+        generator.getattr("__get__")
+    with pytest.raises(InferenceError):
+        list(generator.igetattr("__get__"))
+
+
 class ExceptionModelTest(unittest.TestCase):
     @staticmethod
     def test_valueerror_py3() -> None:
@@ -762,19 +796,14 @@ class ExceptionModelTest(unittest.TestCase):
         """)
         assert isinstance(ast_nodes, list)
         args = next(ast_nodes[0].infer())
-        assert isinstance(args, nodes.Tuple)
+        assert isinstance(args, astroid.Instance)
+        assert args.qname() == "builtins.tuple"
         tb = next(ast_nodes[1].infer())
-        # Python 3.11: If 'contextlib' is loaded, '__traceback__'
-        # could be set inside '__exit__' method in
-        # which case 'err.__traceback__' will be 'Uninferable'
-        try:
+        # If 'contextlib' is loaded, '__traceback__' could be set inside
+        # '__exit__' method in which case 'err.__traceback__' will be 'Uninferable'
+        if tb is not util.Uninferable:
             assert isinstance(tb, astroid.Instance)
             assert tb.name == "traceback"
-        except AssertionError:
-            if PY311_PLUS:
-                assert tb == util.Uninferable
-            else:
-                raise
 
         with pytest.raises(InferenceError):
             next(ast_nodes[2].infer())
@@ -900,9 +929,24 @@ class TestExceptionInstanceModel:
         ast_node = builder.extract_node("""
         BaseException() #@
         """)
-        args: nodes.Tuple = next(ast_node.infer()).getattr("args")[0]
-        # BaseException doesn't have any required args, not even a string
-        assert not args.elts
+        args = next(ast_node.infer()).getattr("args")[0]
+        # BaseException doesn't have any required args, not even a string:
+        # ``args`` is a tuple whose contents are not known.
+        assert isinstance(args, astroid.Instance)
+        assert args.qname() == "builtins.tuple"
+
+    def test_args_unpacking_has_unknown_length(self) -> None:
+        """``args`` is not a known empty tuple: unpacking it cannot be checked."""
+        ast_node = builder.extract_node("""
+        try:
+            pass
+        except ValueError as err:
+            err.args #@
+        """)
+        args = next(ast_node.infer())
+        assert isinstance(args, astroid.Instance)
+        assert args.qname() == "builtins.tuple"
+        assert not isinstance(args, nodes.Tuple)
 
 
 @pytest.mark.parametrize("parentheses", (True, False))

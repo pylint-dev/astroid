@@ -54,11 +54,10 @@ class Statement(NodeNG):
     is_statement = True
     """Whether this node indicates a statement."""
 
-    def next_sibling(self):
+    def next_sibling(self) -> NodeNG | None:
         """The next sibling statement node.
 
         :returns: The next sibling statement node.
-        :rtype: NodeNG or None
         """
         stmts = self.parent.child_sequence(self)
         index = stmts.index(self)
@@ -67,11 +66,10 @@ class Statement(NodeNG):
         except IndexError:
             return None
 
-    def previous_sibling(self):
+    def previous_sibling(self) -> NodeNG | None:
         """The previous sibling statement.
 
         :returns: The previous sibling statement node.
-        :rtype: NodeNG or None
         """
         stmts = self.parent.child_sequence(self)
         index = stmts.index(self)
@@ -307,15 +305,13 @@ class LookupMixIn(NodeNG):
         """
         return self.scope().scope_lookup(self, name)
 
-    def ilookup(self, name):
+    def ilookup(self, name: str) -> Generator[InferenceResult]:
         """Lookup the inferred values of the given variable.
 
         :param name: The variable name to find values for.
-        :type name: str
 
         :returns: The inferred values of the statements returned from
             :meth:`lookup`.
-        :rtype: Iterator
         """
         frame, stmts = self.lookup(name)
         context = InferenceContext()

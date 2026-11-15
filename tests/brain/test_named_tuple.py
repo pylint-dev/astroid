@@ -244,6 +244,39 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)  # would raise ValueError
 
+    def test_format_placeholder_typename_does_not_crash_inference(self) -> None:
+        """A typename containing str.format placeholders must not be formatted.
+
+        Reported in https://github.com/pylint-dev/astroid/issues/3199.
+        """
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{0}", "")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise IndexError
+
+    def test_missing_format_placeholder_typename_does_not_crash_inference(self) -> None:
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{missing}", "")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise KeyError
+
+    def test_attribute_format_placeholder_typename_does_not_crash_inference(
+        self,
+    ) -> None:
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("{message.foo}", "")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)  # would raise AttributeError
+
     def test_keyword_typename_does_not_crash_inference(self) -> None:
         node = builder.extract_node("""
         from collections import namedtuple
@@ -290,3 +323,23 @@ class NamedTupleTest(unittest.TestCase):
         assert isinstance(good_node_two_inferred, nodes.ClassDef)
         bad_node_inferred = next(bad_node.infer())
         assert bad_node_inferred == util.Uninferable
+
+    def test_typing_namedtuple_non_name_annotation_does_not_crash_inference(
+        self,
+    ) -> None:
+        """Reported in https://github.com/pylint-dev/astroid/issues/3257 as a crash.
+
+        Only simple-name annotations name a field; an attribute or subscript
+        target such as ``a.b: str`` is not a field and has no ``name``.
+        """
+        node = builder.extract_node("""
+        from typing import NamedTuple
+        class C(NamedTuple):
+            a.b: str
+            basket[0]: str
+            y: int
+        C #@
+        """)
+        inferred = next(node.infer())  # would raise AttributeError
+        assert isinstance(inferred, nodes.ClassDef)
+        assert list(inferred.instance_attrs) == ["y"]

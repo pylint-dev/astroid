@@ -4,10 +4,13 @@
 
 # TODO(hippo91) : correct the methods signature.
 
-"""Astroid hooks for numpy.core.numerictypes module."""
+"""Astroid hooks for numpy.core.numerictypes and numpy._core.numerictypes modules."""
 
 from astroid import nodes
-from astroid.brain.brain_numpy_utils import numpy_supports_type_hints
+from astroid.brain.brain_numpy_utils import (
+    numpy_supports_type_hints,
+    numpy_version_2_or_later,
+)
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import parse
 from astroid.manager import AstroidManager
@@ -110,7 +113,7 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
         def __class_getitem__(cls, value):
             return cls
         """
-    return parse(generic_src + """
+    module_src = generic_src + """
     class dtype(object):
         def __init__(self, obj, align=False, copy=False):
             self.alignment = None
@@ -201,11 +204,13 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     class complex64(complexfloating): pass
     class int16(signedinteger): pass
     class float96(floating): pass
+    class float128(floating): pass
     class int8(signedinteger): pass
     class uint32(unsignedinteger): pass
     class uint8(unsignedinteger): pass
     class _typedict(dict): pass
     class complex192(complexfloating): pass
+    class complex256(complexfloating): pass
     class timedelta64(signedinteger):
         def __init__(self, nb, unit=None): pass
     class int32(signedinteger): pass
@@ -216,48 +221,84 @@ def numpy_core_numerictypes_transform() -> nodes.Module:
     class int64(signedinteger): pass
 
     buffer_type = memoryview
-    bool8 = bool_
     byte = int8
-    bytes0 = bytes_
     cdouble = complex128
-    cfloat = complex128
     clongdouble = complex192
-    clongfloat = complex192
-    complex_ = complex128
     csingle = complex64
     double = float64
-    float_ = float64
     half = float16
-    int0 = int32
     int_ = int32
     intc = int32
     intp = int32
     long = int32
-    longcomplex = complex192
     longdouble = float96
-    longfloat = float96
     longlong = int64
-    object0 = object_
     object_ = object_
     short = int16
     single = float32
-    singlecomplex = complex64
-    str0 = str_
-    string_ = bytes_
     ubyte = uint8
     uint = uint32
-    uint0 = uint32
     uintc = uint32
     uintp = uint32
     ulonglong = uint64
+    ushort = uint16
+    """
+    if not numpy_version_2_or_later():
+        # Aliases removed in NumPy 2.0, kept for NumPy 1.x.
+        module_src += """
+    bool8 = bool_
+    bytes0 = bytes_
+    cfloat = complex128
+    clongfloat = complex192
+    complex_ = complex128
+    float_ = float64
+    int0 = int32
+    longcomplex = complex192
+    longfloat = float96
+    object0 = object_
+    singlecomplex = complex64
+    str0 = str_
+    string_ = bytes_
+    uint0 = uint32
     unicode = str_
     unicode_ = str_
-    ushort = uint16
     void0 = void
-    """)
+    """
+    if numpy_version_2_or_later():
+        # Added in NumPy 2.0.
+        module_src += """
+    class ulong(unsignedinteger): pass
+    """
+    return parse(module_src)
+
+
+def _inject_numpy_platform_scalar_types(node: nodes.Module) -> None:
+    """Copy platform-specific scalar types into the top-level numpy module.
+
+    NumPy 2 binds these names through a ``globals()`` loop that static
+    analysis cannot track. This mirrors NumPy 1.x, where the same fake
+    classes reached the top level through a star import.
+    """
+    extension = numpy_core_numerictypes_transform()
+    for name in ("float96", "float128", "complex192", "complex256"):
+        if name in node.locals:
+            continue
+        objs = extension.locals.get(name)
+        if objs:
+            for obj in objs:
+                if isinstance(obj, nodes.NodeNG) and obj.parent is extension:
+                    obj.parent = node
+            node.locals[name] = objs
 
 
 def register(manager: AstroidManager) -> None:
     register_module_extender(
         manager, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+    )
+    # NumPy 2.0 renamed numpy.core to numpy._core; keep both hooks.
+    register_module_extender(
+        manager, "numpy._core.numerictypes", numpy_core_numerictypes_transform
+    )
+    manager.register_transform(
+        nodes.Module, _inject_numpy_platform_scalar_types, lambda n: n.name == "numpy"
     )

@@ -50,7 +50,11 @@ def open_source_file(filename: str) -> tuple[TextIOWrapper, str, str]:
     with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
     stream = open(filename, newline=None, encoding=encoding)
-    data = stream.read()
+    try:
+        data = stream.read()
+    except BaseException:
+        stream.close()
+        raise
     return stream, encoding, data
 
 
@@ -148,10 +152,14 @@ class AstroidBuilder(raw_building.InspectBuilder):
             return self._post_build(module, builder, encoding)
 
     def string_build(
-        self, data: str, modname: str = "", path: str | None = None
+        self,
+        data: str,
+        modname: str = "",
+        path: str | None = None,
+        is_stub: bool | None = None,
     ) -> nodes.Module:
         """Build astroid from source code string."""
-        module, builder = self._data_build(data, modname, path)
+        module, builder = self._data_build(data, modname, path, is_stub=is_stub)
         module.file_bytes = data.encode("utf-8")
         return self._post_build(module, builder, "utf-8")
 
@@ -177,7 +185,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
         return module
 
     def _data_build(
-        self, data: str, modname: str, path: str | None
+        self,
+        data: str,
+        modname: str,
+        path: str | None,
+        is_stub: bool | None = None,
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
         """Build tree node from data and add some informations."""
         try:
@@ -203,7 +215,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager, data)
+        if is_stub is None:
+            is_stub = path is not None and path.endswith(".pyi")
+        builder = rebuilder.TreeRebuilder(self._manager, data, is_stub=is_stub)
         module = builder.visit_module(node, modname, node_file, package)
         return module, builder
 
@@ -292,22 +306,25 @@ def parse(
     module_name: str = "",
     path: str | None = None,
     apply_transforms: bool = True,
+    is_stub: bool | None = None,
 ) -> nodes.Module:
     """Parses a source string in order to obtain an astroid AST from it.
 
-    :param str code: The code for the module.
-    :param str module_name: The name for the module, if any
-    :param str path: The path for the module
-    :param bool apply_transforms:
+    :param code: The code for the module.
+    :param module_name: The name for the module, if any
+    :param path: The path for the module
+    :param apply_transforms:
         Apply the transforms for the give code. Use it if you
         don't want the default transforms to be applied.
+    :param is_stub: Whether to treat the code as a ``.pyi`` stub.
+        When ``None``, auto-detected from *path*.
     """
     # pylint: disable-next=import-outside-toplevel
     from astroid.manager import AstroidManager
 
     code = textwrap.dedent(code)
     builder = AstroidBuilder(AstroidManager(), apply_transforms=apply_transforms)
-    return builder.string_build(code, modname=module_name, path=path)
+    return builder.string_build(code, modname=module_name, path=path, is_stub=is_stub)
 
 
 def _extract_expressions(node: nodes.NodeNG) -> Iterator[nodes.NodeNG]:
@@ -319,7 +336,6 @@ def _extract_expressions(node: nodes.NodeNG) -> Iterator[nodes.NodeNG]:
     replacing it by the wrapped expression inside the parent.
 
     :param node: An astroid node.
-    :type node:  astroid.bases.NodeNG
     :yields: The sequence of wrapped expressions on the modified tree
     expression can be found.
     """
@@ -359,12 +375,9 @@ def _find_statement_by_line(node: nodes.NodeNG, line: int) -> nodes.NodeNG | Non
     recursively.
 
     :param node: An astroid node.
-    :type node: astroid.bases.NodeNG
     :param line: The line number of the statement to extract.
-    :type line: int
     :returns: The statement on the line, or None if no statement for the line
       can be found.
-    :rtype:  astroid.bases.NodeNG or None
     """
     if isinstance(node, (nodes.ClassDef, nodes.FunctionDef, nodes.MatchCase)):
         # This is an inaccuracy in the AST: the nodes that can be
@@ -442,9 +455,9 @@ def extract_node(code: str, module_name: str = "") -> nodes.NodeNG | list[nodes.
 
     For convenience, singleton lists are unpacked.
 
-    :param str code: A piece of Python code that is parsed as
+    :param code: A piece of Python code that is parsed as
         a module. Will be passed through textwrap.dedent first.
-    :param str module_name: The name of the module.
+    :param module_name: The name of the module.
     :returns: The designated node from the parse tree, or a list of nodes.
     """
 

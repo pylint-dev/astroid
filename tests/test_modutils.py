@@ -389,8 +389,14 @@ class GetSourceFileTest(unittest.TestCase):
             stub = base + ".pyi"
             with open(stub, "w", encoding="utf-8"):
                 pass
-            for compiled_ext in ("pyc", "pyo", *modutils.PY_COMPILED_EXTS):
-                compiled = f"{base}.{compiled_ext}"
+            compiled_files = [
+                *(
+                    f"{base}.{ext}"
+                    for ext in ("pyc", "pyo", *modutils.PY_COMPILED_EXTS)
+                ),
+                *(base + suffix for suffix in importlib.machinery.EXTENSION_SUFFIXES),
+            ]
+            for compiled in compiled_files:
                 with open(compiled, "wb"):
                     pass
                 self.assertEqual(

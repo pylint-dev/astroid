@@ -1,0 +1,4 @@
+``brain_gi`` only imports ``gi`` for a bare ``require_version(...)`` call when the
+name actually resolves to gi, no longer for an unrelated function of that name.
+
+Refs #3277

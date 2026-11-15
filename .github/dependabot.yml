@@ -11,6 +11,10 @@ updates:
       - "dependency"
     open-pull-requests-limit: 10
     rebase-strategy: "disabled"
+    groups:
+      pip:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -20,3 +24,7 @@ updates:
       - "dependency"
     open-pull-requests-limit: 10
     rebase-strategy: "disabled"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

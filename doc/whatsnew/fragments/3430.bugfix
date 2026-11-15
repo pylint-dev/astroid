@@ -1,0 +1,4 @@
+``ClassDef.has_dynamic_getattr()`` now always returns a bool. It returned
+``Uninferable`` when the ``__getattr__`` of a metaclass could not be inferred.
+
+Refs #3430

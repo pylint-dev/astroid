@@ -117,7 +117,7 @@ def six_moves_transform():
     return module
 
 
-def _six_fail_hook(modname):
+def _six_fail_hook(modname: str) -> nodes.Module:
     """Fix six.moves imports due to the dynamic nature of this
     class.
 
@@ -125,10 +125,8 @@ def _six_fail_hook(modname):
     for six
 
     :param modname: Name of failed module
-    :type modname: str
 
     :return: An astroid module
-    :rtype: nodes.Module
     """
 
     attribute_of = modname != "six.moves" and modname.startswith("six.moves")
@@ -220,6 +218,12 @@ def transform_six_with_metaclass(node):
     If so, inject its argument as the metaclass of the underlying class.
     """
     call = node.bases[0]
+    if not call.args:
+        # ``six.with_metaclass()`` written with no positional metaclass
+        # argument is invalid, but the predicate still matches it.
+        raise InferenceError(
+            "six.with_metaclass() call has no metaclass argument", node=node
+        )
     node._metaclass = call.args[0]
     return node
 

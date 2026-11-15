@@ -6,23 +6,19 @@
 
 from __future__ import annotations
 
-import sys
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from typing import Self
 
-from astroid import helpers, nodes, util
+from astroid import bases, helpers, nodes, util
 from astroid.context import InferenceContext
-from astroid.exceptions import AstroidTypeError, InferenceError, MroError
+from astroid.exceptions import (
+    AstroidError,
+    AstroidTypeError,
+    InferenceError,
+    MroError,
+)
 from astroid.typing import InferenceResult
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
-if TYPE_CHECKING:
-    from astroid import bases
 
 _NameNodes = nodes.AssignAttr | nodes.Attribute | nodes.AssignName | nodes.Name
 
@@ -98,22 +94,12 @@ class BooleanConstraint(Constraint):
     def match(
         cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
     ) -> Self | None:
-        """Return a new constraint for node if expr matches one of these patterns:
+        """Return a new constraint for node if expr is node, else return None.
 
-        - direct match (expr == node): use given negate value
-        - negated match (expr == `not node`): flip negate value
-
-        Return None if no pattern matches.
+        ``not x`` is matched by ``_match_constraint``, which flips negate.
         """
         if _matches(expr, node):
             return cls(node=node, negate=negate)
-
-        if (
-            isinstance(expr, nodes.UnaryOp)
-            and expr.op == "not"
-            and _matches(expr.operand, node)
-        ):
-            return cls(node=node, negate=not negate)
 
         return None
 
@@ -125,7 +111,7 @@ class BooleanConstraint(Constraint):
         - negate=False: satisfied if boolean value is True
         - negate=True: satisfied if boolean value is False
         """
-        inferred_booleaness = inferred.bool_value()
+        inferred_booleaness = inferred.bool_value(context.clone())
         if inferred is util.Uninferable or inferred_booleaness is util.Uninferable:
             return True
 
@@ -189,6 +175,48 @@ class TypeConstraint(Constraint):
             return True
 
 
+class CallableConstraint(Constraint):
+    """Represents a "callable(x)" constraint."""
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches the "callable(x)"
+        pattern. Else, return None.
+        """
+        is_callable_call = (
+            isinstance(expr, nodes.Call)
+            and isinstance(expr.func, nodes.Name)
+            and expr.func.name == "callable"
+            and not expr.keywords
+            and len(expr.args) == 1
+        )
+        if is_callable_call and _matches(expr.args[0], node):
+            return cls(node=node, negate=negate)
+
+        return None
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for uninferable results, or depending on negate flag:
+
+        - negate=False: satisfied when inferred is callable.
+        - negate=True: satisfied when inferred is not callable.
+        """
+        if inferred is util.Uninferable:
+            return True
+
+        # A base class that cannot be inferred may define __call__.
+        if isinstance(inferred, bases.Instance) and not helpers.has_known_bases(
+            inferred._proxied, context
+        ):
+            return True
+
+        return self.negate ^ inferred.callable()
+
+
 class EqualityConstraint(Constraint):
     """Represents a "==" or "!=" constraint."""
 
@@ -247,6 +275,61 @@ class EqualityConstraint(Constraint):
         return True
 
 
+class _CompoundConstraint(Constraint):
+    """Represents an "x and y" or "x or y" constraint."""
+
+    def __init__(
+        self,
+        node: nodes.NodeNG,
+        op: str,
+        children: list[Constraint],
+        negate: bool,
+    ) -> None:
+        super().__init__(node=node, negate=negate)
+        self.op = op
+        self.children = children
+
+    @classmethod
+    def match(
+        cls, node: _NameNodes, expr: nodes.NodeNG, negate: bool = False
+    ) -> Self | None:
+        """Return a new constraint for node if expr matches an "x and y" or
+        "x or y" pattern.
+
+        Return None if expr is not a supported boolean expression, or if any
+        operand does not match a constraint pattern.
+        """
+        if not (isinstance(expr, nodes.BoolOp) and expr.op in {"and", "or"}):
+            return None
+
+        children: list[Constraint] = []
+        for value in expr.values:
+            matches = list(_match_constraint(node, value, negate))
+            if not matches:
+                return None
+            children.extend(matches)
+
+        return cls(node=node, op=expr.op, children=children, negate=negate)
+
+    def satisfied_by(
+        self, inferred: InferenceResult, context: InferenceContext
+    ) -> bool:
+        """Return True for uninferable results, or depending on op and negate:
+
+        - negate=False: all children must be satisfied for "and", or any for "or".
+        - negate=True: any child must be satisfied for "and", or all for "or".
+        """
+        if inferred is util.Uninferable:
+            return True
+
+        results = (
+            constraint.satisfied_by(inferred, context) for constraint in self.children
+        )
+
+        strict = (self.op == "and") ^ self.negate
+        return all(results) if strict else any(results)
+
+
 def get_constraints(
     expr: _NameNodes, frame: nodes.LocalsDictNodeNG
 ) -> dict[nodes.NodeNG, set[Constraint]]:
@@ -256,21 +339,52 @@ def get_constraints(
     corresponding constraint(s).
 
     Constraints are computed statically by analysing the code surrounding expr.
-    Currently this only supports constraints generated from if conditions and
-    comprehension conditions.
+    Currently this only supports constraints generated from if conditions,
+    comprehension conditions, preceding operands in boolean operations, and
+    preceding guard statements: asserts, ifs whose body ends with a return, raise,
+    continue or break, and ifs whose body assigns expr.
     """
     current_node: nodes.NodeNG | None = expr
     constraints_mapping: dict[nodes.NodeNG, set[Constraint]] = {}
+    name = (
+        expr.attrname
+        if isinstance(expr, (nodes.Attribute, nodes.AssignAttr))
+        else expr.name
+    )
+    # Guards before a function, lambda, class or generator expression do not
+    # constrain its body: it may run later, after a reassignment.
+    collect_guards = True
     while current_node is not None and current_node is not frame:
         parent = current_node.parent
+        constraints: set[Constraint] | None = None
+
+        if isinstance(
+            current_node,
+            (nodes.FunctionDef, nodes.Lambda, nodes.ClassDef, nodes.GeneratorExp),
+        ):
+            collect_guards = False
+        elif collect_guards and current_node.is_statement:
+            if guards := _preceding_guards(current_node).get(name):
+                _add_guards_constraints(expr, guards, constraints_mapping)
+
         if isinstance(parent, (nodes.If, nodes.IfExp)):
             branch, _ = parent.locate_child(current_node)
-            constraints: set[Constraint] | None = None
             if branch == "body":
                 constraints = set(_match_constraint(expr, parent.test))
             elif branch == "orelse":
                 constraints = set(_match_constraint(expr, parent.test, invert=True))
+            if constraints:
+                constraints_mapping[parent] = constraints
 
+        elif isinstance(parent, nodes.BoolOp):
+            # Later operands are evaluated only if all preceding ones are
+            # truthy for "and", or all falsy for "or".
+            index = parent.values.index(current_node)
+            constraints = set()
+            for previous_value in parent.values[:index]:
+                constraints.update(
+                    _match_constraint(expr, previous_value, invert=parent.op == "or")
+                )
             if constraints:
                 constraints_mapping[parent] = constraints
         elif isinstance(parent, nodes.Comprehension):
@@ -298,6 +412,148 @@ def get_constraints(
     return constraints_mapping
 
 
+def constraint_applies(
+    constraint_stmt: nodes.NodeNG, stmt: InferenceResult, expr: _NameNodes
+) -> bool:
+    """Return True if the constraints generated at constraint_stmt for expr apply
+    to the values assigned by stmt.
+
+    They do not apply to an assignment inside constraint_stmt, nor to one that can
+    run between constraint_stmt and expr, as in ``if x is None: return``, then
+    ``x = None``.
+    """
+    if constraint_stmt.parent_of(stmt):
+        return False
+    start = (constraint_stmt.end_lineno, constraint_stmt.end_col_offset)
+    position = (stmt.lineno, stmt.col_offset)
+    if None in start or None in position or position < start:
+        return True
+    # A position in another module says nothing about when the assignment runs.
+    if stmt.root() is not constraint_stmt.root():
+        return True
+    end = _unconstrained_range_end(constraint_stmt, expr)
+    return None in end or position > end
+
+
+def _unconstrained_range_end(
+    constraint_stmt: nodes.NodeNG, expr: _NameNodes
+) -> tuple[int | None, int | None]:
+    """Return the position up to which an assignment after constraint_stmt can
+    reach expr without running constraint_stmt again.
+
+    That is expr itself, or the end of the outermost loop containing expr but not
+    constraint_stmt: an assignment after expr in that loop reaches expr on the next
+    iteration.
+    """
+    end: nodes.NodeNG | None = None
+    node = expr.parent
+    while (
+        node is not None
+        and node is not constraint_stmt
+        and not node.parent_of(constraint_stmt)
+    ):
+        if isinstance(node, (nodes.For, nodes.While)):
+            end = node
+        node = node.parent
+    if end is None:
+        return (expr.lineno, expr.col_offset)
+    return (end.end_lineno, end.end_col_offset)
+
+
+_preceding_guards_cache: dict[
+    nodes.NodeNG, dict[str, tuple[nodes.If | nodes.Assert, ...]]
+] = {}
+"""The asserts and ifs preceding each statement in its block, by the names and
+attribute names their test reads.
+
+They do not depend on the constrained name, so they are computed once per block.
+"""
+
+
+def clear_preceding_guards_cache() -> None:
+    """Clear the cache of the guard statements preceding each statement."""
+    _preceding_guards_cache.clear()
+
+
+def _add_guards_constraints(
+    expr: _NameNodes,
+    guards: tuple[nodes.If | nodes.Assert, ...],
+    constraints_mapping: dict[nodes.NodeNG, set[Constraint]],
+) -> None:
+    """Add the constraints of guards for expr.
+
+    After an assert, its test holds. After an if, its test is false for a value
+    assigned before it, if its body cannot let that value through: the body exits,
+    or it assigns expr again.
+    """
+    for guard in guards:
+        is_if = isinstance(guard, nodes.If)
+        constraints = set(_match_constraint(expr, guard.test, invert=is_if))
+        if constraints and not (is_if and _lets_through(guard.body, expr)):
+            constraints_mapping[guard] = constraints
+
+
+def _lets_through(body: list[nodes.NodeNG], expr: _NameNodes) -> bool:
+    """Return True if a value of expr assigned before body can reach the code
+    after it.
+    """
+    if isinstance(body[-1], (nodes.Return, nodes.Raise, nodes.Continue, nodes.Break)):
+        return False
+    for stmt in body:
+        if isinstance(stmt, nodes.Assign):
+            targets = stmt.targets
+        elif isinstance(stmt, nodes.AnnAssign) and stmt.value is not None:
+            targets = [stmt.target]
+        else:
+            continue
+        if any(_same_target(target, expr) for target in targets):
+            return False
+    return True
+
+
+def _preceding_guards(
+    stmt: nodes.NodeNG,
+) -> dict[str, tuple[nodes.If | nodes.Assert, ...]]:
+    """Return the asserts and ifs preceding stmt in its block, by the names and
+    attribute names their test reads: a test that does not read a name cannot
+    constrain it.
+    """
+    if (cached := _preceding_guards_cache.get(stmt)) is not None:
+        return cached
+    try:
+        stmts = stmt.parent.child_sequence(stmt)
+    except AstroidError:
+        # A type comment annotation is not a child of its parent.
+        stmts = [stmt]
+    # Fill the cache for the whole block at once. Statements between two guards
+    # share the same mapping.
+    guards: dict[str, tuple[nodes.If | nodes.Assert, ...]] = {}
+    for sibling in stmts:
+        _preceding_guards_cache[sibling] = guards
+        if isinstance(sibling, (nodes.If, nodes.Assert)):
+            guards = guards.copy()
+            for name in _read_names(sibling.test):
+                guards[name] = (*guards.get(name, ()), sibling)
+    return _preceding_guards_cache[stmt]
+
+
+def _read_names(test: nodes.NodeNG) -> set[str]:
+    """Return the names and attribute names that test reads."""
+    return {
+        node.name if isinstance(node, nodes.Name) else node.attrname
+        for node in test.nodes_of_class((nodes.Name, nodes.Attribute))
+    }
+
+
+def _same_target(target: nodes.NodeNG, expr: _NameNodes) -> bool:
+    """Return True if target assigns the name or attribute that expr reads."""
+    if isinstance(target, nodes.AssignName) and isinstance(expr, nodes.Name):
+        return target.name == expr.name
+    if isinstance(target, nodes.AssignAttr) and isinstance(expr, nodes.Attribute):
+        return target.attrname == expr.attrname and _matches(target.expr, expr.expr)
+    return False
+
+
 def _add_ifs_constraints(
     expr: _NameNodes,
     ifs: list[nodes.NodeNG],
@@ -310,15 +566,16 @@ def _add_ifs_constraints(
             constraints_mapping[if_expr] = constraints
 
 
-ALL_CONSTRAINT_CLASSES = frozenset(
-    (
-        NoneConstraint,
-        BooleanConstraint,
-        TypeConstraint,
-        EqualityConstraint,
-    )
-)
-"""All supported constraint types."""
+_CONSTRAINTS_BY_NODE_TYPE: dict[type[nodes.NodeNG], tuple[type[Constraint], ...]] = {
+    nodes.Attribute: (BooleanConstraint,),
+    nodes.BoolOp: (_CompoundConstraint,),
+    nodes.Call: (TypeConstraint, CallableConstraint),
+    nodes.Compare: (NoneConstraint, EqualityConstraint),
+    nodes.Name: (BooleanConstraint,),
+    # No nodes.UnaryOp entry: _match_constraint handles ``not`` itself, by matching
+    # the operand with the inversion flipped, so that any constraint can be negated.
+}
+"""Constraint types that can match each expression node type."""
 
 
 def _matches(node1: nodes.NodeNG | bases.Proxy, node2: nodes.NodeNG) -> bool:
@@ -337,7 +594,10 @@ def _match_constraint(
     node: _NameNodes, expr: nodes.NodeNG, invert: bool = False
 ) -> Iterator[Constraint]:
     """Yields all constraint patterns for node that match."""
-    for constraint_cls in ALL_CONSTRAINT_CLASSES:
+    if isinstance(expr, nodes.UnaryOp) and expr.op == "not":
+        yield from _match_constraint(node, expr.operand, not invert)
+        return
+    for constraint_cls in _CONSTRAINTS_BY_NODE_TYPE.get(type(expr), ()):
         constraint = constraint_cls.match(node, expr, invert)
         if constraint:
             yield constraint

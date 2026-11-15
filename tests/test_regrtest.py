@@ -6,6 +6,7 @@ import platform
 import sys
 import textwrap
 import unittest
+from importlib.metadata import PackageNotFoundError, version
 from unittest import mock
 
 import pytest
@@ -27,6 +28,13 @@ except ImportError:
     HAS_NUMPY = False
 else:
     HAS_NUMPY = True
+
+try:
+    # numpy.distutils was removed in NumPy 2.0. Read the version from the
+    # installed metadata so the deprecated module is never imported here
+    HAS_NUMPY_DISTUTILS = int(version("numpy").split(".")[0]) < 2
+except (PackageNotFoundError, ValueError):
+    HAS_NUMPY_DISTUTILS = False
 
 
 class NonRegressionTests(unittest.TestCase):
@@ -103,13 +111,13 @@ multiply([1, 2], [3, 4])
         inferred = callfunc.inferred()
         self.assertEqual(len(inferred), 1)
 
-    @unittest.skipUnless(HAS_NUMPY and not PY312_PLUS, "Needs numpy and < Python 3.12")
+    @unittest.skipUnless(
+        HAS_NUMPY and HAS_NUMPY_DISTUTILS and not PY312_PLUS,
+        "Needs numpy.distutils (removed in numpy 2.0) and < Python 3.12",
+    )
     def test_numpy_distutils(self):
         """Special handling of virtualenv's patching of distutils shouldn't interfere
         with numpy.distutils.
-
-        PY312_PLUS -- This test will likely become unnecessary when Python 3.12 is
-        numpy's minimum version. (numpy.distutils will be removed then.)
         """
         node = extract_node("""
 from numpy.distutils.misc_util import is_sequence
@@ -581,3 +589,51 @@ def test_regression_parse_deeply_nested_parentheses() -> None:
         SyntaxError if platform.python_implementation() == "PyPy" else MemoryError
     )
     assert isinstance(ctx.value.error, expected)
+
+
+def test_name_lookup_no_recursion_in_dict_kwargs() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/264.
+
+    Name resolution inside ``(k for k in dict(**k))`` used to bounce between
+    the comprehension's ``k`` and the outer ``k`` until ``RecursionError``.
+    The current behavior infers the generator's source as a dict instance
+    without crashing.
+    """
+    node = extract_node("""
+        def test(k):
+            (k for k in __(dict(**k)))
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.pytype() == "builtins.dict"
+
+
+def test_relative_import_call_infers_to_target(tmp_path) -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/850.
+
+    A call to a name pulled in via ``from .lib import setup`` used to infer as
+    ``Uninferable`` when the directory had no ``__init__.py``: the module was
+    named after its file path, so the relative import had no parent package.
+    """
+    pkg = tmp_path / "pkg850"
+    pkg.mkdir()
+    (pkg / "lib.py").write_text("def setup():\n    pass\n")
+    (pkg / "app.py").write_text(textwrap.dedent("""\
+            from .lib import setup
+
+            def f():
+                setup()
+        """))
+    sys.path.insert(0, str(tmp_path))
+    try:
+        module = MANAGER.ast_from_file(str(pkg / "app.py"), source=True)
+        call_node = module.body[1].body[0].value
+        inferred = list(call_node.func.infer())
+        assert Uninferable not in inferred
+        assert any(
+            isinstance(node, nodes.FunctionDef) and node.name == "setup"
+            for node in inferred
+        )
+    finally:
+        sys.path.remove(str(tmp_path))
+        MANAGER.clear_cache()

@@ -18,7 +18,7 @@ from astroid.exceptions import (
     _NonDeducibleTypeHierarchy,
 )
 from astroid.nodes import scoped_nodes
-from astroid.typing import InferenceResult
+from astroid.typing import InferenceResult, SuccessfulInferenceResult
 from astroid.util import safe_infer
 
 
@@ -254,10 +254,11 @@ def class_instance_as_index(node: bases.Instance) -> nodes.Const | None:
     return None
 
 
-def object_len(node, context: InferenceContext | None = None):
+def object_len(
+    node: SuccessfulInferenceResult, context: InferenceContext | None = None
+) -> int:
     """Infer length of given node object.
 
-    :param Union[nodes.ClassDef, nodes.Instance] node:
     :param node: Node to infer length of
 
     :raises AstroidTypeError: If an invalid node is returned
@@ -265,7 +266,7 @@ def object_len(node, context: InferenceContext | None = None):
     :raises InferenceError: If the given node cannot be inferred
         or if multiple nodes are inferred or if the code executed in python
         would result in a infinite recursive check for length
-    :rtype int: Integer length of node
+    :returns: Integer length of node
     """
     # pylint: disable=import-outside-toplevel; circular import
     from astroid.objects import FrozenSet
@@ -311,6 +312,19 @@ def object_len(node, context: InferenceContext | None = None):
             f"object of type '{node_type.pytype()}' has no len()"
         ) from e
 
+    if not isinstance(
+        len_call,
+        (
+            util.UninferableBase,
+            bases.Proxy,
+            nodes.Lambda,
+            nodes.FunctionDef,
+            nodes.ClassDef,
+        ),
+    ):
+        raise AstroidTypeError(
+            f"'__len__' of type '{node_type.pytype()}' is not callable"
+        )
     inferred = len_call.infer_call_result(node, context)
     if isinstance(inferred, util.UninferableBase):
         raise InferenceError(node=node, context=context)

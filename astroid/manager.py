@@ -163,7 +163,14 @@ class AstroidManager:
         ):
             return self.astroid_cache[modname]
         if source:
-            return AstroidBuilder(self).file_build(filepath, modname)
+            try:
+                return AstroidBuilder(self).file_build(filepath, modname)
+            except RecursionError as e:
+                e.add_note(
+                    f"Astroid was unable to parse {filepath}.\n"
+                    "From pylint, try: --init-hook='import sys; sys.setrecursionlimit(2000)' or higher.",
+                )
+                raise e
         if fallback and modname:
             return self.ast_from_module_name(modname)
         raise AstroidBuildingError("Unable to build an AST for {path}.", path=filepath)
@@ -198,6 +205,32 @@ class AstroidManager:
             modname, self.extension_package_whitelist
         )
 
+    def _ast_from_c_module(
+        self, modname: str, found_spec: spec.ModuleSpec
+    ) -> nodes.Module:
+        if (
+            found_spec.type == spec.ModuleType.C_EXTENSION
+            and not self._can_load_extension(modname, found_spec.location)
+        ):
+            if not self.prefer_stubs or found_spec.location is None:
+                return self._build_stub_module(modname)
+            try:
+                source = get_source_file(
+                    found_spec.location, prefer_stubs=self.prefer_stubs
+                )
+            except NoSourceFile:
+                return self._build_stub_module(modname)
+            return AstroidBuilder(self).file_build(source, modname)
+        try:
+            named_module = load_module_from_name(modname)
+        except Exception as e:
+            raise AstroidImportError(
+                "Loading {modname} failed with:\n{error}",
+                modname=modname,
+                path=found_spec.location,
+            ) from e
+        return self.ast_from_module(named_module, modname)
+
     def ast_from_module_name(  # noqa: C901
         self,
         modname: str | None,
@@ -231,20 +264,7 @@ class AstroidManager:
                 spec.ModuleType.C_BUILTIN,
                 spec.ModuleType.C_EXTENSION,
             ):
-                if (
-                    found_spec.type == spec.ModuleType.C_EXTENSION
-                    and not self._can_load_extension(modname, found_spec.location)
-                ):
-                    return self._build_stub_module(modname)
-                try:
-                    named_module = load_module_from_name(modname)
-                except Exception as e:
-                    raise AstroidImportError(
-                        "Loading {modname} failed with:\n{error}",
-                        modname=modname,
-                        path=found_spec.location,
-                    ) from e
-                return self.ast_from_module(named_module, modname)
+                return self._ast_from_c_module(modname, found_spec)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
                 raise AstroidImportError(
@@ -307,25 +327,29 @@ class AstroidManager:
     def file_from_module_name(
         self, modname: str, contextfile: str | None
     ) -> spec.ModuleSpec:
+        cache_key = (modname, contextfile)
         try:
-            value = self._mod_file_cache[(modname, contextfile)]
+            cached = self._mod_file_cache[cache_key]
         except KeyError:
             try:
-                value = file_info_from_modpath(
+                module_spec = file_info_from_modpath(
                     modname.split("."), context_file=contextfile
                 )
             except ImportError as e:
-                value = AstroidImportError(
+                error = AstroidImportError(
                     "Failed to import module {modname} with error:\n{error}.",
                     modname=modname,
                     # we remove the traceback here to save on memory usage (since these exceptions are cached)
                     error=e.with_traceback(None),
                 )
-            self._mod_file_cache[(modname, contextfile)] = value
-        if isinstance(value, AstroidBuildingError):
+                self._mod_file_cache[cache_key] = error
+                raise error from None
+            self._mod_file_cache[cache_key] = module_spec
+            return module_spec
+        if isinstance(cached, AstroidImportError):
             # we remove the traceback here to save on memory usage (since these exceptions are cached)
-            raise value.with_traceback(None)  # pylint: disable=no-member
-        return value
+            raise cached.with_traceback(None)
+        return cached
 
     def ast_from_module(
         self, module: types.ModuleType, modname: str | None = None
@@ -444,6 +468,7 @@ class AstroidManager:
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
         from astroid.brain.helpers import register_all_brains
+        from astroid.constraint import clear_preceding_guards_cache
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter._import.spec import (
             _find_spec,
@@ -454,6 +479,7 @@ class AstroidManager:
         from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()
+        clear_preceding_guards_cache()
         _invalidate_cache()  # inference context cache
 
         self.astroid_cache.clear()

@@ -181,13 +181,9 @@ def infer_func_form(
     return class_node, name, attributes
 
 
-def _has_namedtuple_base(node):
-    """Predicate for class inference tip.
-
-    :type node: ClassDef
-    :rtype: bool
-    """
-    return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
+def _has_namedtuple_base(node: nodes.ClassDef) -> bool:
+    """Predicate for class inference tip."""
+    return bool(set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES)
 
 
 def _looks_like(node, name) -> bool:
@@ -466,7 +462,10 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
 
             new_targets = []
             for target in targets:
-                if isinstance(target, nodes.Starred):
+                if not isinstance(target, nodes.AssignName):
+                    # ``Starred`` targets, and attribute/subscript targets from a
+                    # chained assignment such as ``x = a.b = 1``, do not name an
+                    # enum member and have no ``name`` attribute.
                     continue
                 target_names.add(target.name)
                 # Replace all the assignments with our mocked class.
@@ -582,6 +581,7 @@ def infer_typing_namedtuple_class(class_node, context: InferenceContext | None =
         annassign.target.name
         for annassign in class_node.body
         if isinstance(annassign, nodes.AnnAssign)
+        and isinstance(annassign.target, nodes.AssignName)
     ]
     code = dedent("""
     from collections import namedtuple

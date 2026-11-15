@@ -267,6 +267,19 @@ def register_arguments(func: nodes.FunctionDef, args: list | None = None) -> Non
             register_arguments(func, arg.elts)
 
 
+def _would_create_parent_cycle(node: nodes.NodeNG, child: nodes.NodeNG) -> bool:
+    """Whether making ``node`` the parent of ``child`` would close a parent loop.
+
+    That happens when ``child`` already is ``node`` or one of its ancestors.
+    """
+    ancestor: nodes.NodeNG | None = node
+    while ancestor is not None:
+        if ancestor is child:
+            return True
+        ancestor = ancestor.parent
+    return False
+
+
 def object_build_class(
     node: nodes.Module | nodes.ClassDef, member: type
 ) -> nodes.ClassDef:
@@ -538,7 +551,16 @@ class InspectBuilder:
                 # create an empty node so that the name is actually defined
                 child: nodes.NodeNG = build_dummy(member)
             if child not in node.locals.get(alias, ()):
-                node.add_local_node(child, alias)
+                if _would_create_parent_cycle(node, child):
+                    # ``child`` was built for another owner and is already an
+                    # ancestor of ``node`` (or is ``node`` itself). Classes that
+                    # expose themselves or their siblings as attributes -- pyo3
+                    # complex enums do -- reach this. Re-parenting would close a
+                    # parent loop and make ``root()`` spin forever, so only
+                    # register the name.
+                    node.set_local(alias, child)
+                else:
+                    node.add_local_node(child, alias)
         return None
 
     def imported_member(self, node, member, name: str) -> bool:

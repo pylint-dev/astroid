@@ -15,6 +15,7 @@ from astroid import builder, nodes
 from astroid.brain.brain_numpy_utils import (
     NUMPY_VERSION_TYPE_HINTS_SUPPORT,
     numpy_supports_type_hints,
+    numpy_version_2_or_later,
 )
 
 
@@ -149,6 +150,29 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                     inferred_values[-1].pytype() in licit_array_types,
                     msg=f"Illicit type for {attr_:s} ({inferred_values[-1].pytype()})",
                 )
+
+    @unittest.skipUnless(
+        HAS_NUMPY and numpy_version_2_or_later(),
+        "This test requires the numpy library with version 2 or later.",
+    )
+    def test_numpy_ndarray_numpy_2_members(self):
+        """Test members added to ndarray in NumPy 2.0."""
+        inferred_values = list(self._inferred_ndarray_attribute("mT"))
+        self.assertTrue(len(inferred_values) == 1)
+        self.assertTrue(inferred_values[-1].pytype() in ".ndarray")
+
+        inferred_values = list(self._inferred_ndarray_method_call("to_device"))
+        self.assertTrue(len(inferred_values) == 1)
+        self.assertTrue(inferred_values[-1].pytype() in ".ndarray")
+
+        node = builder.extract_node("""
+        import numpy as np
+        test_array = np.ndarray((2, 2))
+        test_array.device
+        """)
+        inferred_values = list(node.infer())
+        self.assertTrue(len(inferred_values) == 1)
+        self.assertIsInstance(inferred_values[-1], nodes.Const)
 
     @unittest.skipUnless(
         HAS_NUMPY and numpy_supports_type_hints(),
