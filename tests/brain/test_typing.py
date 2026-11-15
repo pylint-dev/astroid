@@ -78,11 +78,15 @@ class TestTypingAlias:
         assert isinstance(inferred, bases.Instance)
         assert inferred.name == "_SpecialGenericAlias"
 
-    def test_infer_typing_alias_subscriptable(self) -> None:
-        """Test that _alias() with a positive integer adds __class_getitem__."""
-        node = builder.extract_node("""
+    @pytest.mark.parametrize("type_var_arg", ["1", "True"])
+    def test_infer_typing_alias_subscriptable(self, type_var_arg: str) -> None:
+        """Test that _alias() with a positive integer adds __class_getitem__.
+
+        ``True`` counts as ``1`` at runtime, so ``_alias(list, True)[int]`` works.
+        """
+        node = builder.extract_node(f"""
             from typing import _alias
-            x = _alias(int, 1)
+            x = _alias(int, {type_var_arg})
             """)
         assert isinstance(node, nodes.Assign)
         assert isinstance(node.value, nodes.Call)
@@ -96,13 +100,14 @@ class TestTypingAlias:
             '"foo"',
             "None",
             'b"bar"',
-            "True",
             "False",
             "-1",
             "0",
         ],
     )
-    def test_infer_typing_alias_non_int_argument(self, type_var_arg: str) -> None:
+    def test_infer_typing_alias_non_subscriptable_argument(
+        self, type_var_arg: str
+    ) -> None:
         """Regression test for: https://github.com/pylint-dev/astroid/issues/3389
 
         Test that _alias() with a non-integer or non-positive second argument
