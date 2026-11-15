@@ -1790,7 +1790,7 @@ class TestFunctoolsPartial:
         for node in (instance, inherited):
             inferred = next(node.infer())
             if PY314_PLUS:
-                assert type(inferred) is astroid.BoundMethod
+                assert isinstance(inferred, astroid.BoundMethod)
                 assert isinstance(inferred._proxied._proxied, objects.PartialFunction)
                 # 3.14 runtime binds ``self`` on instance access; call checkers
                 # must see the implicit argument.
@@ -1802,7 +1802,8 @@ class TestFunctoolsPartial:
 
         inferred = next(klass.infer())
         if PY314_PLUS:
-            assert type(inferred) is astroid.UnboundMethod
+            assert isinstance(inferred, astroid.UnboundMethod)
+            assert not isinstance(inferred, astroid.BoundMethod)
             # Class access never passes an implicit ``self`` on any version.
             assert inferred.implicit_parameters() == 0
         else:
@@ -1817,7 +1818,7 @@ class TestFunctoolsPartial:
         # Assigned on the class from a classmethod: same descriptor rules.
         inferred = next(set_bar.infer())
         if PY314_PLUS:
-            assert type(inferred) is astroid.BoundMethod
+            assert isinstance(inferred, astroid.BoundMethod)
         else:
             assert isinstance(inferred, objects.PartialFunction)
 
