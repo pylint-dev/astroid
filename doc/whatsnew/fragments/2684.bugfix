@@ -1,0 +1,7 @@
+Stop importing a package while looking up one of its submodules. The frozen module
+check asked ``importlib.util.find_spec`` for the dotted name, which imports the
+parent, so a package in the analysed project that shares its name with a standard
+library module (``test``, ``code``, ``xmlrpc``, ...) was executed as soon as a
+missing name was looked up in it.
+
+Refs #2684
