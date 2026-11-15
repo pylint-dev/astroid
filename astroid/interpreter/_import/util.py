@@ -18,14 +18,13 @@ from astroid.const import IS_PYPY
 def is_namespace(modname: str, path: str | None = None) -> bool:
     """Tell whether modname is a namespace package.
 
-    When path is given, only the portions located under it are considered, so
-    that a namespace package that also exists in site-packages is still
-    recognised from the directory it is resolved from.
+    When path is given, modname is searched from that directory instead of
+    sys.path, so that a namespace package that also exists in site-packages is
+    still recognised from the directory it is resolved from.
     """
     from astroid.modutils import (  # pylint: disable=import-outside-toplevel
         EXT_LIB_DIRS,
         STD_LIB_DIRS,
-        _is_subpath,
     )
 
     STD_AND_EXT_LIB_DIRS = STD_LIB_DIRS.union(EXT_LIB_DIRS)
@@ -40,7 +39,9 @@ def is_namespace(modname: str, path: str | None = None) -> bool:
     # not, but requires instead that each single parent ('astroid', 'nodes', etc.)
     # be specced from left to right.
     processed_components = []
-    last_submodule_search_locations: list[str] | _NamespacePath | None = None
+    last_submodule_search_locations: list[str] | _NamespacePath | None = (
+        None if path is None else [path]
+    )
     for component in modname.split("."):
         processed_components.append(component)
         working_modname = ".".join(processed_components)
@@ -95,13 +96,6 @@ def is_namespace(modname: str, path: str | None = None) -> bool:
 
         # Update last_submodule_search_locations for next iteration
         if found_spec and found_spec.submodule_search_locations:
-            locations = found_spec.submodule_search_locations
-            if path is not None:
-                locations = [
-                    location for location in locations if _is_subpath(location, path)
-                ]
-                if not locations:
-                    return False
             # But immediately return False if we can detect we are in stdlib
             # or external lib (e.g site-packages)
             if any(
@@ -109,10 +103,10 @@ def is_namespace(modname: str, path: str | None = None) -> bool:
                     str(location).startswith(lib_dir)
                     for lib_dir in STD_AND_EXT_LIB_DIRS
                 )
-                for location in locations
+                for location in found_spec.submodule_search_locations
             ):
                 return False
-            last_submodule_search_locations = locations
+            last_submodule_search_locations = found_spec.submodule_search_locations
 
     return (
         found_spec is not None

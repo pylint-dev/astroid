@@ -336,6 +336,23 @@ def test_modpath_from_file_with_shadowed_namespace_package(
     assert not util.is_namespace(namespace, str(project / "elsewhere"))
 
 
+def test_modpath_from_file_with_namespace_package_outside_sys_path(
+    tmp_path: Path,
+) -> None:
+    """A namespace package is resolved from a directory that is not on sys.path."""
+    # is_namespace() caches its results, so the name is unique to this test.
+    namespace = "astroid_namespace_outside_sys_path"
+    module = tmp_path / namespace / "subpackage" / "module.py"
+    module.parent.mkdir(parents=True)
+    module.touch()
+
+    assert modutils.modpath_from_file(str(module), [str(tmp_path)]) == [
+        namespace,
+        "subpackage",
+        "module",
+    ]
+
+
 class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
     def test_do_not_load_twice(self) -> None:
         modutils.load_module_from_modpath(["data", "lmfp", "foo"])
