@@ -19,6 +19,7 @@ import importlib.util
 import io
 import itertools
 import os
+import site
 import sys
 import sysconfig
 import types
@@ -93,6 +94,10 @@ if os.name == "posix":
         STD_LIB_DIRS.add(_posix_path("lib64"))
 
 EXT_LIB_DIRS = {sysconfig.get_path("purelib"), sysconfig.get_path("platlib")}
+# Distributions such as Debian install packages outside of sysconfig's paths.
+SITE_PACKAGES_DIRS = EXT_LIB_DIRS.union(
+    site.getsitepackages(), [site.getusersitepackages()]
+)
 BUILTIN_MODULES: dict[str, bool] = dict.fromkeys(sys.builtin_module_names, True)
 
 
@@ -557,6 +562,17 @@ def is_stdlib_path(filename: str) -> bool:
     return any(
         filename.startswith(_cache_normalize_path(entry) + os.sep)
         for entry in STD_LIB_DIRS
+    )
+
+
+def is_library_path(filename: str) -> bool:
+    """Return: True if the file is located in the standard library or in a
+    site-packages directory.
+    """
+    filename = _normalize_path(filename)
+    return any(
+        filename.startswith(_cache_normalize_path(entry) + os.sep)
+        for entry in itertools.chain(STD_LIB_DIRS, SITE_PACKAGES_DIRS)
     )
 
 
