@@ -213,9 +213,11 @@ def infer_named_tuple(
     func = util.safe_infer(
         _extract_single_node("import collections; collections.namedtuple")
     )
-    if not isinstance(func, nodes.NodeNG):
-        raise UseInferenceDefault()
     try:
+        if not isinstance(func, nodes.NodeNG):
+            # Without the factory signature ``rename=`` cannot be bound: assume
+            # the default rather than throwing the whole namedtuple away.
+            raise InferenceError("cannot infer collections.namedtuple")
         rename_arg_bool_value = next(
             call_site.infer_argument(func, "rename", context or InferenceContext())
         ).bool_value()
