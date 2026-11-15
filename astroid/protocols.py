@@ -1113,9 +1113,10 @@ def starred_assigned_stmts(  # noqa: C901
 
             # Only a lookup chain applied to completion ends with the slice
             # lookup, which extracts a list. Breaking out of the loop early
-            # leaves the last intermediate element instead: a single node
-            # that says nothing about the starred values.
-            if found_element is not None and not isinstance(found_element, list):
+            # leaves the last intermediate element instead (or nothing, when
+            # the first lookup fails), which says nothing about the starred
+            # values.
+            if not isinstance(found_element, list):
                 yield util.Uninferable
                 return
 
@@ -1125,7 +1126,7 @@ def starred_assigned_stmts(  # noqa: C901
                 lineno=self.lineno,
                 col_offset=self.col_offset,
             )
-            unpacked.postinit(elts=found_element or [])
+            unpacked.postinit(elts=found_element)
             yield unpacked
             return
 

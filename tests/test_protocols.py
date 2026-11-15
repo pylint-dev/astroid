@@ -166,6 +166,16 @@ class ProtocolTests(unittest.TestCase):
             for (a, (b, *c)), in [[[1]]]: #@
                 pass
             """,
+            # the first lookup already fails
+            """
+            x = 5
+            for a, (b, *c) in [x]: #@
+                pass
+            """,
+            """
+            for a, *c in [object()]: #@
+                pass
+            """,
         ):
             assign_stmts = extract_node(code)
             starred = next(assign_stmts.nodes_of_class(nodes.Starred))
