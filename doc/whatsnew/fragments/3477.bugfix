@@ -1,0 +1,6 @@
+``Annotated[X, ...]`` from ``typing`` or ``typing_extensions`` now infers to ``X``
+instead of ``Annotated``, also when nested. This fixes false positives such as
+``no-member`` on a class method called through an ``Annotated`` alias.
+
+Refs #3477
+Refs pylint-dev/pylint#9151
