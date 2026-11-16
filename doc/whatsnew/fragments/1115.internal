@@ -1,0 +1,5 @@
+Remove ``register_builtin_transform`` from ``astroid.brain.brain_builtin_inference``.
+It was only meant for astroid's own builtin brain, which now declares its inference
+functions in a static dispatch table.
+
+Refs #1115

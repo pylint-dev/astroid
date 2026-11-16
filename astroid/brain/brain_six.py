@@ -117,7 +117,7 @@ def six_moves_transform():
     return module
 
 
-def _six_fail_hook(modname):
+def _six_fail_hook(modname: str) -> nodes.Module:
     """Fix six.moves imports due to the dynamic nature of this
     class.
 
@@ -125,10 +125,8 @@ def _six_fail_hook(modname):
     for six
 
     :param modname: Name of failed module
-    :type modname: str
 
     :return: An astroid module
-    :rtype: nodes.Module
     """
 
     attribute_of = modname != "six.moves" and modname.startswith("six.moves")

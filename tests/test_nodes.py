@@ -25,13 +25,13 @@ from astroid import (
     builder,
     extract_node,
     nodes,
+    objects,
     parse,
     transforms,
     util,
 )
 from astroid.const import (
     IS_PYPY,
-    PY311_PLUS,
     PY312_PLUS,
     PY313_PLUS,
     PY314_PLUS,
@@ -49,6 +49,7 @@ from astroid.exceptions import (
 )
 from astroid.nodes.node_classes import UNATTACHED_UNKNOWN
 from astroid.nodes.scoped_nodes import SYNTHETIC_ROOT
+from astroid.typing import SuccessfulInferenceResult
 from tests.testdata.python3.recursion_error import LONG_CHAINED_METHOD_CALL
 
 from . import resources
@@ -1063,7 +1064,6 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_py311(self) -> None:
         # Test to make sure the Python-provided property decorators
         # are properly interpreted as properties
@@ -1152,6 +1152,43 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
+    def test_possible_property_name_outside_class(self) -> None:
+        # A decorator with a POSSIBLE_PROPERTIES name only makes a property
+        # in a class body: elsewhere, the function stays a callable function.
+        ast = builder.parse("""
+        def lazy(func): return func
+        def reify(func): return func
+
+        @lazy
+        def lazy_function(): return 42
+
+        @reify
+        def reified_function(): return 42
+
+        def outer():
+            @lazy
+            def inner(): return 42
+            return inner
+        """)
+        for function in (
+            ast["lazy_function"],
+            ast["reified_function"],
+            ast["outer"].body[0],
+        ):
+            inferred = next(function.infer())
+            self.assertNotIsInstance(inferred, objects.Property, function.name)
+            self.assertTrue(inferred.callable(), function.name)
+
+    def test_standard_property_outside_class(self) -> None:
+        # A real property object is not callable, wherever it is defined
+        ast = builder.parse("""
+        @property
+        def color(): return "red"
+        """)
+        inferred = next(ast["color"].infer())
+        self.assertIsInstance(inferred, objects.Property)
+        self.assertFalse(inferred.callable())
+
     def test_is_standard_property_subclass(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
@@ -1193,7 +1230,6 @@ class BoundMethodNodeTest(unittest.TestCase):
         ):
             self._is_property(ast, prop)
 
-    @pytest.mark.skipif(not PY311_PLUS, reason="Uses enum.property introduced in 3.11")
     def test_is_standard_property_subclass_py311(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
         # are properly interpreted as properties
@@ -1518,6 +1554,7 @@ def test_unknown() -> None:
     assert isinstance(next(UNATTACHED_UNKNOWN.infer()), type(util.Uninferable))
     assert isinstance(UNATTACHED_UNKNOWN.name, str)
     assert isinstance(UNATTACHED_UNKNOWN.qname(), str)
+    assert isinstance(UNATTACHED_UNKNOWN.pytype(), str)
 
 
 def test_type_comments_with() -> None:
@@ -2462,6 +2499,125 @@ def test_slice_qname() -> None:
     assert node.slice.qname() == "builtins.slice"
 
 
+INFERRED_VALUES = """
+import collections
+import functools
+import abc
+
+def function(): ...
+async def coroutine_function(): ...
+def generator_function():
+    yield
+async def async_generator_function():
+    yield
+
+class Class:
+    def method(self): ...
+    @classmethod
+    def class_method(cls): ...
+    @property
+    def prop(self): ...
+    def __init__(self):
+        super()  #@
+
+1  #@
+"text"  #@
+b"bytes"  #@
+...  #@
+None  #@
+[1]  #@
+(1,)  #@
+{1}  #@
+frozenset()  #@
+{1: 2}  #@
+{}.keys()  #@
+{}.values()  #@
+{}.items()  #@
+slice(1, 2)  #@
+lambda: 1  #@
+function  #@
+coroutine_function  #@
+generator_function()  #@
+async_generator_function()  #@
+Class  #@
+Class()  #@
+Class().method  #@
+Class.method  #@
+Class.class_method  #@
+Class.prop  #@
+collections  #@
+functools.partial(function)  #@
+ValueError()  #@
+int | str  #@
+abc.ABCMeta  #@
+"""
+
+
+def _inferred_values(code: str) -> list[tuple[str, SuccessfulInferenceResult]]:
+    return [
+        (node.as_string(), inferred)
+        for node in extract_node(code)
+        for inferred in node.infer()
+        if not isinstance(inferred, util.UninferableBase)
+    ]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        pytest.param(INFERRED_VALUES, id="values"),
+    ],
+)
+def test_inferred_values_are_named(code: str) -> None:
+    """Every value inference returns has a name, a qualified name and a type,
+    so that code reading them on an inferred value does not need to guard.
+    """
+    inferred_values = _inferred_values(code)
+    assert len({source for source, _ in inferred_values}) == code.count("#@")
+    for source, inferred in inferred_values:
+        assert isinstance(inferred.name, str), source
+        assert isinstance(inferred.qname(), str), source
+        assert isinstance(inferred.pytype(), str), source
+
+
+SCOPES = """
+def function(): ...
+async def coroutine_function(): ...
+class Class: ...
+lambda: 1
+(x for x in y)
+[x for x in y]
+{x for x in y}
+{x: x for x in y}
+"""
+
+
+def test_scopes_are_named() -> None:
+    """Every scope has a name and a qualified name, so that code reading them
+    on ``node.scope()`` does not need to guard.
+    """
+    scopes = list(parse(SCOPES).nodes_of_class(nodes.LocalsDictNodeNG))
+    scope_classes = {
+        node_class
+        for node_class in nodes.ALL_NODE_CLASSES
+        if isinstance(node_class, type)
+        and issubclass(node_class, nodes.LocalsDictNodeNG)
+    } - {nodes.LocalsDictNodeNG, nodes.ComprehensionScope}
+    assert {type(scope) for scope in scopes} == scope_classes
+    for scope in scopes:
+        assert isinstance(scope.name, str), scope
+        assert isinstance(scope.qname(), str), scope
+
+
+def test_slice_name() -> None:
+    """An inferred ``slice`` object has the name of its type, like other builtins."""
+    node = extract_node("slice(1, 2)")
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Slice)
+    assert inferred.name == "slice"
+    assert inferred.name == inferred.pytype().rsplit(".", 1)[-1]
+
+
 @pytest.mark.skipif(not PY312_PLUS, reason="Uses 3.12 type param nodes")
 @pytest.mark.parametrize(
     "source,node_type,qname",
@@ -2527,3 +2683,32 @@ def test_self_inferring_nodes_have_a_type() -> None:
         ]
 
     assert not missing
+
+
+def test_chained_attribute_parent_pointer() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/272.
+
+    The inner Attribute (``removed.tags``) in a chained call ``removed.tags.extend()``
+    used to have its ``.parent`` pointing to the wrong node instead of the
+    enclosing outer Attribute.
+    """
+    module = astroid.parse(textwrap.dedent("""
+            class Tags:
+                def extend(self): return 42
+            class Removed:
+                def __init__(self):
+                    self.tags = Tags()
+
+            removed = Removed()
+            removed.tags.extend()
+            """))
+    expr = module.body[-1]
+    callfunc = expr.value
+    assert isinstance(callfunc, nodes.Call)
+    outer_attr = callfunc.func
+    assert isinstance(outer_attr, nodes.Attribute)
+    assert outer_attr.attrname == "extend"
+    inner_attr = outer_attr.expr
+    assert isinstance(inner_attr, nodes.Attribute)
+    assert inner_attr.attrname == "tags"
+    assert inner_attr.parent is outer_attr

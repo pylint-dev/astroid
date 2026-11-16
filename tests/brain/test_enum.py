@@ -216,6 +216,18 @@ class EnumBrainTest(unittest.TestCase):
         # Inference must not raise ``TypeError``; it falls back to default.
         assert next(node.infer()) is util.Uninferable
 
+    def test_enum_func_form_empty_tuple_member_no_crash(self) -> None:
+        """A functional Enum member given as an empty tuple is invalid.
+
+        Reading the member name via ``const.elts[0]`` used to raise an
+        uncaught ``IndexError``.
+        """
+        node = builder.extract_node("""
+        from enum import Enum
+        Enum("E", [()])  #@
+        """)
+        assert next(node.infer()) is util.Uninferable
+
     def test_infer_enum_value_as_the_right_type(self) -> None:
         string_value, int_value = builder.extract_node("""
         from enum import Enum
@@ -545,16 +557,7 @@ class EnumBrainTest(unittest.TestCase):
         another user-defined enum class.
         """
         enum_class_node, enum_member_value_node = astroid.extract_node("""
-        import sys
-
-        from enum import Enum
-
-        if sys.version_info >= (3, 11):
-            from enum import StrEnum
-        else:
-            class StrEnum(str, Enum):
-                pass
-
+        from enum import StrEnum
 
         class Color(StrEnum): #@
             RED = "red"
@@ -622,5 +625,68 @@ class EnumBrainTest(unittest.TestCase):
             pass
         """)
         # Inference must not raise ``DuplicateBasesError``.
+        inferred = next(node.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+
+    def test_enum_oversized_integer_member(self) -> None:
+        """An int member past ``sys.get_int_max_str_digits()`` is still mocked.
+
+        A hexadecimal literal is accepted by the tokenizer, but rendering its
+        value back in decimal used to make the enum transform raise ``ValueError``.
+        """
+        oversized = "0x" + "f" * 4000
+        big_value, small_value = builder.extract_node(f"""
+        import enum
+
+        class Flags(enum.IntFlag):
+            A = {oversized}
+            B = 2
+
+        Flags.A.value  #@
+        Flags.B.value  #@
+        """)
+        inferred = next(big_value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == int(oversized, 16)
+        inferred = next(small_value.infer())
+        assert isinstance(inferred, nodes.Const)
+        assert inferred.value == 2
+
+    def test_dataclass_enum_exposes_members(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/2317.
+
+        A class decorated with ``@dataclass`` that also inherits from ``Enum``
+        must still expose ``__members__`` (the dataclass transform should not
+        strip the enum metaclass attributes).
+        """
+        ast_node = builder.extract_node("""
+        from dataclasses import dataclass
+        from enum import Enum
+
+
+        @dataclass
+        class Something(str, Enum):
+            A = "a"
+            B = "b"
+
+        Something.__members__  #@
+        """)
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, nodes.Dict)
+        member_names = [key.value for key, _ in inferred.items]
+        assert member_names == ["A", "B"]
+
+    def test_enum_chained_assignment_attribute_target_no_crash(self) -> None:
+        """A chained assignment whose target is an attribute names no member.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/3257
+        """
+        node = builder.extract_node("""
+        import enum
+
+        class C(enum.Enum):  #@
+            x = a.b = 1
+        """)
+        # ``a.b`` is an ``AssignAttr`` target with no ``name`` attribute.
         inferred = next(node.infer())
         assert isinstance(inferred, nodes.ClassDef)

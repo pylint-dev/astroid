@@ -163,7 +163,14 @@ class AstroidManager:
         ):
             return self.astroid_cache[modname]
         if source:
-            return AstroidBuilder(self).file_build(filepath, modname)
+            try:
+                return AstroidBuilder(self).file_build(filepath, modname)
+            except RecursionError as e:
+                e.add_note(
+                    f"Astroid was unable to parse {filepath}.\n"
+                    "From pylint, try: --init-hook='import sys; sys.setrecursionlimit(2000)' or higher.",
+                )
+                raise e
         if fallback and modname:
             return self.ast_from_module_name(modname)
         raise AstroidBuildingError("Unable to build an AST for {path}.", path=filepath)
@@ -461,6 +468,7 @@ class AstroidManager:
         # import here because of cyclic imports
         # pylint: disable=import-outside-toplevel
         from astroid.brain.helpers import register_all_brains
+        from astroid.constraint import clear_preceding_guards_cache
         from astroid.inference_tip import clear_inference_tip_cache
         from astroid.interpreter._import.spec import (
             _find_spec,
@@ -471,6 +479,7 @@ class AstroidManager:
         from astroid.nodes.scoped_nodes import ClassDef
 
         clear_inference_tip_cache()
+        clear_preceding_guards_cache()
         _invalidate_cache()  # inference context cache
 
         self.astroid_cache.clear()

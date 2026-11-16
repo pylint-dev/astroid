@@ -1,0 +1,6 @@
+Fix an ``AttributeError`` crash when inferring a ``typing.NamedTuple`` subclass
+or an ``enum.Enum`` whose body contains an assignment target that is not a plain
+name, such as the annotation ``a.b: str`` or the chained assignment ``x = a.b = 1``.
+Such targets do not name a field or member and are now skipped.
+
+Closes #3257

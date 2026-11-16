@@ -10,7 +10,7 @@ the maintenance branch. If so, release a last patch release first. See
 
 - Preview the changelog that will be generated from the news fragments in
   `doc/whatsnew/fragments/` with `towncrier build --draft`.
-- Install the release dependencies: `pip3 install -r requirements_minimal.txt`
+- Install the release dependencies: `pip3 install --group dev` (pip 25.1 or newer)
 - Bump the version and release by using `tbump X.Y.0 --no-push --no-tag`. (For example:
   `tbump 2.4.0 --no-push --no-tag`)
 - Check the commit created with `git show` amend the commit if required.
@@ -78,7 +78,7 @@ is the version under development on `main`.)
 - Preview the changelog that will be generated from the news fragments in
   `doc/whatsnew/fragments/` with `towncrier build --draft`. The patch release notes are
   added to the existing `doc/whatsnew/X/X.Y-1/index.rst` document.
-- Install the release dependencies: `pip3 install -r requirements_minimal.txt`
+- Install the release dependencies: `pip3 install --group dev` (pip 25.1 or newer)
 - Bump the version and release by using `tbump X.Y-1.Z --no-tag --no-push`. (For
   example: `tbump 2.3.5 --no-tag --no-push`. We're not ready to tag before code review.)
 - Check the result visually with `git show`.

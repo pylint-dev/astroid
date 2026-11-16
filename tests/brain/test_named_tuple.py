@@ -5,6 +5,9 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
+
+import pytest
 
 from astroid import builder, nodes, util
 from astroid.exceptions import AttributeInferenceError
@@ -323,3 +326,74 @@ class NamedTupleTest(unittest.TestCase):
         assert isinstance(good_node_two_inferred, nodes.ClassDef)
         bad_node_inferred = next(bad_node.infer())
         assert bad_node_inferred == util.Uninferable
+
+    def test_typing_namedtuple_non_name_annotation_does_not_crash_inference(
+        self,
+    ) -> None:
+        """Reported in https://github.com/pylint-dev/astroid/issues/3257 as a crash.
+
+        Only simple-name annotations name a field; an attribute or subscript
+        target such as ``a.b: str`` is not a field and has no ``name``.
+        """
+        node = builder.extract_node("""
+        from typing import NamedTuple
+        class C(NamedTuple):
+            a.b: str
+            basket[0]: str
+            y: int
+        C #@
+        """)
+        inferred = next(node.infer())  # would raise AttributeError
+        assert isinstance(inferred, nodes.ClassDef)
+        assert list(inferred.instance_attrs) == ["y"]
+
+
+def _unresolved_namedtuple_factory(factory):
+    """Make only the ``collections.namedtuple`` lookup of the brain fail."""
+    real_safe_infer = util.safe_infer
+
+    def fake_safe_infer(node, *args, **kwargs):
+        if isinstance(node, nodes.Attribute) and node.attrname == "namedtuple":
+            return factory
+        return real_safe_infer(node, *args, **kwargs)
+
+    return patch(
+        "astroid.brain.brain_namedtuple_enum.util.safe_infer",
+        side_effect=fake_safe_infer,
+    )
+
+
+@pytest.mark.parametrize(
+    "factory", [None, util.Uninferable], ids=["none", "uninferable"]
+)
+def test_namedtuple_unresolved_factory_keeps_fields(factory) -> None:
+    """Without the factory, ``rename=`` falls back to ``False``."""
+    node = builder.extract_node("""
+    from collections import namedtuple
+    namedtuple('Client', 'value')
+    """)
+    with _unresolved_namedtuple_factory(factory):
+        inferred = next(node.infer())
+    assert isinstance(inferred, nodes.ClassDef)
+    assert list(inferred.instance_attrs) == ["value"]
+    assert inferred.getattr("_replace")
+
+
+@pytest.mark.parametrize(
+    "factory", [None, util.Uninferable], ids=["none", "uninferable"]
+)
+def test_typing_namedtuple_unresolved_factory_keeps_fields(factory) -> None:
+    node = builder.extract_node("""
+    import typing
+
+    class Client(typing.NamedTuple):
+        value: int
+
+    Client
+    """)
+    with _unresolved_namedtuple_factory(factory):
+        inferred = next(node.infer())
+    assert isinstance(inferred, nodes.ClassDef)
+    assert inferred.name == "Client"
+    assert list(inferred.instance_attrs) == ["value"]
+    assert inferred.getattr("_replace")

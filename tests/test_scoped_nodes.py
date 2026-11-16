@@ -480,6 +480,28 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         astroid = builder.parse("lmbd = lambda: None", __name__)
         self.assertEqual(f"{__name__}.<lambda>", astroid["lmbd"].parent.value.qname())
 
+    def test_comprehension_qname(self) -> None:
+        module = builder.parse(
+            """
+            def func():
+                (x for x in y)
+                [x for x in y]
+                {x for x in y}
+                {x: x for x in y}
+            """,
+            __name__,
+        )
+        names = [stmt.value.qname() for stmt in module["func"].body]
+        self.assertEqual(
+            names,
+            [
+                f"{__name__}.func.<genexpr>",
+                f"{__name__}.func.<listcomp>",
+                f"{__name__}.func.<setcomp>",
+                f"{__name__}.func.<dictcomp>",
+            ],
+        )
+
     def test_lambda_getattr(self) -> None:
         astroid = builder.parse("lmbd = lambda: None")
         self.assertIsInstance(
@@ -616,6 +638,25 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
+    def test_func_getattr_does_not_modify_instance_attrs(self) -> None:
+        """Looking up an attribute that is also a special attribute must not
+        add the special attribute to instance_attrs.
+        """
+        func = builder.extract_node("""
+            def func():
+                pass
+
+            func.__name__ = "name"
+            func #@
+        """).inferred()[0]
+        self.assertIsInstance(func, nodes.FunctionDef)
+        lambda_func = builder.extract_node("lambda: None")
+        lambda_func.instance_attrs["__name__"] = [nodes.Const("name")]
+        for node in (func, lambda_func):
+            self.assertEqual(len(node.getattr("__name__")), 2)
+            self.assertEqual(len(node.getattr("__name__")), 2)
+            self.assertEqual(len(node.instance_attrs["__name__"]), 1)
+
     def test_func_is_bound(self) -> None:
         data = """
         class MyClass:
@@ -732,6 +773,21 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(node.locals["classmethod_wrapped"][0].type, "classmethod")
         self.assertEqual(node.locals["staticmethod_wrapped"][0].type, "staticmethod")
         self.assertEqual(node.locals["long_classmethod"][0].type, "classmethod")
+
+    def test_decorator_factory_returning_classmethod_subclass(self) -> None:
+        node = builder.extract_node("""
+        class my_classmethod(classmethod):
+            pass
+
+        def factory():
+            return my_classmethod
+
+        class SomeClass:
+            @factory()
+            def method(cls):
+                pass
+        """)
+        self.assertEqual(node.locals["method"][0].type, "classmethod")
 
     def test_igetattr(self) -> None:
         func = builder.extract_node("""
@@ -2151,6 +2207,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         module = astroid_builder.module_build(difflib)
         self.assertFalse(module["SequenceMatcher"].has_dynamic_getattr())
 
+    def test_has_dynamic_getattr_uninferable_in_metaclass(self) -> None:
+        """An uninferable ``__getattr__`` found in the metaclass is not dynamic.
+
+        The result used to be ``Uninferable`` instead of a bool.
+        """
+        node = builder.extract_node("""
+        class Meta(type):
+            __getattr__ = undefined_name
+
+        class A(metaclass=Meta):  #@
+            pass
+        """)
+        self.assertIs(node.has_dynamic_getattr(), False)
+
     def test_duplicate_bases_namedtuple(self) -> None:
         module = builder.parse("""
         import collections
@@ -2658,6 +2728,19 @@ def test_metaclass_call_result_without_context() -> None:
         assert [getattr(n, "value", None) for n in inferred] == [42]
 
 
+def test_type_subclass_call_result_without_caller() -> None:
+    # Regression: ClassDef.infer_call_result may be called through the public
+    # API without a caller (it accepts None). For a subclass of ``type``, the
+    # three-argument ``type(name, bases, dict)`` check read ``caller.args``
+    # unguarded, crashing with "AttributeError: 'NoneType' object has no
+    # attribute 'args'". It should infer an instance of the metaclass instead.
+    node = builder.extract_node("class Meta(type): pass")
+    inferred = list(node.infer_call_result(caller=None))
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], Instance)
+    assert inferred[0].qname() == ".Meta"
+
+
 @pytest.mark.parametrize(
     "func",
     [
@@ -2761,6 +2844,11 @@ def test_slots_duplicate_bases_issue_1089() -> None:
         """)
     with pytest.raises(NotImplementedError):
         astroid["First"].slots()
+
+
+def test_classdef_repr_tree_ast_state() -> None:
+    node = builder.extract_node("class A: pass")
+    assert "locals=" in node.repr_tree(ast_state=True)
 
 
 def test_import_with_global() -> None:

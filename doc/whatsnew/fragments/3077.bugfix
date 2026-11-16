@@ -1,0 +1,5 @@
+Fix inference of callable instances stored as attributes, including attributes
+with a same-named member on the callable. Infer the result of calling the
+instance instead of looking up the attribute name on it again.
+
+Refs #3077

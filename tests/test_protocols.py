@@ -20,6 +20,13 @@ from astroid.exceptions import InferenceError
 from astroid.manager import AstroidManager
 from astroid.util import Uninferable, UninferableBase
 
+try:
+    import typing_extensions  # pylint: disable=unused-import
+
+    HAS_TYPING_EXTENSIONS = True
+except ImportError:
+    HAS_TYPING_EXTENSIONS = False
+
 
 @contextlib.contextmanager
 def _add_transform(
@@ -143,6 +150,51 @@ class ProtocolTests(unittest.TestCase):
         assigned = next(starred.assigned_stmts())
         assert isinstance(assigned, nodes.List)
         assert assigned.as_string() == "[2, 3]"
+
+    def test_assigned_stmts_starred_for_opaque_inner_element(self) -> None:
+        """Regression test for https://github.com/pylint-dev/astroid/issues/3378.
+
+        The lookup loop used to break out leaving a single intermediate node
+        in the inferred List's ``elts``, crashing consumers with ``TypeError``.
+        """
+        for code in (
+            # the inner element has no itered(): Call, Name
+            """
+            for a, (b, *c) in [[1, object()]]: #@
+                pass
+            """,
+            """
+            x = 5
+            for a, (b, *c) in [[1, x]]: #@
+                pass
+            """,
+            # an intermediate index lookup raises IndexError
+            """
+            for (a, (b, *c)), in [[[1]]]: #@
+                pass
+            """,
+            # the first lookup already fails
+            """
+            x = 5
+            for a, (b, *c) in [x]: #@
+                pass
+            """,
+            """
+            for a, *c in [object()]: #@
+                pass
+            """,
+        ):
+            assign_stmts = extract_node(code)
+            starred = next(assign_stmts.nodes_of_class(nodes.Starred))
+            self.assertIs(next(starred.assigned_stmts()), Uninferable)
+
+    def test_inference_starred_for_opaque_inner_element(self) -> None:
+        """Inferring the starred name itself must not raise ``TypeError``."""
+        name_node = extract_node("""
+        for a, (b, *c) in [[1, object()]]:
+            c #@
+        """)
+        self.assertEqual(name_node.inferred(), [Uninferable])
 
     def _get_starred_stmts(self, code: str) -> list | UninferableBase:
         assign_stmt = extract_node(f"{code} #@")
@@ -681,6 +733,9 @@ class StubAnnotationInferenceTest(unittest.TestCase):
         assert isinstance(inferred[0], Instance)
         assert inferred[0].name == "int"
 
+    @pytest.mark.skipif(
+        not HAS_TYPING_EXTENSIONS, reason="Requires the typing_extensions library"
+    )
     def test_stub_typing_extensions_annotated_unwrapped(self) -> None:
         module = builder.parse(
             """

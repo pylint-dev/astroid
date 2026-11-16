@@ -6,8 +6,8 @@
 
 from __future__ import annotations
 
-import sys
-from typing import TYPE_CHECKING, overload
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Self, overload
 
 from astroid.exceptions import ParentMissingError
 from astroid.filter_statements import _filter_stmts
@@ -15,10 +15,6 @@ from astroid.nodes import _base_nodes, scoped_nodes
 from astroid.nodes.scoped_nodes.utils import builtin_lookup
 from astroid.typing import InferenceResult, SuccessfulInferenceResult
 
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 if TYPE_CHECKING:
     from astroid import nodes
 
@@ -39,7 +35,6 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         For example: module.name, module.class.name ...
 
         :returns: The qualified name.
-        :rtype: str
         """
         # pylint: disable=no-member; github.com/pylint-dev/astroid/issues/278
         if self.parent is None:
@@ -53,7 +48,6 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         """The first parent node defining a new scope.
 
         :returns: The first parent scope node.
-        :rtype: Module or FunctionDef or ClassDef or Lambda or GeneratorExp
         """
         return self
 
@@ -150,46 +144,41 @@ class LocalsDictNodeNG(_base_nodes.LookupMixIn):
         """
         return self.locals[item][0]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Iterate over the names of locals defined in this scoped node.
 
         :returns: The names of the defined locals.
-        :rtype: Iterator[str]
         """
         return iter(self.keys())
 
-    def keys(self):
+    def keys(self) -> list[str]:
         """The names of locals defined in this scoped node.
 
         :returns: The names of the defined locals.
-        :rtype: list(str)
         """
         return list(self.locals.keys())
 
-    def values(self):
+    def values(self) -> list[InferenceResult]:
         """The nodes that define the locals in this scoped node.
 
         :returns: The nodes that define locals.
-        :rtype: list(NodeNG)
         """
         # pylint: disable=consider-using-dict-items
         # It look like this class override items/keys/values,
         # probably not worth the headache
         return [self[key] for key in self.keys()]
 
-    def items(self):
+    def items(self) -> list[tuple[str, InferenceResult]]:
         """Get the names of the locals and the node that defines the local.
 
         :returns: The names of locals and their associated node.
-        :rtype: list(tuple(str, NodeNG))
         """
         return list(zip(self.keys(), self.values()))
 
-    def __contains__(self, name) -> bool:
+    def __contains__(self, name: object) -> bool:
         """Check if a local is defined in this scope.
 
         :param name: The name of the local to check for.
-        :type name: str
 
         :returns: Whether this node has a local of the given name,
         """

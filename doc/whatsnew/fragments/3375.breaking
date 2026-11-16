@@ -1,0 +1,4 @@
+Support for Python 3.10 was dropped, along with the ``PY311_PLUS`` constant and the
+``typing-extensions`` runtime dependency. Python 3.11 is now the minimum version.
+
+Closes #3375

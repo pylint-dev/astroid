@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import collections
 import collections.abc
+import copy
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
 from astroid import decorators, nodes
-from astroid.const import PY311_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -39,10 +39,12 @@ if TYPE_CHECKING:
     from astroid.constraint import Constraint
 
 
-PROPERTIES = {"builtins.property", "abc.abstractproperty", "functools.cached_property"}
-# enum.property was added in Python 3.11
-if PY311_PLUS:
-    PROPERTIES.add("enum.property")
+PROPERTIES = {
+    "builtins.property",
+    "abc.abstractproperty",
+    "functools.cached_property",
+    "enum.property",
+}
 
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be
@@ -70,6 +72,14 @@ POSSIBLE_PROPERTIES = {
 def _is_property(
     meth: nodes.FunctionDef | UnboundMethod, context: InferenceContext | None = None
 ) -> bool:
+    # An UnboundMethod can proxy a Lambda (a lambda already bound to an
+    # instance, like ``A().f``, then assigned in another class body) or even
+    # Uninferable, neither of which can carry decorators.
+    target = meth
+    while isinstance(target, UnboundMethod):
+        target = target._proxied
+    if not isinstance(target, nodes.FunctionDef):
+        return False
     decoratornames = meth.decoratornames(context=context)
     if PROPERTIES.intersection(decoratornames):
         return True
@@ -78,7 +88,11 @@ def _is_property(
         for name in decoratornames
         if not isinstance(name, UninferableBase)
     }
-    if any(name in stripped for name in POSSIBLE_PROPERTIES):
+    # The names are only a guess, and a property-like decorator only makes
+    # sense in a class body: a function elsewhere stays a function.
+    if any(name in stripped for name in POSSIBLE_PROPERTIES) and isinstance(
+        meth.parent.frame(), nodes.ClassDef
+    ):
         return True
 
     if not meth.decorators:
@@ -180,7 +194,12 @@ def _infer_stmts(
         try:
             stmt_constraints: set[Constraint] = set()
             for constraint_stmt, potential_constraints in constraints.items():
-                if not constraint_stmt.parent_of(stmt):
+                # pylint: disable-next=import-outside-toplevel
+                from astroid.constraint import constraint_applies
+
+                # Every constraint of the mapping is generated for the same node.
+                (expr,) = {constraint.node for constraint in potential_constraints}
+                if constraint_applies(constraint_stmt, stmt, expr):
                     stmt_constraints.update(potential_constraints)
             for inf in stmt.infer(context=context):
                 if all(
@@ -329,13 +348,6 @@ class BaseInstance(Proxy):
         context = bind_context_to_node(context, self)
         inferred = False
 
-        # If the call is an attribute on the instance, we infer the attribute itself
-        if isinstance(caller, nodes.Call) and isinstance(caller.func, nodes.Attribute):
-            for res in self.igetattr(caller.func.attrname, context):
-                inferred = True
-                yield res
-
-        # Otherwise we infer the call to the __call__ dunder normally
         for node in self._proxied.igetattr("__call__", context):
             if isinstance(node, UninferableBase) or not node.callable():
                 continue
@@ -344,6 +356,11 @@ class BaseInstance(Proxy):
                 yield node
                 # Prevent recursion.
                 continue
+            if context.callcontext:
+                # Arguments belong to __call__, not to the instance's class.
+                # The incoming CallContext is shared with the caller.
+                context.callcontext = copy.copy(context.callcontext)
+                context.callcontext.callee = node
             for res in node.infer_call_result(caller, context):
                 inferred = True
                 yield res
@@ -442,7 +459,7 @@ class Instance(BaseInstance):
 class UnboundMethod(Proxy):
     """A special node representing a method not bound to an instance."""
 
-    _proxied: nodes.FunctionDef | UnboundMethod
+    _proxied: nodes.FunctionDef | nodes.Lambda | UnboundMethod | UninferableBase
 
     special_attributes: (
         objectmodel.BoundMethodModel | objectmodel.UnboundMethodModel

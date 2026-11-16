@@ -1,0 +1,7 @@
+``FunctionDef.getattr()`` and ``Lambda.getattr()`` no longer add the special
+attribute to ``instance_attrs`` when an attribute such as ``__name__`` is both
+assigned on the function and a special attribute. The stored list used to grow by
+one on every lookup. ``ClassDef.repr_tree(ast_state=True)`` no longer raises
+``AttributeError``.
+
+Refs #3411

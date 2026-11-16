@@ -778,6 +778,11 @@ class GeneratorBaseModel(FunctionModel, ContextManagerModel):
             setattr(type(self), IMPL_PREFIX + name, property(patched))
 
     @property
+    def attr___get__(self):
+        # Generators are not descriptors
+        raise AttributeInferenceError(target=self._instance, attribute="__get__")
+
+    @property
     def attr___name__(self):
         return node_classes.Const(
             value=self._instance.parent.name, parent=self._instance

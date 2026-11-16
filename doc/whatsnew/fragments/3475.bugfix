@@ -1,0 +1,7 @@
+Only treat a function as a property because of its decorator's name, like
+``@lazy`` or ``@reify``, when the function is defined in a class body. A
+function decorated this way elsewhere stays a function, so it is no longer
+inferred as a property object that is not callable.
+
+Refs #3475
+Closes pylint-dev/pylint#3586

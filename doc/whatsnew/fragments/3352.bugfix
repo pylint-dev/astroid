@@ -1,0 +1,5 @@
+Fix an ``AssertionError`` when inferring a namedtuple, or a class derived from
+``typing.NamedTuple``, if ``collections.namedtuple`` itself cannot be inferred.
+The namedtuple is now built as if ``rename=False``.
+
+Refs #3352

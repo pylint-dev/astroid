@@ -564,7 +564,7 @@ def arguments_assigned_stmts(
 
 @decorators.raise_if_nothing_inferred
 def assign_assigned_stmts(
-    self: nodes.AugAssign | nodes.Assign | nodes.AnnAssign | nodes.TypeAlias,
+    self: nodes.AugAssign | nodes.Assign | nodes.AnnAssign,
     node: node_classes.AssignedStmtsPossibleNode = None,
     context: InferenceContext | None = None,
     assign_path: list[int] | None = None,
@@ -584,6 +584,30 @@ def assign_assigned_stmts(
         self.value.infer(context), assign_path, context
     )
 
+    return {
+        "node": self,
+        "unknown": node,
+        "assign_path": assign_path,
+        "context": context,
+    }
+
+
+@decorators.raise_if_nothing_inferred
+def type_alias_assigned_stmts(
+    self: nodes.TypeAlias,
+    node: node_classes.AssignedStmtsPossibleNode = None,
+    context: InferenceContext | None = None,
+    assign_path: list[int] | None = None,
+) -> Any:
+    """The name of a ``type`` statement is bound to a ``typing.TypeAliasType``,
+    not to the aliased value.
+    """
+    # pylint: disable-next=stop-iteration-return
+    alias_type = next(node_classes.unpack_infer(extract_node("""
+from typing import TypeAliasType
+TypeAliasType
+""")))
+    yield alias_type.instantiate_class()
     return {
         "node": self,
         "unknown": node,
@@ -1111,13 +1135,22 @@ def starred_assigned_stmts(  # noqa: C901
                 else:
                     found_element = element
 
+            # Only a lookup chain applied to completion ends with the slice
+            # lookup, which extracts a list. Breaking out of the loop early
+            # leaves the last intermediate element instead (or nothing, when
+            # the first lookup fails), which says nothing about the starred
+            # values.
+            if not isinstance(found_element, list):
+                yield util.Uninferable
+                return
+
             unpacked = nodes.List(
                 ctx=Context.Store,
                 parent=self,
                 lineno=self.lineno,
                 col_offset=self.col_offset,
             )
-            unpacked.postinit(elts=found_element or [])
+            unpacked.postinit(elts=found_element)
             yield unpacked
             return
 

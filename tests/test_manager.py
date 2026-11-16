@@ -703,6 +703,20 @@ class ClearCacheTest(unittest.TestCase):
                 # less equal because the "baseline" might have had multiple calls to bootstrap()
                 self.assertLessEqual(cleared_cache.currsize, baseline_cache.currsize)
 
+    def test_clear_cache_clears_preceding_guards_cache(self) -> None:
+        node = astroid.extract_node("""
+        def f(x = None):
+            if x is None:
+                return
+            x  #@
+        """)
+        node.inferred()
+        self.assertNotEqual(astroid.constraint._preceding_guards_cache, {})
+
+        astroid.MANAGER.clear_cache()
+
+        self.assertEqual(astroid.constraint._preceding_guards_cache, {})
+
     def test_file_cache_after_clear_cache(self) -> None:
         """Test to mimic the behavior of how pylint lints file and
         ensure clear cache clears everything stored in the cache.
@@ -747,6 +761,17 @@ class ClearCacheTest(unittest.TestCase):
         isinstance_call = astroid.extract_node("isinstance(1, int)")
         inferred = next(isinstance_call.infer())
         self.assertIs(inferred.value, True)
+
+
+class FileParseFailureTest(unittest.TestCase):
+    @unittest.mock.patch(
+        "astroid.manager.AstroidBuilder.file_build", side_effect=RecursionError
+    )
+    def test_recursion_error(self, _mock) -> None:
+        filepath = unittest.__file__
+        with self.assertRaises(RecursionError) as cm:
+            astroid.MANAGER.ast_from_file(filepath)
+        self.assertIn("sys.setrecursionlimit", cm.exception.__notes__[0])
 
 
 class NamespacePthParserTest(unittest.TestCase):

@@ -36,6 +36,7 @@ from astroid.bases import (
     UnboundMethod,
     UnionType,
     _infer_stmts,
+    _is_property,
 )
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse
 from astroid.const import IS_PYPY, PY312_PLUS, PY314_PLUS, PY315_PLUS
@@ -682,7 +683,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         func, retval = extract_node(code, __name__)
         self.assertEqual([i.value for i in func.ilookup("something")], [1.0, 1.0j])
-        self.assertEqual([i.value for i in retval.infer()], [1.0, 1.0j])
+        # The float returned early by the isinstance guard.
+        self.assertEqual([i.value for i in retval.infer()], [1.0j])
 
     def test_lookup_cond_branches(self) -> None:
         code = '''
@@ -5704,6 +5706,108 @@ def test_call_on_instance_with_inherited_dunder_call_method() -> None:
     assert val.name == "Sub"
 
 
+@pytest.mark.parametrize(
+    "expression",
+    ["Holder.target(42)", "Holder().target(42)", "Root().holder.target(42)"],
+)
+@pytest.mark.parametrize(
+    "attribute",
+    ["", "target = 99", "@property\n        def target(self):\n            return 99"],
+    ids=["missing", "constant", "property"],
+)
+def test_callable_attribute_result(expression: str, attribute: str) -> None:
+    """Calling an attribute uses the callable's return value, not a namesake."""
+    node = extract_node(f"""
+    class Callable:
+        {attribute}
+        def __call__(self, value):
+            return value
+
+    class Holder:
+        target = Callable()
+
+    class Root:
+        holder = Holder()
+
+    {expression}
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+
+@pytest.mark.parametrize("attribute", ["__call__", "__new__"])
+def test_callable_special_named_attribute_result(attribute: str) -> None:
+    """An ordinary callable stored under a special name is still called."""
+    node = extract_node(f"""
+    class Callable:
+        def __call__(self, value):
+            return value
+
+    class Holder:
+        {attribute} = Callable()
+
+    Holder.{attribute}(42)
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+
+def test_callable_attribute_inherited_method_result() -> None:
+    node = extract_node("""
+    class Base:
+        def __call__(self, value):
+            return self.factor * value
+
+    class Callable(Base):
+        factor = 2
+
+    class Holder:
+        target = Callable()
+
+    Holder().target(42)
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 84
+
+
+@pytest.mark.parametrize(
+    "call_arguments", ["42", "value=42", "*[42]", "**{'value': 42}"]
+)
+def test_callable_attribute_call_arguments(call_arguments: str) -> None:
+    node = extract_node(f"""
+    class Callable:
+        def __call__(self, value):
+            return value
+    class Holder:
+        target = Callable()
+    Holder.target({call_arguments})
+    """)
+    [inferred] = node.inferred()
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+
+def test_callable_instance_preserves_call_context() -> None:
+    node = extract_node("""
+    class Callable:
+        def __call__(self, value):
+            return value
+    Callable()
+    """)
+    [instance] = node.inferred()
+    context = InferenceContext()
+    call_context = CallContext(args=[nodes.Const(42)], callee=instance)
+    context.callcontext = call_context
+    [inferred] = list(instance.infer_call_result(None, context))
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+    assert context.callcontext is call_context
+    assert context.callcontext.callee is instance
+
+
 class TestInferencePropagation:
     """Make sure function argument values are properly
     propagated to sub functions.
@@ -6062,6 +6166,147 @@ def test_attribute_mro_object_inference() -> None:
     """).inferred()
     assert len(inferred) == 1
     assert inferred[0].value == 2
+
+
+def test_class_attribute_assigned_through_the_class() -> None:
+    """Values bound on a class outside its body are inferred along with the others.
+
+    https://github.com/pylint-dev/pylint/issues/3045
+    https://github.com/pylint-dev/pylint/issues/9250
+    """
+    code = """
+    class Registry:
+        entries = None
+        names = None
+
+        @classmethod
+        def get(cls):
+            if cls.entries is None:
+                cls.entries = {}
+            cls.entries  #@
+            return cls.entries
+
+        def __init__(self):
+            klass = self.__class__
+            klass.names = []
+            self.names  #@
+
+    class Child(Registry):
+        pass
+
+    Registry.version = 1
+    Registry.version = "1.0"
+
+    Child.get()  #@
+    Registry.names  #@
+    Registry.version  #@
+    Registry.entries  #@
+    """
+    entries, names, child_entries, class_names, version, class_entries = (
+        [inferred.pytype() for inferred in node.inferred()]
+        for node in extract_node(code)
+    )
+    # The ``is None`` check rules ``None`` out once ``cls.entries`` is assigned.
+    assert entries == child_entries == ["builtins.dict"]
+    assert class_entries == ["builtins.NoneType", "builtins.dict"]
+    assert names == class_names == ["builtins.NoneType", "builtins.list"]
+    assert version == ["builtins.int", "builtins.str"]
+
+
+def test_class_attribute_assigned_through_an_ancestor() -> None:
+    """A value bound on an ancestor does not leak into a class overriding it."""
+    node = extract_node("""
+    class Base:
+        flag = None
+
+        @classmethod
+        def enable(cls):
+            cls.flag = True
+
+    class Child(Base):
+        flag = 0
+
+    Child.flag  #@
+    """)
+    assert [inferred.value for inferred in node.inferred()] == [0]
+
+
+def test_class_attribute_only_assigned_through_an_ancestor() -> None:
+    """A subclass sees all the values its ancestor binds on itself in its methods."""
+    node = extract_node("""
+    class Base:
+        @classmethod
+        def reset(cls):
+            cls.cache = None
+
+        @classmethod
+        def fill(cls):
+            cls.cache = {}
+
+    class Child(Base):
+        pass
+
+    Child.cache  #@
+    """)
+    assert [inferred.pytype() for inferred in node.inferred()] == [
+        "builtins.NoneType",
+        "builtins.dict",
+    ]
+
+
+def test_class_attribute_assigned_through_a_sibling_class() -> None:
+    """A value bound on an ancestor does not leak through a shared scope."""
+    node = extract_node("""
+    class Base:
+        pass
+
+    class Child(Base):
+        pass
+
+    Base.attr = 1
+    Child.attr = "a"
+    Child.attr  #@
+    """)
+    assert [inferred.value for inferred in node.inferred()] == ["a"]
+
+
+def test_class_attribute_assigned_from_another_module() -> None:
+    """A value bound on a class from another module is ignored.
+
+    Otherwise the inferred values would depend on which module was built first.
+    """
+    module = parse(
+        """
+    class Klass:
+        attr = None
+        attr = 0
+    """,
+        module_name="class_attribute_owner",
+    )
+    parse(
+        """
+    import class_attribute_owner
+    class_attribute_owner.Klass.attr = {}
+    """,
+        module_name="class_attribute_patcher",
+    )
+    inferred = module["Klass"].igetattr("attr")
+    assert [value.value for value in inferred] == [None, 0]
+
+
+def test_class_attribute_only_set_by_the_metaclass() -> None:
+    """The values of a metaclass attribute are kept when no class defines it."""
+    node = extract_node("""
+    class Meta(type):
+        attr = 1
+        attr = 2
+
+    class Klass(metaclass=Meta):
+        pass
+
+    Klass.attr  #@
+    """)
+    assert sorted(inferred.value for inferred in node.inferred()) == [1, 2]
 
 
 def test_inferred_sequence_unpacking_works() -> None:
@@ -6696,6 +6941,49 @@ def test_property_callable_inference() -> None:
     inferred = next(property_call.infer())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 42
+
+
+def test_class_attribute_bound_to_foreign_lambda_method() -> None:
+    """A class attribute bound to another class' lambda "method" infers to a
+    bound method instead of raising: the method reaching ``_is_property``
+    proxies a ``Lambda`` node, which has no ``decoratornames``.
+    """
+    getattr_call, attribute = extract_node("""
+    class A:
+        f = lambda self: 42
+
+    class B:
+        g = A().f
+
+    getattr(B(), "g") #@
+    B().g #@
+    """)
+    for node in (getattr_call, attribute):
+        inferred = next(node.infer())
+        assert isinstance(inferred, BoundMethod)
+
+
+def test_dunder_bound_to_foreign_lambda_method() -> None:
+    """``bool()`` and ``not`` look up ``__bool__`` through ``_is_property`` too."""
+    bool_call, not_op = extract_node("""
+    class A:
+        f = lambda self: False
+
+    class B:
+        __bool__ = A().f
+
+    bool(B()) #@
+    not B() #@
+    """)
+    assert next(bool_call.infer()).value is False
+    assert next(not_op.infer()).value is True
+
+
+def test_is_property_method_proxying_uninferable() -> None:
+    """An ``UnboundMethod`` can proxy ``Uninferable``, whose
+    ``decoratornames()`` is ``Uninferable`` rather than a set.
+    """
+    assert _is_property(UnboundMethod(Uninferable)) is False
 
 
 def test_property_docstring() -> None:
@@ -7661,3 +7949,138 @@ def test_augassign_list_tuple_does_not_mutate_initial_value():
     inferred = next(module.body[-1].value.infer())
     assert inferred.as_string() == "[0, 1, 1]"
     assert module.body[0].value.as_string() == "[0]"
+
+
+def test_bool_call_in_or_does_not_recurse() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/878.
+
+    Inferring ``v = bool() or 1`` used to bounce between
+    ``_infer_method_result_truth`` and ``bool_value`` until ``RecursionError``.
+    Run under a tight recursion limit to guard against regression.
+    """
+    original_limit = sys.getrecursionlimit()
+    sys.setrecursionlimit(1000)
+    try:
+        node = extract_node("v = bool() or 1  #@").value
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 1
+    finally:
+        sys.setrecursionlimit(original_limit)
+
+
+def test_tuple_unpack_from_dict_return_not_str() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1006.
+
+    astroid 2.5.7 mis-inferred the second element of
+    ``_, mylist = self.check(self.load())`` as a ``str`` (a dict key type
+    leaking through the tuple unpack), triggering a false ``E1101`` on
+    ``mylist.append(...)``. Current behavior infers ``Uninferable``, which is
+    enough to avoid the false positive.
+    """
+    code = textwrap.dedent("""
+        def S_OK(value=None):
+            return {'OK': True, 'Value': value}
+
+
+        class FooBar:
+            def __init__(self):
+                self.__initStatus = S_OK()
+
+            def check(self, result):
+                return result["Value"]
+
+            def load(self):
+                if not self.__initStatus['OK']:
+                    return self.__initStatus
+                return S_OK((None, ["Hello"]))
+
+            def connect(self):
+                _, mylist = self.check(self.load())
+                mylist  #@
+    """)
+    node = extract_node(code)
+    for item in node.inferred():
+        if isinstance(item, nodes.Const):
+            assert not isinstance(item.value, str), (
+                "mylist must not be inferred as a str — that was the historical "
+                "false-positive trigger for E1101."
+            )
+        if isinstance(item, Instance):
+            assert (
+                item.pytype() != "builtins.str"
+            ), "mylist must not be inferred as a str instance."
+
+
+def test_re_compile_not_inferred_as_str() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/520.
+
+    ``re.compile(r"f")`` used to infer to ``[Uninferable, Const.str]``, and the
+    spurious ``str`` member triggered a ``no-member`` false positive on
+    subsequent ``.match()`` calls. The current behavior is ``[Uninferable]``;
+    in particular, no inferred value may be a string.
+    """
+    node = extract_node("""
+        import re
+        _ENCODING_RGX = re.compile(r"f")
+        _ENCODING_RGX  #@
+    """)
+    for value in node.inferred():
+        if isinstance(value, nodes.Const):
+            assert not isinstance(value.value, str)
+        if isinstance(value, Instance):
+            assert value.pytype() != "builtins.str"
+
+
+def test_dict_returning_method_through_inheritance() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1017.
+
+    A method that returns a dict literal, called on an instance of a class
+    that inherits from a base whose same-named method returns ``None``, used
+    to infer as the base class's instance (the schema object). The override
+    must win, so the call result is a ``Dict``.
+    """
+    node = extract_node("""
+        class SchemaNode:
+            def deserialize(self, value): pass
+
+
+        class ExtendedSchemaNode(SchemaNode):
+            pass
+
+
+        class GetJobsQueries(ExtendedSchemaNode):
+            def deserialize(self, value):
+                return {"detail": True}
+
+
+        obj = GetJobsQueries()
+        filters = obj.deserialize({"data": 1})
+        filters  #@
+    """)
+    inferred = node.inferred()
+    assert any(isinstance(item, nodes.Dict) for item in inferred)
+
+
+def test_redefined_method_uses_last_definition() -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/1683.
+
+    When a method is redefined in the same class body, calling it on an
+    instance must infer to the *last* definition. The bug caused inference to
+    pick the first (no-return) definition, triggering false
+    ``assignment-from-no-return`` in pylint.
+    """
+    node = extract_node("""
+        class Test:
+            def test(self):
+                pass
+
+            def test(self):
+                return True
+
+        Test().test()  #@
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value is True

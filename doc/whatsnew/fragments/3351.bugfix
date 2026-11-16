@@ -1,0 +1,14 @@
+A class attribute is now inferred with the values assigned to it through the
+class in the module that defines it, as in ``cls.attr = value`` in a class
+method or ``Klass.attr = value``, along with the value set in the class body.
+Only the latter used to be inferred, so pylint reported
+``unsubscriptable-object``, ``unsupported-membership-test`` and similar errors
+on lazily initialized class attributes such as ``cache = None``. A value
+assigned to an attribute of a parent class also no longer leaks into a
+subclass that assigns the same attribute in the same scope.
+
+Refs #3351
+Closes pylint-dev/pylint#9250
+Closes pylint-dev/pylint#9809
+Closes pylint-dev/pylint#10082
+Refs pylint-dev/pylint#3045
