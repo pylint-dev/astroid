@@ -1146,6 +1146,46 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert len(inferred) == 1, f"{label} inference: {inferred}"
             assert isinstance(inferred[0], nodes.List), f"{label} inference: {inferred}"
 
+    def test_truncated_base_inference_does_not_hide_ancestors(self) -> None:
+        """A truncated base class must not wipe out the inherited members.
+
+        Reproducer from https://github.com/pylint-dev/astroid/issues/3464,
+        itself a duplicate of https://github.com/pylint-dev/astroid/issues/3383:
+        when the truncated result is a class base, ``ancestors()`` comes back
+        empty and the inherited ``__class_getitem__`` disappears, which shows
+        up as ``E1136`` on SQLAlchemy ``Mapped`` in
+        https://github.com/pylint-dev/pylint/issues/9549.
+        """
+        module = parse(textwrap.dedent("""
+                class Base:
+                    @classmethod
+                    def __class_getitem__(cls, item):
+                        return cls
+
+                class Child(Base):
+                    pass
+                """))
+        child = module["Child"]
+
+        # ``parse`` already inferred these nodes and filled the process-wide
+        # cache, which would short-circuit the budget check below. Drop it and
+        # restore it afterwards so the rest of the suite is unaffected.
+        cache = InferenceContext().inferred
+        saved = dict(cache)
+        cache.clear()
+        try:
+            exhausted = InferenceContext()
+            exhausted.nodes_inferred = exhausted.max_inferred + 1
+            assert list(child.bases[0].infer(exhausted)) == [Uninferable]
+
+            # The truncated result was not cached, so the base still resolves
+            # for real and the inherited member stays reachable.
+            assert [base.name for base in child.ancestors()] == ["Base", "object"]
+            assert child.getattr("__class_getitem__")
+        finally:
+            cache.clear()
+            cache.update(saved)
+
     def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)

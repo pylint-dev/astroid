@@ -157,12 +157,21 @@ class NodeNG:
         # Limit inference amount to help with performance issues with
         # exponentially exploding possible results.
         limit = AstroidManager().max_inferable_values
-        truncated = False
         for i, result in enumerate(self._infer(context=context)):
-            if i >= limit or (context.nodes_inferred > context.max_inferred):
+            if context.nodes_inferred > context.max_inferred:
+                # Whether the budget runs out depends on what was inferred
+                # earlier in the process, so the result must not be cached:
+                # caching the ``Uninferable`` placeholder would make the
+                # outcome depend on inference order. See
+                # https://github.com/pylint-dev/pylint/issues/11582.
+                yield util.Uninferable
+                return
+            if i >= limit:
+                # ``limit`` is a fixed cap on the number of results, so it
+                # does not depend on what was inferred before; caching it is
+                # safe and avoids paying for the explosion on every re-inference.
                 results.append(util.Uninferable)
                 yield util.Uninferable
-                truncated = True
                 break
             results.append(result)
             yield result
@@ -170,13 +179,7 @@ class NodeNG:
 
         # Cache generated results for subsequent inferences of the
         # same node using the same context.
-        # Truncated results are deliberately left out of the cache: whether the
-        # budget runs out depends on what was inferred earlier in the process,
-        # so caching the ``Uninferable`` placeholder would make the outcome
-        # depend on inference order. See
-        # https://github.com/pylint-dev/pylint/issues/11582.
-        if not truncated:
-            context.inferred[key] = tuple(results)
+        context.inferred[key] = tuple(results)
         return
 
     def repr_name(self) -> str:
