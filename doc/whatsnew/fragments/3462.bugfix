@@ -1,0 +1,8 @@
+Do not infer the first argument of a ``classmethod`` defined outside a class
+body, such as in a factory function or at module level, as the enclosing
+function or module. There is no class to bind it to there, so ``cls`` is now
+inferred as ``Uninferable``. This removes ``no-member`` and
+``too-many-function-args`` false positives reported by pylint on such code.
+
+Refs #3462
+Closes pylint-dev/pylint#7487
