@@ -10,6 +10,7 @@ import pytest
 
 from astroid import bases, nodes, objects, util
 from astroid.builder import _extract_single_node, extract_node
+from astroid.exceptions import InferenceError
 
 
 class BuiltinsTest(unittest.TestCase):
@@ -163,11 +164,75 @@ class Number:
 def test_slice_with_starred_args() -> None:
     """Regression test for https://github.com/pylint-dev/astroid/issues/186.
 
-    The builtin arg-count check used to refuse to infer when ``Call.args``
-    contained a ``Starred`` node, e.g. ``slice(*(1, 2, 3))``.
+    ``*args`` in ``Call.args`` are unpacked, so ``slice(*(1, 2, 3))``
+    infers to the same ``Slice`` node as ``slice(1, 2, 3)``.
     """
     node = extract_node("slice(*(1, 2, 3))  #@")
     inferred = node.inferred()
     assert len(inferred) == 1
-    assert isinstance(inferred[0], bases.Instance)
-    assert inferred[0].pytype() == "builtins.slice"
+    assert isinstance(inferred[0], nodes.Slice)
+    bounds = [inferred[0].lower, inferred[0].upper, inferred[0].step]
+    assert [bound.value for bound in bounds] == [1, 2, 3]
+
+
+@pytest.mark.parametrize(
+    "code,expected_type,expected",
+    [
+        ("getattr(*('a', 'upper'))", bases.BoundMethod, "upper"),
+        ("getattr('a', *['upper'])", bases.BoundMethod, "upper"),
+        ("getattr(*('a', 'missing', 42))", nodes.Const, 42),
+        ("hasattr(*('a', 'upper'))", nodes.Const, True),
+        ("hasattr(*('a', 'missing'))", nodes.Const, False),
+        ("bool(*(0,))", nodes.Const, False),
+        ("bool(*())", nodes.Const, False),
+        ("callable(*(len,))", nodes.Const, True),
+        ("type(*(1,))", nodes.ClassDef, "int"),
+        ("property(*(lambda self: 1,))", objects.Property, "<property>"),
+    ],
+)
+def test_builtins_with_starred_args(code: str, expected_type: type, expected) -> None:
+    """Regression test for https://github.com/pylint-dev/astroid/issues/186."""
+    inferred = extract_node(code).inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], expected_type)
+    if expected_type is nodes.Const:
+        assert inferred[0].value == expected
+    else:
+        assert inferred[0].name == expected
+
+
+@pytest.mark.parametrize(
+    "code,expected_type,expected_name",
+    [
+        # Starred value of unknown length.
+        ("slice(*unknown)", bases.Instance, "slice"),
+        ("def g(*args):\n    slice(1, *args)  #@", bases.Instance, "slice"),
+        ("property(lambda self: 1, *unknown)", objects.Property, "<property>"),
+        # Wrong number of arguments once unpacked.
+        ("bool(*(1, 2))", bases.Instance, "bool"),
+        ("type(*(1, 2))", bases.Instance, "type"),
+        ("property(*())", bases.Instance, "property"),
+    ],
+)
+def test_builtins_with_unknown_starred_args_fall_back(
+    code: str, expected_type: type, expected_name: str
+) -> None:
+    """Starred calls that cannot be unpacked safely keep the default inference."""
+    inferred = extract_node(code).inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], expected_type)
+    assert inferred[0].name == expected_name
+
+
+def test_callable_with_unknown_starred_args() -> None:
+    assert extract_node("callable(*unknown)").inferred() == [util.Uninferable]
+
+
+@pytest.mark.parametrize(
+    "code",
+    ["getattr(*('a',))", "getattr(*('a', 'missing'))", "callable(*(len, len))"],
+)
+def test_builtins_with_starred_args_inference_error(code: str) -> None:
+    """Starred calls that are invalid once unpacked fail like their plain form."""
+    with pytest.raises(InferenceError):
+        extract_node(code).inferred()

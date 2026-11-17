@@ -565,14 +565,36 @@ def infer_super(
     return super_obj
 
 
-def _infer_getattr_args(node, context):
-    if len(node.args) not in (2, 3):
+def _unpack_starred_args(
+    node: nodes.Call, context: InferenceContext | None
+) -> list[SuccessfulInferenceResult]:
+    """Return the positional arguments of *node* with ``*args`` expanded.
+
+    If a starred value is not a tuple or a list of known length (e.g. a
+    ``*args`` parameter), return ``node.args`` unchanged.
+    """
+    args: list[SuccessfulInferenceResult] = []
+    for arg in node.args:
+        if not isinstance(arg, nodes.Starred):
+            args.append(arg)
+            continue
+        inferred = util.safe_infer(arg.value, context=context)
+        if not isinstance(inferred, (nodes.Tuple, nodes.List)) or isinstance(
+            inferred.parent, nodes.Arguments
+        ):
+            return list(node.args)
+        args.extend(inferred.elts)
+    return args
+
+
+def _infer_getattr_args(args, context):
+    if len(args) not in (2, 3):
         # Not a valid getattr call.
         raise UseInferenceDefault
 
     try:
-        obj = next(node.args[0].infer(context=context))
-        attr = next(node.args[1].infer(context=context))
+        obj = next(args[0].infer(context=context))
+        attr = next(args[1].infer(context=context))
     except (InferenceError, StopIteration) as exc:
         raise UseInferenceDefault from exc
 
@@ -596,7 +618,8 @@ def infer_getattr(node, context: InferenceContext | None = None):
     result will be an Uninferable object. Otherwise, the normal attribute
     lookup will be done.
     """
-    obj, attr = _infer_getattr_args(node, context)
+    args = _unpack_starred_args(node, context)
+    obj, attr = _infer_getattr_args(args, context)
     if (
         isinstance(obj, util.UninferableBase)
         or isinstance(attr, util.UninferableBase)
@@ -607,10 +630,10 @@ def infer_getattr(node, context: InferenceContext | None = None):
     try:
         return next(obj.igetattr(attr, context=context))
     except (StopIteration, InferenceError, AttributeInferenceError):
-        if len(node.args) == 3:
+        if len(args) == 3:
             # Try to infer the default and return it instead.
             try:
-                return next(node.args[2].infer(context=context))
+                return next(args[2].infer(context=context))
             except (StopIteration, InferenceError) as exc:
                 raise UseInferenceDefault from exc
 
@@ -627,7 +650,7 @@ def infer_hasattr(node, context: InferenceContext | None = None):
     when we are unsure of the outcome of the function call.
     """
     try:
-        obj, attr = _infer_getattr_args(node, context)
+        obj, attr = _infer_getattr_args(_unpack_starred_args(node, context), context)
         if (
             isinstance(obj, util.UninferableBase)
             or isinstance(attr, util.UninferableBase)
@@ -652,11 +675,12 @@ def infer_callable(node, context: InferenceContext | None = None):
     even though that attribute is something which can't be
     called.
     """
-    if len(node.args) != 1:
+    args = _unpack_starred_args(node, context)
+    if len(args) != 1:
         # Invalid callable call.
         raise UseInferenceDefault
 
-    argument = node.args[0]
+    argument = args[0]
     try:
         inferred = next(argument.infer(context=context))
     except (InferenceError, StopIteration):
@@ -674,11 +698,12 @@ def infer_property(
     This only infers the output of `property`
     call, not the arguments themselves.
     """
-    if len(node.args) < 1:
+    args = _unpack_starred_args(node, context)
+    if len(args) < 1:
         # Invalid property call.
         raise UseInferenceDefault
 
-    getter = node.args[0]
+    getter = args[0]
     try:
         inferred = next(getter.infer(context=context))
     except (InferenceError, StopIteration) as exc:
@@ -708,14 +733,15 @@ def infer_property(
 
 def infer_bool(node, context: InferenceContext | None = None):
     """Understand bool calls."""
-    if len(node.args) > 1:
+    args = _unpack_starred_args(node, context)
+    if len(args) > 1:
         # Invalid bool call.
         raise UseInferenceDefault
 
-    if not node.args:
+    if not args:
         return nodes.Const(False)
 
-    argument = node.args[0]
+    argument = args[0]
     try:
         inferred = next(argument.infer(context=context))
     except (InferenceError, StopIteration):
@@ -731,15 +757,16 @@ def infer_bool(node, context: InferenceContext | None = None):
 
 def infer_type(node, context: InferenceContext | None = None):
     """Understand the one-argument form of *type*."""
-    if len(node.args) != 1:
+    args = _unpack_starred_args(node, context)
+    if len(args) != 1:
         raise UseInferenceDefault
 
-    return helpers.object_type(node.args[0], context)
+    return helpers.object_type(args[0], context)
 
 
 def infer_slice(node, context: InferenceContext | None = None):
     """Understand `slice` calls."""
-    args = node.args
+    args = _unpack_starred_args(node, context)
     if not 0 < len(args) <= 3:
         raise UseInferenceDefault
 
