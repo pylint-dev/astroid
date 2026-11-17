@@ -10,7 +10,7 @@ repos:
       - id: end-of-file-fixer
         exclude: tests/testdata
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.17.4"
+    rev: "v0.17.5"
     hooks:
       - id: ruff-check
         args: ["--fix"]
@@ -89,7 +89,7 @@ repos:
         pass_filenames: false
 
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.10
+    rev: v3.10.1
     hooks:
       - id: prettier
         args: [--prose-wrap=always, --print-width=88]
