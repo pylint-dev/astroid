@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
-from astroid import bases, context, nodes
+from astroid import bases, context, nodes, util
 from astroid.builder import _extract_single_node
 from astroid.const import PY313
 from astroid.exceptions import InferenceError, UseInferenceDefault
@@ -43,6 +43,9 @@ def infer_parents_subscript(
     if isinstance(subscript_node.slice, nodes.Const):
         path_cls = next(_extract_single_node(PATH_TEMPLATE).infer())
         return iter([path_cls.instantiate_class()])
+    if isinstance(util.safe_infer(subscript_node.slice, context=ctx), nodes.Slice):
+        tuple_cls = AstroidManager().builtins_module["tuple"]
+        return iter([tuple_cls.instantiate_class()])
 
     raise UseInferenceDefault
 
