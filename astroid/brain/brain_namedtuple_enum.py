@@ -416,15 +416,24 @@ INT_FLAG_ADDITION_METHODS = """
 """
 
 
-def _binds_function(stmt: nodes.Import | nodes.ImportFrom, name: str) -> bool:
-    """Return whether ``name``, bound by the import ``stmt``, is a function.
+def _binds_descriptor(stmt: nodes.Import | nodes.ImportFrom, name: str) -> bool:
+    """Return whether ``name``, bound by the import ``stmt``, is a descriptor.
 
-    A function is a descriptor, so ``Enum`` keeps it as a plain method
-    rather than turning it into a member.
+    ``Enum`` keeps a descriptor, such as a function or a class defining
+    ``__get__``, as a plain attribute rather than turning it into a member.
     """
     context = InferenceContext()
     context.lookupname = name
-    return isinstance(util.safe_infer(stmt, context), (nodes.FunctionDef, nodes.Lambda))
+    inferred = util.safe_infer(stmt, context)
+    if isinstance(inferred, (nodes.FunctionDef, nodes.Lambda)):
+        return True
+    if not isinstance(inferred, nodes.ClassDef):
+        return False
+    return any(
+        method in klass.locals
+        for klass in (inferred, *inferred.ancestors())
+        for method in ("__get__", "__set__", "__delete__")
+    )
 
 
 def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
@@ -454,7 +463,7 @@ def infer_enum_class(node: nodes.ClassDef) -> nodes.ClassDef:
                 # just like a name bound by an assignment. Its value is
                 # whatever the import binds, so replay the import when
                 # inferring ``value``.
-                if _binds_function(stmt, local):
+                if _binds_descriptor(stmt, local):
                     continue
                 import_stmt = stmt.as_string()
                 targets = [

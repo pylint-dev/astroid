@@ -738,13 +738,17 @@ class EnumBrainTest(unittest.TestCase):
             "DEBUG",
         ]
 
-    def test_enum_function_imported_in_class_body_is_not_a_member(self) -> None:
-        """A function is a descriptor, so importing one does not make a member."""
+    def test_enum_descriptor_imported_in_class_body_is_not_a_member(self) -> None:
+        """A descriptor, such as a function or a class defining ``__get__``,
+        is not a member, even when it is bound by an import.
+        """
         function, call, members = builder.extract_node("""
         import enum
 
         class Color(enum.Enum):
             from os.path import join
+            from functools import cached_property
+            from collections import OrderedDict
             RED = 1
 
         Color.join #@
@@ -760,4 +764,7 @@ class EnumBrainTest(unittest.TestCase):
         assert list(call.infer())
 
         inferred_members = next(members.infer())
-        assert [key.value for key, _ in inferred_members.items] == ["RED"]
+        assert {key.value for key, _ in inferred_members.items} == {
+            "OrderedDict",
+            "RED",
+        }
