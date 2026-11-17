@@ -478,6 +478,7 @@ class FunctionModel(ObjectModel):
                 if isinstance(func, astroid.objects.PartialFunction):
                     new_func_kwargs["filled_args"] = func.filled_args
                     new_func_kwargs["filled_keywords"] = func.filled_keywords
+                    new_func_kwargs["is_async"] = func.is_async
 
                 new_func = func.__class__(**new_func_kwargs)
                 # pylint: disable=no-member

@@ -1,0 +1,5 @@
+Calling a ``functools.partial`` of an async generator function is now inferred
+as an async generator instead of a synchronous generator. This removes a false
+positive ``not-an-iterable`` in pylint when iterating over it with ``async for``.
+
+Closes pylint-dev/pylint#9439
