@@ -1,5 +1,5 @@
-Fix inference of ``getattr``, ``hasattr``, ``callable``, ``property``, ``bool``,
-``type`` and ``slice`` calls whose positional arguments are unpacked with ``*``
-from a tuple or a list.
+Fix inference of ``getattr``, ``hasattr``, ``callable``, ``property``, ``bool``
+and ``slice`` calls whose positional arguments are unpacked with ``*`` from a
+tuple or a list.
 
 Refs #186

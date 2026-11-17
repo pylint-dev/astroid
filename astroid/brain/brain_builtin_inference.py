@@ -757,11 +757,10 @@ def infer_bool(node, context: InferenceContext | None = None):
 
 def infer_type(node, context: InferenceContext | None = None):
     """Understand the one-argument form of *type*."""
-    args = _unpack_starred_args(node, context)
-    if len(args) != 1:
+    if len(node.args) != 1:
         raise UseInferenceDefault
 
-    return helpers.object_type(args[0], context)
+    return helpers.object_type(node.args[0], context)
 
 
 def infer_slice(node, context: InferenceContext | None = None):

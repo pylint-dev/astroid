@@ -186,7 +186,6 @@ def test_slice_with_starred_args() -> None:
         ("bool(*(0,))", nodes.Const, False),
         ("bool(*())", nodes.Const, False),
         ("callable(*(len,))", nodes.Const, True),
-        ("type(*(1,))", nodes.ClassDef, "int"),
         ("property(*(lambda self: 1,))", objects.Property, "<property>"),
     ],
 )
@@ -210,7 +209,6 @@ def test_builtins_with_starred_args(code: str, expected_type: type, expected) ->
         ("property(lambda self: 1, *unknown)", objects.Property, "<property>"),
         # Wrong number of arguments once unpacked.
         ("bool(*(1, 2))", bases.Instance, "bool"),
-        ("type(*(1, 2))", bases.Instance, "type"),
         ("property(*())", bases.Instance, "property"),
     ],
 )
@@ -226,6 +224,12 @@ def test_builtins_with_unknown_starred_args_fall_back(
 
 def test_callable_with_unknown_starred_args() -> None:
     assert extract_node("callable(*unknown)").inferred() == [util.Uninferable]
+
+
+def test_type_with_three_starred_args() -> None:
+    """``type(*spec)`` must not be inferred as a plain ``type`` instance."""
+    code = "spec = ('A', (), {'foo': 1})\nC = type(*spec)\nC.foo  #@"
+    assert extract_node(code).inferred() == [util.Uninferable]
 
 
 @pytest.mark.parametrize(
