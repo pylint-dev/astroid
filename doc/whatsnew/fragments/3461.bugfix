@@ -1,0 +1,4 @@
+Apply the ``!s``, ``!r`` and ``!a`` conversions when inferring f-strings, so
+``f'{"a"!r}'`` is inferred as ``"'a'"`` instead of ``'a'``.
+
+Refs #3461

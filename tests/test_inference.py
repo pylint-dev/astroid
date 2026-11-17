@@ -7707,6 +7707,60 @@ def test_empty_format_spec() -> None:
 
 
 @pytest.mark.parametrize(
+    "code, expected",
+    [
+        # The format spec cannot be inferred.
+        ("f'{1:{x}}'", [util.Uninferable]),
+        # One format spec works, the other cannot be inferred.
+        ('f\'{"a":{">3" if c else x}}\'', ["  a", util.Uninferable]),
+        # Both format specs fail: Uninferable is given only once.
+        ('f\'{"a":{"d" if c else x}}\'', [util.Uninferable]),
+    ],
+)
+def test_formatted_value_uninferable_format_spec(
+    code: str, expected: list[str | util.UninferableBase]
+) -> None:
+    node = extract_node(code)
+    assert isinstance(node, nodes.JoinedStr)
+    formatted_value = node.values[0]
+    assert isinstance(formatted_value, nodes.FormattedValue)
+    inferred = [
+        value if value is util.Uninferable else value.value
+        for value in formatted_value.infer()
+    ]
+    assert inferred == expected
+
+
+@pytest.mark.parametrize(
+    "code, expected",
+    [
+        ("f'{\"a\"!r}'", "'a'"),
+        ("f'{\"a\"!s}'", "a"),
+        ("f'{\"é\"!a}'", "'\\xe9'"),
+        ("f'{\"a\"!r:>5}'", "  'a'"),
+        ("f'{1.5!s:.1}'", "1"),
+        ("f'{1.5:.1}'", "2e+00"),
+        # ``=`` uses ``!r`` when there is no conversion and no format spec.
+        ("f'{\"a\"=}'", "\"a\"='a'"),
+        # ``!r`` gives a ``str``, which has no ``x`` format code.
+        ("f'{1!r:{\"x\"}}'", util.Uninferable),
+    ],
+)
+def test_formatted_value_conversion(
+    code: str, expected: str | util.UninferableBase
+) -> None:
+    """The ``!s``, ``!r`` and ``!a`` conversions are applied before the format spec."""
+    node = extract_node(code)
+    inferred = list(node.infer())
+    assert len(inferred) == 1
+    if expected is util.Uninferable:
+        assert inferred[0] is util.Uninferable
+    else:
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == expected
+
+
+@pytest.mark.parametrize(
     "code",
     [
         '"{:>2000000000}".format("x")',
