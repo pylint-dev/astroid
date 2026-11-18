@@ -60,7 +60,7 @@ def is_decorated_with_dataclass(
     )
 
 
-def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef | None:
+def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef:
     """Rewrite a dataclass to be easily understood by pylint."""
     node.is_dataclass = True
 
@@ -76,7 +76,7 @@ def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef | None:
         node.instance_attrs[name] = [rhs_node]
 
     if not _check_generate_dataclass_init(node):
-        return None
+        return node
 
     kw_only_decorated = False
     if node.decorators.nodes:
