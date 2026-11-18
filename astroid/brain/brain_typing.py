@@ -162,6 +162,15 @@ def infer_typing_attr(
         raise UseInferenceDefault
 
     if (
+        value.qname() == "typing.Annotated"
+        and isinstance(node.slice, nodes.Tuple)
+        and node.slice.elts
+    ):
+        # Annotated[X, ...] is X with metadata attached, so infer X. A nested
+        # Annotated[Annotated[X, ...], ...] goes through this tip again.
+        return node.slice.elts[0].infer(context=ctx)
+
+    if (
         PY313_PLUS
         and isinstance(value, nodes.FunctionDef)
         and value.qname() == "typing.Annotated"

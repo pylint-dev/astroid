@@ -49,3 +49,24 @@ class TestTypingExtensions:
         """)
         for attr in ("__required_keys__", "__optional_keys__"):
             assert cls.getattr(attr), f"{cls.name}.{attr} not found"
+
+    @staticmethod
+    def test_annotated_infers_annotated_type() -> None:
+        """``Annotated[X, ...]`` from typing_extensions infers X, like typing's.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/9151
+        """
+        ast_nodes = builder.extract_node("""
+        import typing_extensions
+        from typing_extensions import Annotated
+
+        class Foo: ...
+
+        Annotated[Foo, int] #@
+        typing_extensions.Annotated[typing_extensions.Annotated[Foo, 1], 2] #@
+        """)
+        for node in ast_nodes:
+            inferred = node.inferred()
+            assert len(inferred) == 1
+            assert isinstance(inferred[0], nodes.ClassDef)
+            assert inferred[0].name == "Foo"

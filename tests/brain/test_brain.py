@@ -572,20 +572,59 @@ class TypingBrain(unittest.TestCase):
         assert ancestors[0].name == "Foo"
         assert ancestors[1].name == "object"
 
-    def test_typing_annotated_subscriptable(self):
-        """typing.Annotated is subscriptable with __class_getitem__ below 3.13."""
-        node = builder.extract_node("""
+    def test_typing_annotated_infers_annotated_type(self):
+        """Annotated[X, ...] infers X, the type the metadata is attached to.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/9151
+        """
+        *types, instance, method = builder.extract_node("""
         import typing
-        typing.Annotated[str, "data"]
+        from typing import Annotated
+
+        class Foo:
+            @classmethod
+            def foo(cls): ...
+
+        Bar = Annotated[Foo, int]
+        Annotated[Foo, int] #@
+        typing.Annotated[Foo, "data"] #@
+        Annotated[Annotated[Foo, 1], 2] #@
+        Bar #@
+        Bar() #@
+        Bar.foo #@
         """)
-        inferred = next(node.infer())
-        if PY313_PLUS:
-            assert isinstance(inferred, nodes.FunctionDef)
-        else:
-            assert isinstance(inferred, nodes.ClassDef)
-            assert isinstance(
-                inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
-            )
+        for node in types:
+            inferred = node.inferred()
+            assert len(inferred) == 1
+            assert isinstance(inferred[0], nodes.ClassDef)
+            assert inferred[0].name == "Foo"
+        inferred = instance.inferred()
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], Instance)
+        assert inferred[0].name == "Foo"
+        assert [m.name for m in method.inferred()] == ["foo"]
+
+    def test_typing_annotated_subscriptable(self):
+        """typing.Annotated is subscriptable with __class_getitem__ below 3.13.
+
+        Without metadata, which is an error at runtime, the subscript still
+        infers to Annotated itself.
+        """
+        ast_nodes = builder.extract_node("""
+        import typing
+        typing.Annotated[str] #@
+        typing.Annotated[()] #@
+        """)
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            assert inferred.qname() == "typing.Annotated"
+            if PY313_PLUS:
+                assert isinstance(inferred, nodes.FunctionDef)
+            else:
+                assert isinstance(inferred, nodes.ClassDef)
+                assert isinstance(
+                    inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
+                )
 
     def test_typing_generic_slots(self):
         """Test slots for Generic subclass."""
