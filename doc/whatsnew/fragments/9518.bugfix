@@ -1,0 +1,3 @@
+Avoid inheriting arguments for dataclass fields marked with ``init=False`` in base classes when generating ``__init__`` signatures for subclasses.
+
+Closes pylint-dev/pylint#9518
