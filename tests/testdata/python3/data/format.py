@@ -7,7 +7,7 @@ earzer', hop)
 x = [i for i in range(5)
      if i % 4]
 
-fonction(1,
+function(1,
          2,
          3,
          4)

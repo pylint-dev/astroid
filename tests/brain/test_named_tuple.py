@@ -23,12 +23,12 @@ class NamedTupleTest(unittest.TestCase):
         """)
         assert isinstance(klass, nodes.ClassDef)
         self.assertEqual(
-            [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
+            [ancestor.name for ancestor in klass.ancestors()], ["X", "tuple", "object"]
         )
         # See: https://github.com/pylint-dev/pylint/issues/5982
         self.assertNotIn("X", klass.locals)
-        for anc in klass.ancestors():
-            self.assertFalse(anc.parent is None)
+        for ancestor in klass.ancestors():
+            self.assertFalse(ancestor.parent is None)
 
     def test_namedtuple_inference(self) -> None:
         klass = builder.extract_node("""

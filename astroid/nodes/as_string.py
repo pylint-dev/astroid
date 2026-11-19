@@ -560,25 +560,25 @@ class AsStringVisitor:
 
     def visit_try(self, node: nodes.Try) -> str:
         """return an nodes.Try node as string"""
-        trys = [f"try:\n{self._stmt_list(node.body)}"]
+        tries = [f"try:\n{self._stmt_list(node.body)}"]
         for handler in node.handlers:
-            trys.append(handler.accept(self))
+            tries.append(handler.accept(self))
         if node.orelse:
-            trys.append(f"else:\n{self._stmt_list(node.orelse)}")
+            tries.append(f"else:\n{self._stmt_list(node.orelse)}")
         if node.finalbody:
-            trys.append(f"finally:\n{self._stmt_list(node.finalbody)}")
-        return "\n".join(trys)
+            tries.append(f"finally:\n{self._stmt_list(node.finalbody)}")
+        return "\n".join(tries)
 
     def visit_trystar(self, node: nodes.TryStar) -> str:
         """return an nodes.TryStar node as string"""
-        trys = [f"try:\n{self._stmt_list(node.body)}"]
+        tries = [f"try:\n{self._stmt_list(node.body)}"]
         for handler in node.handlers:
-            trys.append(handler.accept(self))
+            tries.append(handler.accept(self))
         if node.orelse:
-            trys.append(f"else:\n{self._stmt_list(node.orelse)}")
+            tries.append(f"else:\n{self._stmt_list(node.orelse)}")
         if node.finalbody:
-            trys.append(f"finally:\n{self._stmt_list(node.finalbody)}")
-        return "\n".join(trys)
+            tries.append(f"finally:\n{self._stmt_list(node.finalbody)}")
+        return "\n".join(tries)
 
     def visit_tuple(self, node: nodes.Tuple) -> str:
         """return an nodes.Tuple node as string"""

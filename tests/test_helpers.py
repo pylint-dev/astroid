@@ -17,7 +17,7 @@ class TestHelpers(unittest.TestCase):
     def setUp(self) -> None:
         builtins_name = builtins.__name__
         astroid_manager = manager.AstroidManager()
-        AstroidBuilder(astroid_manager)  # Only to ensure boostrap
+        AstroidBuilder(astroid_manager)  # Only to ensure bootstrap
         self.builtins = astroid_manager.astroid_cache[builtins_name]
         self.manager = manager.AstroidManager()
 

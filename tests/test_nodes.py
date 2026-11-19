@@ -234,12 +234,12 @@ class Language(metaclass=Natural):
             self.assertEqual(ast.as_string(), code)
 
     def test_slice_and_subscripts(self) -> None:
-        code = """a[:1] = bord[2:]
-a[:1] = bord[2:]
+        code = """a[:1] = board[2:]
+a[:1] = board[2:]
 del bree[3:d]
-bord[2:]
+board[2:]
 del av[d::f], a[df:]
-a[:1] = bord[2:]
+a[:1] = board[2:]
 del SRC[::1, newaxis, 1:]
 tous[vals] = 1010
 del thousand[key]
@@ -247,7 +247,7 @@ del a[::2], a[:-1:step]
 del Fee.form[left:]
 aout.vals = miles.of_stuff
 del (ccok, (name.thing, foo.attrib.value)), Fee.form[left:]
-if all[1] == bord[0:]:
+if all[1] == board[0:]:
     pass\n\n"""
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)

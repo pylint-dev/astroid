@@ -1213,7 +1213,7 @@ class Assign(_base_nodes.AssignTypeNode, _base_nodes.Statement):
     """Class representing an :class:`ast.Assign` node.
 
     An :class:`Assign` is a statement where something is explicitly
-    asssigned to.
+    assigned to.
 
     >>> import astroid
     >>> node = astroid.extract_node('variable = range(10)')
@@ -1910,7 +1910,7 @@ class Compare(NodeNG):
         lhs = list(left_node.infer(context=context))
         # should we break early if first element is uninferable?
         for op, right_node in ops:
-            # eagerly evaluate rhs so that values can be re-used as lhs
+            # eagerly evaluate rhs so that values can be reused as lhs
             rhs = list(right_node.infer(context=context))
             try:
                 retval = self._do_compare(lhs, op, rhs)

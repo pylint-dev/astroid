@@ -68,7 +68,7 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(namearg.fromlineno, 5)
         self.assertEqual(namearg.tolineno, 5)
         # on line 10:
-        #    fonction(1,
+        #    function(1,
         #             2,
         #             3,
         #             4)
@@ -210,7 +210,7 @@ class FromToLineNoTest(unittest.TestCase):
 
     @staticmethod
     def test_function_with_docstring() -> None:
-        """Test function defintions with only docstrings."""
+        """Test function definitions with only docstrings."""
         code = textwrap.dedent('''\
         def a():
             """My docstring"""
@@ -500,7 +500,7 @@ class BuilderTest(unittest.TestCase):
         code = """
             def yiell(): #@
                 yield 0
-                if noe:
+                if no:
                     yield more
         """
         func = builder.extract_node(code)

@@ -59,7 +59,7 @@ CMP_OP_CLASSES: Final[dict[type[ast.cmpop], str]] = {
     ast.Lt: "<",
     ast.LtE: "<=",
     ast.NotEq: "!=",
-    ast.NotIn: "not in",
+    ast.NotIn: "not in",  # codespell:ignore
 }
 
 CONTEXT_CLASSES: Final[dict[type[ast.expr_context], Context]] = {

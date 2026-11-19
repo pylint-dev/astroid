@@ -642,7 +642,7 @@ Release date: 2023-09-26
 
   This is a breaking change for ``nodes.FunctionDef`` where previously ``caller`` had a default of
   ``None``. Passing ``None`` again will not create a behaviour change.
-  The breaking change allows us to better type and re-use the method within ``astroid``.
+  The breaking change allows us to better type and reuse the method within ``astroid``.
 
 * Improved signature of the ``__init__`` and ``__postinit__`` methods of most nodes.
   This includes making ``lineno``, ``col_offset``, ``end_lineno``, ``end_col_offset`` and ``parent``
@@ -2999,7 +2999,7 @@ Release date: 2018-07-15
 
      Close pylint-dev/pylint#2159
 
-   * Limit the maximum amount of interable result in an NodeNG.infer() call to
+   * Limit the maximum amount of inferable result in an NodeNG.infer() call to
      100 by default for performance issues with variables with large amounts of
      possible values.
 
@@ -4009,7 +4009,7 @@ Release date: 2012-10-05
 
     * #106191: fix __future__ absolute import w/ From node
 
-    * #50395: fix function fromlineno when some decorator is splited on
+    * #50395: fix function fromlineno when some decorator is split on
       multiple lines (patch by Mark Gius)
 
     * #92362: fix pyreverse crash on relative import
