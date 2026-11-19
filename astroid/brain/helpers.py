@@ -56,6 +56,7 @@ def register_all_brains(manager: AstroidManager) -> None:
         brain_numpy_core_einsumfunc,
         brain_numpy_core_fromnumeric,
         brain_numpy_core_function_base,
+        brain_numpy_core_getlimits,
         brain_numpy_core_multiarray,
         brain_numpy_core_numeric,
         brain_numpy_core_numerictypes,
@@ -110,6 +111,7 @@ def register_all_brains(manager: AstroidManager) -> None:
     brain_numpy_core_einsumfunc.register(manager)
     brain_numpy_core_fromnumeric.register(manager)
     brain_numpy_core_function_base.register(manager)
+    brain_numpy_core_getlimits.register(manager)
     brain_numpy_core_multiarray.register(manager)
     brain_numpy_core_numerictypes.register(manager)
     brain_numpy_core_umath.register(manager)
