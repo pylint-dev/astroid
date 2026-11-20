@@ -1,0 +1,7 @@
+A builtin module name under a package astroid cannot search into, such as
+``pkg.time`` where ``pkg`` is a C extension package or comes from a zip file, is
+no longer resolved to the builtin module. The manager then imported
+``pkg.time``, which ran ``pkg`` even though it was not on
+``extension-pkg-allow-list``.
+
+Refs #1567
