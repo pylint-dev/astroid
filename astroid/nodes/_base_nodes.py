@@ -157,14 +157,12 @@ class ImportNode(FilterStmtsBaseNode, NoChildrenNode, Statement):
         # to make sure we use the import system to get the correct module.
         if (
             modname
-            # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
             and mymodule.relative_to_absolute_name(modname, level) == mymodule.name
         ):
             use_cache = False
         else:
             use_cache = True
 
-        # pylint: disable-next=no-member # pylint doesn't recognize type of mymodule
         return mymodule.import_module(
             modname,
             level=level,

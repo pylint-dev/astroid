@@ -16,7 +16,7 @@ import astroid
 from astroid import MANAGER, builder, nodes, objects, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
-from astroid.const import PY312_PLUS, PY313_PLUS, PY315_PLUS
+from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS, PY315_PLUS
 from astroid.exceptions import (
     AttributeInferenceError,
     InferenceError,
@@ -1795,6 +1795,155 @@ class TestFunctoolsPartial:
         inferred_result = next(result.infer())
         assert isinstance(inferred_result, nodes.Const)
         assert inferred_result.value == 1
+
+    @staticmethod
+    def test_partial_class_attribute_binding() -> None:
+        """Instance access to a partial class attribute binds only on Python 3.14.
+
+        Before 3.14, ``functools.partial`` has no binding behaviour (3.13 defines
+        ``__get__`` but warns and returns the same partial), so accessing it
+        through an instance must not bind ``self``.
+
+        Reproduces https://github.com/pylint-dev/pylint/issues/2271.
+        """
+        ast_nodes = astroid.extract_node("""
+        from functools import partial
+
+        def func(x, y):
+            return x + y
+
+        class A:
+            bar = partial(func, 1)
+
+            def __init__(self):
+                self.instance_bar = partial(func, 1)
+
+            @classmethod
+            def setup(cls):
+                cls.set_bar = partial(func, 1)
+
+        class B(A):
+            pass
+
+        A().bar #@
+        A.bar #@
+        B().bar #@
+        A().instance_bar #@
+        A().bar(2) #@
+        A().set_bar #@
+        A.bar(2) #@
+        """)
+        instance, klass, inherited, instance_attr, call, set_bar, class_call = ast_nodes
+
+        for node in (instance, inherited):
+            inferred = next(node.infer())
+            if PY314_PLUS:
+                assert isinstance(inferred, astroid.BoundMethod)
+                assert isinstance(inferred._proxied._proxied, objects.PartialFunction)
+                # 3.14 runtime binds ``self`` on instance access; call checkers
+                # must see the implicit argument.
+                assert inferred.implicit_parameters() == 1
+            else:
+                assert isinstance(inferred, objects.PartialFunction)
+                # No implicit ``self`` argument for the call checkers.
+                assert inferred.implicit_parameters() == 0
+
+        inferred = next(klass.infer())
+        if PY314_PLUS:
+            assert isinstance(inferred, astroid.UnboundMethod)
+            assert not isinstance(inferred, astroid.BoundMethod)
+            # Class access never passes an implicit ``self`` on any version.
+            assert inferred.implicit_parameters() == 0
+        else:
+            assert isinstance(inferred, objects.PartialFunction)
+            assert inferred.implicit_parameters() == 0
+
+        # An attribute assigned on the instance is never bound on any version.
+        inferred = next(instance_attr.infer())
+        assert isinstance(inferred, objects.PartialFunction)
+        assert inferred.implicit_parameters() == 0
+
+        # Assigned on the class from a classmethod: same descriptor rules.
+        inferred = next(set_bar.infer())
+        if PY314_PLUS:
+            assert isinstance(inferred, astroid.BoundMethod)
+        else:
+            assert isinstance(inferred, objects.PartialFunction)
+
+        if not PY314_PLUS:
+            inferred_call = next(call.infer())
+            assert isinstance(inferred_call, nodes.Const)
+            assert inferred_call.value == 3
+
+        # Calling through the class is unbound on every version: ``A.bar(2)``
+        # must keep its value-equivalent call semantics even on 3.14, where the
+        # class-access proxy is ``UnboundMethod`` (runtime returns the partial).
+        inferred_class_call = next(class_call.infer())
+        assert isinstance(inferred_class_call, nodes.Const)
+        assert inferred_class_call.value == 3
+
+    @staticmethod
+    def test_staticmethod_partial_class_attribute_unchanged() -> None:
+        """``staticmethod(partial(...))`` inference is unchanged by the fix.
+
+        astroid currently cannot infer through ``staticmethod(partial(...))``
+        and yields ``Uninferable`` on every Python version, with and without
+        this fix (an observed pre-existing limitation, matched by the runtime
+        binding nothing there). The assertion pins the exact current behaviour
+        instead of a weak negative check: it deliberately fails if inference
+        of this pattern improves, so the test is then strengthened to check
+        the inferred node and value.
+        """
+        node = astroid.extract_node("""
+        from functools import partial
+
+        def func(x, y):
+            return (x, y)
+
+        class A:
+            bar = staticmethod(partial(func, 1))
+
+        A().bar #@
+        """)
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
+    @staticmethod
+    def test_partial_class_attribute_explicit_get() -> None:
+        """Baseline-preservation control for explicit ``__get__`` on a partial.
+
+        This guards the descriptor path fixed for
+        https://github.com/pylint-dev/astroid/issues/3090 against crashes and
+        against behaviour changes from the version gate above: inference must
+        keep yielding a bound method here, exactly as on the unfixed baseline.
+
+        It does NOT validate runtime binding semantics: astroid's descriptor
+        path binds on every Python version and omits the bound ``self`` from
+        inferred call results, while the runtime only binds on 3.14 (3.13
+        warns and returns the unbound partial; 3.12 has no ``__get__``).
+        That mismatch is a pre-existing astroid limitation, unchanged here.
+        """
+        ast_nodes = astroid.extract_node("""
+        from functools import partial
+
+        def func(x, y):
+            return x + y
+
+        class A:
+            bar = partial(func, 1)
+
+        A.bar.__get__(A(), A) #@
+        A.bar.__get__(A(), A)(2) #@
+        """)
+        bound, call = ast_nodes
+
+        inferred_bound = next(bound.infer())
+        assert isinstance(inferred_bound, astroid.BoundMethod)
+
+        # No crash, one result; the value is not asserted because astroid
+        # omits the bound ``self`` from call results (see docstring).
+        inferred_call = next(call.infer())
+        assert inferred_call is not util.Uninferable
 
     def test_invalid_functools_partial_calls(self) -> None:
         ast_nodes = astroid.extract_node("""
