@@ -67,9 +67,9 @@ class TransformVisitor:
                 if ret is not None:
                     _invalidate_cache()
                     node = ret
-                if ret.__class__ != cls:
-                    # Can no longer apply the rest of the transforms.
-                    break
+                    if ret.__class__ != cls:
+                        # Can no longer apply the rest of the transforms.
+                        break
         return node
 
     def _visit(self, node: nodes.NodeNG) -> SuccessfulInferenceResult:
