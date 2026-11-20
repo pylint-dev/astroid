@@ -768,3 +768,45 @@ class EnumBrainTest(unittest.TestCase):
             "OrderedDict",
             "RED",
         }
+
+    def test_dataclass_enum_members(self) -> None:
+        """Dataclass transforms must not prevent Enum ``__members__`` inference
+        when ``__init__`` generation is skipped.
+
+        Regression test for https://github.com/pylint-dev/astroid/issues/2317.
+        """
+        module = builder.parse("""
+        from dataclasses import dataclass
+        from enum import Enum
+
+        @dataclass
+        class DefaultDataclassEnum(str, Enum):
+            asd: str = "1"
+
+        @dataclass(init=False)
+        class InitFalseDataclassEnum(str, Enum):
+            asd: str = "1"
+
+        @dataclass
+        class CustomInitDataclassEnum(str, Enum):
+            asd: str = "1"
+
+            def __init__(self, value: str) -> None:
+                pass
+        """)
+        for name in (
+            "DefaultDataclassEnum",
+            "InitFalseDataclassEnum",
+            "CustomInitDataclassEnum",
+        ):
+            enum_cls = module[name]
+            assert enum_cls.is_dataclass
+            assert "__members__" in enum_cls.locals
+
+            members = next(enum_cls.getattr("__members__")[0].infer())
+            assert isinstance(members, nodes.Dict)
+            assert [k.value for k, _ in members.items] == ["asd"]
+
+            value_node = next(enum_cls.getattr("asd")[0].igetattr("value"))
+            assert isinstance(value_node, nodes.Const)
+            assert value_node.value == "1"

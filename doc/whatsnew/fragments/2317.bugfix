@@ -1,0 +1,5 @@
+``dataclass_transform()`` now always returns the transformed ``ClassDef`` node so
+subsequent ``Enum`` inference still populates ``__members__`` on ``@dataclass(init=False)``
+and custom-``__init__`` enum classes.
+
+Refs #2317
