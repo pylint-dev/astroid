@@ -475,7 +475,9 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
     # truncated result must not have been cached, so with the budget restored
     # the lookup resolves for real instead of replaying ``Uninferable``.
     # See https://github.com/pylint-dev/pylint/issues/11582.
-    assert super_node.getattr("__init__", context=context)[0] is not Uninferable
+    assert isinstance(
+        super_node.getattr("__init__", context=context)[0], bases.BoundMethod
+    )
 
 
 @mock.patch(

@@ -1,13 +1,7 @@
 Do not cache inference results that were truncated by the inference budget.
+Caching them made inference results depend on the order in which modules were analysed.
 
-``NodeNG.infer`` appends an ``Uninferable`` placeholder once the per-inference
-budget (``InferenceContext.max_inferred``) is exhausted, and used to store that
-truncated tuple in the process-wide inference cache. Because that cache is
-shared by every module, a later inference of the same node with a fresh budget
-returned the cached ``Uninferable`` even though the node was inferable, which
-made results depend on the order in which the modules were analysed.
-
-Refs #3383
+Closes #3383
 Closes #3464
 Closes pylint-dev/pylint#11582
 Refs pylint-dev/pylint#9549
