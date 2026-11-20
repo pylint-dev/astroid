@@ -960,6 +960,63 @@ class BrainUUIDTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
 
 
+@pytest.mark.parametrize(
+    "code",
+    [
+        """
+        def sample(a, b=None):
+            return a
+        sample([1, 2, 5, 6], 2)
+        """,
+        """
+        class Identity:
+            def sample(self, a, b=None):
+                return a
+        Identity().sample([1, 2, 5, 6], 2)
+        """,
+    ],
+)
+def test_random_sample_does_not_override_user_defined_calls(code: str) -> None:
+    inferred = next(astroid.extract_node(code).infer())
+    assert isinstance(inferred, nodes.List)
+    assert [elt.value for elt in inferred.elts] == [1, 2, 5, 6]
+
+
+@pytest.mark.parametrize(
+    "receiver", ["random.Random()", "random.SystemRandom()", "Inherited()"]
+)
+def test_random_sample_inherited_methods(receiver: str) -> None:
+    node = astroid.extract_node(f"""
+        import random
+        class Inherited(random.Random):
+            pass
+        {receiver}.sample([1, 2, 5, 6], 2)
+    """)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert len(inferred.elts) == 2
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        "sample = 42; sample([1, 2, 5, 6], 2)",
+        "sample([1, 2, 5, 6], 2)",
+        "unknown.sample([1, 2, 5, 6], 2)",
+        """
+        if unknown:
+            def sample(a, b=None):
+                return a
+        else:
+            from random import sample
+        sample([1, 2, 5, 6], 2)
+        """,
+    ],
+)
+def test_random_sample_unresolved_callee_uses_normal_inference(code: str) -> None:
+    assert util.safe_infer(astroid.extract_node(code)) is None
+
+
 class RandomSampleTest(unittest.TestCase):
     def test_inferred_successfully(self) -> None:
         node = astroid.extract_node("""
