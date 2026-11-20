@@ -337,6 +337,54 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 5)
 
+    def test_namedtuple_api_on_self(self) -> None:
+        """``self`` in a method has the namedtuple API and the tuple methods.
+
+        https://github.com/pylint-dev/pylint/issues/7891
+        """
+        klass, *attributes = builder.extract_node("""
+        from typing import NamedTuple
+
+        class X(NamedTuple): #@
+            a: int
+            b: str = "b"
+
+            def method(self):
+                self._asdict() #@
+                self._replace(a=1) #@
+                self._fields #@
+                self._make([1, "b"]) #@
+                type(self)._make([1, "b"]) #@
+                self._field_defaults #@
+                self.count #@
+                self.index #@
+        """)
+        asdict, replace, fields, make, type_make, field_defaults, count, index = (
+            next(attribute.infer()) for attribute in attributes
+        )
+        # pylint recognizes a typing.NamedTuple subclass by this ancestor.
+        assert [ancestor.qname() for ancestor in klass.ancestors()] == [
+            "typing.NamedTuple",
+            "builtins.tuple",
+            "builtins.object",
+        ]
+        assert isinstance(replace, astroid.Instance)
+        assert replace._proxied is klass
+        for made in (make, type_make):
+            assert isinstance(made, astroid.Instance)
+            assert made.name == "X"
+        # Instances, not ``()`` or ``{}``: the items are not known.
+        assert isinstance(asdict, astroid.Instance)
+        assert asdict.pytype() == "builtins.dict"
+        assert isinstance(fields, astroid.Instance)
+        assert fields.pytype() == "builtins.tuple"
+        assert isinstance(field_defaults, astroid.Instance)
+        assert field_defaults.pytype() == "builtins.dict"
+        for method, name in ((count, "count"), (index, "index")):
+            assert isinstance(method, astroid.BoundMethod)
+            assert method.name == name
+            assert method.parent.qname() == "builtins.tuple"
+
     def test_namedtuple_inference(self) -> None:
         klass = builder.extract_node("""
         from typing import NamedTuple

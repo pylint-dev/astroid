@@ -1,0 +1,9 @@
+``typing.NamedTuple`` is now inferred as a ``tuple`` subclass with ``_asdict``,
+``_replace``, ``_fields``, ``_make`` and ``_field_defaults``, as typeshed
+declares it. ``self`` in a method of a ``typing.NamedTuple`` subclass finds that
+API and the tuple methods such as ``count`` and ``index`` through it, so pylint
+no longer reports ``no-member``, ``unsubscriptable-object`` or
+``not-an-iterable`` on ``self`` there.
+
+Refs #3476
+Closes pylint-dev/pylint#7891
