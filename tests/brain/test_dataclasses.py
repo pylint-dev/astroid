@@ -1630,3 +1630,31 @@ def test_property_default_huge_int_does_not_crash() -> None:
     assert len(inferred) == 1
     assert isinstance(inferred[0], bases.Instance)
     assert inferred[0].name == "A"
+
+
+def test_generic_base_subscripted_with_abc_union() -> None:
+    """A generic dataclass base subscripted with a union of an ABC subclass keeps
+    its fields in the subclass ``__init__``.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/9488
+    """
+    node = astroid.extract_node("""
+    from abc import ABC
+    from dataclasses import dataclass
+    from typing import Generic, TypeVar
+
+    class Base: ...
+    class AbstractBase(ABC): ...
+
+    _T = TypeVar("_T", bound=Base | AbstractBase)
+
+    @dataclass
+    class GenericClass(Generic[_T]):
+        field: _T
+
+    @dataclass
+    class ConcreteGeneric(GenericClass[Base | AbstractBase]):  #@
+        pass
+    """)
+    init = node.locals["__init__"][0]
+    assert [a.name for a in init.args.args] == ["self", "field"]
