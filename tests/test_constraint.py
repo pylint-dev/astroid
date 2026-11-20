@@ -2467,3 +2467,43 @@ def test_isinstance_pep604_union(
     assert len(inferred) == 2
     assert inferred[0].value == satisfy_val
     assert inferred[1] is Uninferable
+
+
+@pytest.mark.parametrize(
+    ("classinfo", "satisfy_val", "fail_val"),
+    (
+        ("int | str", 1.5, 3),
+        ("int | None", 1.5, None),
+        ("float | None", 3, None),
+    ),
+)
+def test_not_isinstance_pep604_union(
+    classinfo: str, satisfy_val: float | None, fail_val: float | None
+) -> None:
+    """not isinstance(x, A | B) narrows like not isinstance(x, (A, B)).
+
+    The None member of a union, e.g. "int | None", must exclude the None value
+    and only the None value.
+    """
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        if not isinstance(x, {classinfo}):
+            return (
+                x  #@
+            )
+
+    def f2(x = {satisfy_val}):
+        if not isinstance(x, {classinfo}):
+            return (
+                x  #@
+            )
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
