@@ -1,0 +1,5 @@
+Infer ``re.compile()`` results as ``re.Pattern`` instances with modeled regular
+expression methods and attributes. Preserve text/bytes result types and optional
+matches instead of reporting false ``no-member`` errors on compiled patterns.
+
+Closes #520
