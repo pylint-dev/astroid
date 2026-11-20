@@ -13,6 +13,7 @@ from functools import partial
 from typing import Final
 
 from astroid import context, nodes
+from astroid.brain.brain_namedtuple_enum import TYPING_NAMEDTUPLE_BASENAMES
 from astroid.brain.helpers import register_module_extender
 from astroid.builder import AstroidBuilder, _extract_single_node, extract_node
 from astroid.const import PY312_PLUS, PY313_PLUS, PY314_PLUS, PY315_PLUS
@@ -199,8 +200,14 @@ def infer_typing_attr(
 
 
 def _looks_like_generic_class_pep695(node: nodes.ClassDef) -> bool:
-    """Check if class is using type parameter. Python 3.12+."""
-    return len(node.type_params) > 0
+    """Check if class is using type parameter. Python 3.12+.
+
+    A ``typing.NamedTuple`` subclass is left to its own inference tip, which this one
+    would replace.
+    """
+    return len(node.type_params) > 0 and not (
+        set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
+    )
 
 
 def infer_typing_generic_class_pep695(
