@@ -441,7 +441,7 @@ class AssignName(
         assign node.
         """
         if isinstance(self.parent, AugAssign):
-            return self.parent.infer(context)
+            return _infer_stmts([self.parent], context)
 
         stmts = list(self.assigned_stmts(context=context))
         return _infer_stmts(stmts, context)
