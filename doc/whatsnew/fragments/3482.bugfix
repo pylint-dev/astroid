@@ -1,0 +1,8 @@
+The ``ctypes`` brain now gives the ``value`` argument of ``c_int``, ``c_char``,
+``c_double`` and the other simple types the same default as at runtime
+(``0``, ``0.0``, ``b"\x00"``, ``"\x00"`` or ``False``). ``apple = c_int()`` no
+longer makes pylint emit ``no-value-for-parameter`` on interpreters where
+``_ctypes`` is a built-in module, such as the uv and python-build-standalone
+builds.
+
+Refs #3482
