@@ -2425,3 +2425,85 @@ def test_guard_assignment_attr_from_other_module() -> None:
     """)
 
     assert _values(node) == [1]
+
+
+@pytest.mark.parametrize(
+    ("classinfo", "satisfy_val", "fail_val"),
+    (
+        ("int | str", 3, 1.5),
+        ("(int | str, bytes)", 3, 1.5),
+        ("int | None", None, 1.5),
+        ("float | None", 1.5, 3),
+        ("float | complex", 1.5, 3),
+    ),
+)
+def test_isinstance_pep604_union(
+    classinfo: str, satisfy_val: float | None, fail_val: float | None
+) -> None:
+    """isinstance(x, A | B) narrows like isinstance(x, (A, B)).
+
+    The None member of a union, e.g. "int | None", must match the None value
+    and only the None value.
+    """
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        if isinstance(x, {classinfo}):
+            return (
+                x  #@
+            )
+
+    def f2(x = {satisfy_val}):
+        if isinstance(x, {classinfo}):
+            return (
+                x  #@
+            )
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
+
+
+@pytest.mark.parametrize(
+    ("classinfo", "satisfy_val", "fail_val"),
+    (
+        ("int | str", 1.5, 3),
+        ("int | None", 1.5, None),
+        ("float | None", 3, None),
+    ),
+)
+def test_not_isinstance_pep604_union(
+    classinfo: str, satisfy_val: float | None, fail_val: float | None
+) -> None:
+    """not isinstance(x, A | B) narrows like not isinstance(x, (A, B)).
+
+    The None member of a union, e.g. "int | None", must exclude the None value
+    and only the None value.
+    """
+    node1, node2 = builder.extract_node(f"""
+    def f1(x = {fail_val}):
+        if not isinstance(x, {classinfo}):
+            return (
+                x  #@
+            )
+
+    def f2(x = {satisfy_val}):
+        if not isinstance(x, {classinfo}):
+            return (
+                x  #@
+            )
+    """)
+
+    inferred = node1.inferred()
+    assert len(inferred) == 1
+    assert inferred[0] is Uninferable
+
+    inferred = node2.inferred()
+    assert len(inferred) == 2
+    assert inferred[0].value == satisfy_val
+    assert inferred[1] is Uninferable
