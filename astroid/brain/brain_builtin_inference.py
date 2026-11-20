@@ -244,7 +244,7 @@ def _builtin_dispatch_transform(
         if result.lineno is None:
             result.lineno = node.lineno
         # Can be a 'Module' see https://github.com/pylint-dev/pylint/issues/4671
-        # We don't have a regression test on this one: tread carefully
+        # We don't have a regression test on this one: be careful
         if hasattr(result, "col_offset") and result.col_offset is None:
             result.col_offset = node.col_offset
     return iter([result])

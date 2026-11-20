@@ -266,7 +266,7 @@ class TestSpecialAlias:
 
         inferred = next(assign.value.infer())
         assert isinstance(inferred, nodes.ClassDef)
-        assert [anc.qname() for anc in inferred.ancestors()] == [
+        assert [ancestor.qname() for ancestor in inferred.ancestors()] == [
             base,
             "builtins.object",
         ]

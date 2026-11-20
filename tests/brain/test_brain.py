@@ -314,10 +314,10 @@ class TypingBrain(unittest.TestCase):
            pass
         """)
         self.assertEqual(
-            [anc.name for anc in klass.ancestors()], ["X", "tuple", "object"]
+            [ancestor.name for ancestor in klass.ancestors()], ["X", "tuple", "object"]
         )
-        for anc in klass.ancestors():
-            self.assertFalse(anc.parent is None)
+        for ancestor in klass.ancestors():
+            self.assertFalse(ancestor.parent is None)
 
     def test_namedtuple_can_correctly_access_methods(self) -> None:
         klass, called = builder.extract_node("""

@@ -278,7 +278,7 @@ def _generate_dataclass_init(
     for assign in assigns:
         name, annotation, value = assign.target.name, assign.annotation, assign.value
 
-        # Check whether this assign is overriden by a property assignment
+        # Check whether this assign is overridden by a property assignment
         property_node: nodes.FunctionDef | None = None
         for additional_assign in node.locals[name]:
             if not isinstance(additional_assign, nodes.FunctionDef):
@@ -347,7 +347,7 @@ def _generate_dataclass_init(
             except (InferenceError, StopIteration):
                 pass
         else:
-            # Even with `init=False` the default value still can be propogated to
+            # Even with `init=False` the default value still can be propagated to
             # later assignments. Creating weird signatures like:
             # (self, a: str = 1) -> None
             previous_default = _get_previous_field_default(node, name)

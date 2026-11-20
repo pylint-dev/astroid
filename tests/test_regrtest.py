@@ -461,7 +461,7 @@ def test_max_inferred_for_complicated_class_hierarchy() -> None:
     init_object_node = module.body[-1].mro()[-1]["__init__"]
     super_node = next(init_attr_node.expr.infer())
 
-    # Arbitrarily limit the max number of infered nodes per context
+    # Arbitrarily limit the max number of inferred nodes per context
     InferenceContext.max_inferred = -1
     context = InferenceContext()
 

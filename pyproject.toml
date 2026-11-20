@@ -113,6 +113,10 @@ lint.fixable = [
 ]
 lint.unfixable = [ "RUF001" ]
 
+[tool.codespell]
+ignore-words = [ "custom_dict.txt" ]
+exclude-file = "CONTRIBUTORS.txt"
+
 [tool.pyproject-fmt]
 max_supported_python = "3.14"
 
