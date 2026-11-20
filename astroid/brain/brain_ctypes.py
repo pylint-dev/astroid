@@ -57,11 +57,19 @@ def enrich_ctypes_redefined_types() -> nodes.Module:
         ("c_wchar", "str", "u"),
     )
 
+    # The value each type holds when it is built without argument
+    builtin_type_to_default = {
+        "bytes": r"b'\x00'",
+        "float": "0.0",
+        "int": "0",
+        "str": r"'\x00'",
+    }
+
     src = ["""
 from _ctypes import _SimpleCData
 
 class c_bool(_SimpleCData):
-    def __init__(self, value):
+    def __init__(self, value=False):
         self.value = True
         self._type_ = '?'
     """]
@@ -69,7 +77,7 @@ class c_bool(_SimpleCData):
     for c_type, builtin_type, type_code in c_class_to_type:
         src.append(f"""
 class {c_type}(_SimpleCData):
-    def __init__(self, value):
+    def __init__(self, value={builtin_type_to_default[builtin_type]}):
         self.value = {builtin_type}(value)
         self._type_ = '{type_code}'
         """)
