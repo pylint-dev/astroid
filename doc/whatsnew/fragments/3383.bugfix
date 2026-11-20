@@ -1,0 +1,9 @@
+Do not cache inference results that were truncated by the inference budget.
+Caching them made inference results depend on the order in which modules were analysed.
+
+Closes #3383
+Closes #3464
+Closes pylint-dev/pylint#11582
+Refs pylint-dev/pylint#9549
+
+Thanks to @budhitha for the astroid-only reproducer behind #3464.
