@@ -114,7 +114,7 @@ lint.fixable = [
 lint.unfixable = [ "RUF001" ]
 
 [tool.codespell]
-ignore-words-list = "Ned,Ream,astroid,nin"
+ignore-words-list = "Ned,Ream,astroid,bord,nin"
 exclude-file = "CONTRIBUTORS.txt"
 
 [tool.pyproject-fmt]
