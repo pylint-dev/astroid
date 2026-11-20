@@ -1,0 +1,9 @@
+Resolving ``distutils`` submodules no longer asks the import system where
+``distutils`` lives. With setuptools installed that lookup went through its
+``distutils`` shim, which imports ``setuptools`` through ``sys.path``, so a
+``setuptools`` package next to the analysed sources was executed as soon as a
+file imported ``distutils.util``. The lookup only served virtualenv < 20, which
+cannot create environments for the Python versions astroid supports.
+
+Refs #1386
+Refs pylint-dev/pylint#5645
