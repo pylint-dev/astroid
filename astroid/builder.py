@@ -191,7 +191,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         path: str | None,
         is_stub: bool | None = None,
     ) -> tuple[nodes.Module, rebuilder.TreeRebuilder]:
-        """Build tree node from data and add some informations."""
+        """Build tree node from data and add some information."""
         try:
             node = _parse_string(data, type_comments=True, modname=modname)
         except (TypeError, ValueError, SyntaxError, MemoryError) as exc:

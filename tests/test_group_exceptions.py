@@ -108,7 +108,7 @@ def test_star_exceptions_infer_exceptions() -> None:
         raise ExceptionGroup("group", [ValueError(654), TypeError(10)])
     except* ValueError as ve:
         print(e.exceptions)
-    except* TypeError as te:
+    except* TypeError as texc:
         print(e.exceptions)
     else:
         sys.exit(127)

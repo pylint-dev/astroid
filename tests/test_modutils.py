@@ -363,7 +363,7 @@ class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
 
 
 class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
-    """given a mod path (i.e. splited module / package name), return the
+    """given a mod path (i.e. split module / package name), return the
     corresponding file, giving priority to source file over precompiled file
     if it exists"""
 

@@ -2338,7 +2338,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             @property
             def bind(self):
                 return 42
-            def irelevant(self):
+            def irrelevant(self):
                 # This is important, because it used to trigger
                 # a maximum recursion error.
                 bind = _bind(self)

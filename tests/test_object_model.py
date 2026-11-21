@@ -708,7 +708,7 @@ class TestContextManagerModel:
         # Test that the method is correctly bound
         assert isinstance(enter.bound, bases.Generator)
         assert enter.bound._proxied.qname() == "builtins.generator"
-        # Test that thet FunctionDef accepts no arguments except self
+        # Test that the FunctionDef accepts no arguments except self
         # NOTE: This probably shouldn't be double proxied, but this is a
         # quirck of the current model implementations.
         assert isinstance(enter._proxied._proxied, nodes.FunctionDef)
@@ -717,7 +717,7 @@ class TestContextManagerModel:
 
         exit_node = next(ast_nodes[1].infer())
         assert isinstance(exit_node, astroid.BoundMethod)
-        # Test that the FunctionDef accepts the arguments as defiend in the ObjectModel
+        # Test that the FunctionDef accepts the arguments as defined in the ObjectModel
         assert isinstance(exit_node._proxied._proxied, nodes.FunctionDef)
         assert len(exit_node._proxied._proxied.args.args) == 4
         assert exit_node._proxied._proxied.args.args[0].name == "self"
@@ -973,7 +973,7 @@ def test_lru_cache(parentheses) -> None:
 
 
 def test_class_annotations() -> None:
-    """Test that the `__annotations__` attribute is avaiable in the class scope"""
+    """Test that the `__annotations__` attribute is available in the class scope"""
     annotations, klass_attribute = builder.extract_node("""
         class Test:
             __annotations__  #@

@@ -2031,7 +2031,10 @@ class ClassDef(
         if self.qname() == type_name:
             return True
 
-        return any(anc.qname() == type_name for anc in self.ancestors(context=context))
+        return any(
+            ancestor.qname() == type_name
+            for ancestor in self.ancestors(context=context)
+        )
 
     def _infer_type_call(self, caller, context):
         try:
