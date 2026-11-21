@@ -1196,6 +1196,84 @@ def test_dataclass_with_field_init_is_false_without_default() -> None:
     assert child_init.args.defaults == []
 
 
+def test_dataclass_inherits_fields_of_base_with_init_false() -> None:
+    """A base decorated with init=False has no __init__, but its fields are still
+    part of the __init__ of a subclass.
+
+    Reported in https://github.com/pylint-dev/pylint/issues/9389
+    """
+    child, third, kw_child = astroid.extract_node("""
+    from dataclasses import dataclass, field
+
+    @dataclass(init=False, frozen=True)
+    class Base:
+        a: str
+
+    @dataclass(frozen=True)
+    class Child(Base):
+        b: str
+
+    @dataclass
+    class First:
+        x: int
+
+    @dataclass(init=False)
+    class Second(First):
+        y: str
+        z: int = field(default=0, init=False)
+
+    @dataclass
+    class Third(Second):
+        w: float = 1.0
+
+    @dataclass(init=False, kw_only=True)
+    class KwBase:
+        k: int
+
+    @dataclass
+    class KwChild(KwBase):
+        p: str
+
+    Child.__init__  #@
+    Third.__init__  #@
+    KwChild.__init__  #@
+    """)
+
+    child_init: bases.UnboundMethod = next(child.infer())
+    assert [a.name for a in child_init.args.args] == ["self", "a", "b"]
+
+    third_init: bases.UnboundMethod = next(third.infer())
+    assert [a.name for a in third_init.args.args] == ["self", "x", "y", "w"]
+    assert [a.value for a in third_init.args.defaults] == [1.0]
+
+    kw_child_init: bases.UnboundMethod = next(kw_child.infer())
+    assert [a.name for a in kw_child_init.args.args] == ["self", "p"]
+    assert [a.name for a in kw_child_init.args.kwonlyargs] == ["k"]
+
+
+def test_dataclass_base_with_init_false_and_invalid_field_order() -> None:
+    """The fields of a base with init=False that can't form a valid __init__ are
+    left out of the __init__ of a subclass.
+    """
+    node = astroid.extract_node("""
+    from dataclasses import dataclass
+
+    @dataclass(init=False)
+    class Base:
+        a: int = 1
+        b: int
+
+    @dataclass
+    class Child(Base):
+        c: int
+
+    Child.__init__  #@
+    """)
+
+    init: bases.UnboundMethod = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "c"]
+
+
 def test_dataclass_inits_of_non_dataclasses() -> None:
     """Regression test for __init__ mangling for non dataclasses.
 
