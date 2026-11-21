@@ -75,6 +75,14 @@ def dataclass_transform(node: nodes.ClassDef) -> nodes.ClassDef | None:
         rhs_node = AstroidManager().visit_transforms(rhs_node)
         node.instance_attrs[name] = [rhs_node]
 
+    # The decorator sets ``__dataclass_fields__`` on every dataclass, whatever
+    # its arguments, as a dict of field names to ``dataclasses.Field`` objects.
+    if "__dataclass_fields__" not in node.locals:
+        fields_assign = parse("__dataclass_fields__ = {}").body[0]
+        fields_assign.parent = node
+        fields_assign.lineno, fields_assign.col_offset = None, None
+        node.locals["__dataclass_fields__"] = [fields_assign.targets[0]]
+
     if not _check_generate_dataclass_init(node):
         return None
 
