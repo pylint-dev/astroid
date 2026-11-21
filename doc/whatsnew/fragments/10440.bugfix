@@ -1,0 +1,5 @@
+``numpy.unravel_index`` is no longer inferred as a one-element tuple. It returns one
+array per dimension of ``shape``, so its result is now a ``tuple`` of unknown length,
+and unpacking it no longer reports ``unbalanced-tuple-unpacking`` in pylint.
+
+Closes pylint-dev/pylint#10440
