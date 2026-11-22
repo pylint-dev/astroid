@@ -11,6 +11,7 @@ from __future__ import annotations
 import collections
 import collections.abc
 import copy
+import itertools
 from collections.abc import Iterable, Iterator
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -306,8 +307,9 @@ class BaseInstance(Proxy):
             context.lookupname = name
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            yield from _infer_stmts(
-                self._wrap_attr(get_attr, context), context, frame=self
+            # A chain iterator does not forward close() to an iterator being finalized.
+            yield from itertools.chain(
+                _infer_stmts(self._wrap_attr(get_attr, context), context, frame=self)
             )
         except AttributeInferenceError:
             try:
@@ -317,7 +319,7 @@ class BaseInstance(Proxy):
                 if self._proxied.__class__.__name__ != "ClassDef":
                     raise
                 attrs = self._proxied.igetattr(name, context, class_context=False)
-                yield from self._wrap_attr(attrs, context)
+                yield from itertools.chain(self._wrap_attr(attrs, context))
             except AttributeInferenceError as error:
                 raise InferenceError(**vars(error)) from error
 

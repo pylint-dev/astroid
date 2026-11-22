@@ -1095,7 +1095,8 @@ def _infer_attribute(
                 # It's value would be the args passed to the linter itself
                 yield util.Uninferable
             else:
-                yield from owner.igetattr(node.attrname, context)
+                # Cleanup can release this generator while the inner iterator is closing.
+                yield from itertools.chain(owner.igetattr(node.attrname, context))
         except (
             AttributeInferenceError,
             InferenceError,
