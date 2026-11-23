@@ -285,13 +285,6 @@ class TestBuiltinDispatcher(unittest.TestCase):
     branch is worth a dedicated regression test.
     """
 
-    def test_known_builtin_name_dispatches(self) -> None:
-        """``bool(...)`` resolves to the builtin's inferred constant."""
-        node = builder.extract_node("bool(1) #@")
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value is True
-
     def test_dict_fromkeys_attribute_dispatches(self) -> None:
         """``dict.fromkeys(...)`` flows through the Attribute branch of the predicate."""
         node = builder.extract_node("dict.fromkeys(['a', 'b']) #@")

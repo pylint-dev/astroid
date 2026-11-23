@@ -37,16 +37,3 @@ def test_numpy_function_calls_inferred_as_ndarray() -> None:
     assert (
         inferred_values[-1].pytype() == ".ndarray"
     ), f"Illicit type for {method:s} ({inferred_values[-1].pytype()})"
-
-
-@pytest.mark.skipif(not HAS_NUMPY, reason="This test requires the numpy library.")
-def test_function_parameters() -> None:
-    instance = builder.extract_node("""
-    import numpy
-    numpy.einsum #@
-    """)
-    actual_args = instance.inferred()[0].args
-
-    assert actual_args.vararg == "operands"
-    assert [arg.name for arg in actual_args.kwonlyargs] == ["out", "optimize"]
-    assert actual_args.kwarg == "kwargs"

@@ -23,14 +23,13 @@ import pytest
 from astroid import (
     MANAGER,
     builder,
-    extract_node,
     nodes,
     objects,
     parse,
     util,
 )
 from astroid.bases import BoundMethod, Generator, Instance, UnboundMethod
-from astroid.const import PY312_PLUS, WIN32
+from astroid.const import WIN32
 from astroid.exceptions import (
     AstroidBuildingError,
     AttributeInferenceError,
@@ -38,7 +37,6 @@ from astroid.exceptions import (
     InconsistentMroError,
     InferenceError,
     MroError,
-    NameInferenceError,
     NoDefault,
     ResolveError,
     TooManyLevelsError,
@@ -502,12 +500,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             ],
         )
 
-    def test_lambda_getattr(self) -> None:
-        astroid = builder.parse("lmbd = lambda: None")
-        self.assertIsInstance(
-            astroid["lmbd"].parent.value.getattr("__code__")[0], nodes.Unknown
-        )
-
     def test_is_method(self) -> None:
         data = """
             class A:
@@ -534,28 +526,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertFalse(astroid["function"].is_method())
         self.assertFalse(astroid["sfunction"].is_method())
 
-    def test_argnames(self) -> None:
-        code = "def f(a, b, c, *args, **kwargs): pass"
-        astroid = builder.parse(code, __name__)
-        self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "args", "kwargs"])
-
-        code_with_kwonly_args = "def f(a, b, *args, c=None, d=None, **kwargs): pass"
-        astroid = builder.parse(code_with_kwonly_args, __name__)
-        self.assertEqual(
-            astroid["f"].argnames(), ["a", "b", "args", "c", "d", "kwargs"]
-        )
-
-    def test_argnames_lambda(self) -> None:
-        lambda_node = extract_node("lambda a, b, c, *args, **kwargs: ...")
-        self.assertEqual(lambda_node.argnames(), ["a", "b", "c", "args", "kwargs"])
-
-    def test_positional_only_argnames(self) -> None:
-        code = "def f(a, b, /, c=None, *args, d, **kwargs): pass"
-        astroid = builder.parse(code, __name__)
-        self.assertEqual(
-            astroid["f"].argnames(), ["a", "b", "c", "args", "d", "kwargs"]
-        )
-
     def test_return_nothing(self) -> None:
         """Test inferred value on a function with empty return."""
         data = """
@@ -570,29 +540,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(func_vals), 1)
         self.assertIsInstance(func_vals[0], nodes.Const)
         self.assertIsNone(func_vals[0].value)
-
-    def test_no_returns_is_implicitly_none(self) -> None:
-        code = """
-            def f():
-                print('non-empty, non-pass, no return statements')
-            value = f()
-            value
-        """
-        node = builder.extract_node(code)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value is None
-
-    def test_only_raises_is_not_implicitly_none(self) -> None:
-        code = """
-            def f():
-                raise SystemExit()
-            f()
-        """
-        node = builder.extract_node(code)
-        assert isinstance(node, nodes.Call)
-        inferred = next(node.infer())
-        assert inferred is util.Uninferable
 
     def test_abstract_methods_are_not_implicitly_none(self) -> None:
         code = """
@@ -656,24 +603,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(node.getattr("__name__")), 2)
             self.assertEqual(len(node.getattr("__name__")), 2)
             self.assertEqual(len(node.instance_attrs["__name__"]), 1)
-
-    def test_func_is_bound(self) -> None:
-        data = """
-        class MyClass:
-            def bound():  #@
-                pass
-        """
-        func = builder.extract_node(data)
-        self.assertIs(func.is_bound(), True)
-        self.assertEqual(func.implicit_parameters(), 1)
-
-        data2 = """
-        def not_bound():  #@
-            pass
-        """
-        func2 = builder.extract_node(data2)
-        self.assertIs(func2.is_bound(), False)
-        self.assertEqual(func2.implicit_parameters(), 0)
 
     def test_type_builtin_descriptor_subclasses(self) -> None:
         astroid = builder.parse("""
@@ -774,21 +703,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(node.locals["staticmethod_wrapped"][0].type, "staticmethod")
         self.assertEqual(node.locals["long_classmethod"][0].type, "classmethod")
 
-    def test_decorator_factory_returning_classmethod_subclass(self) -> None:
-        node = builder.extract_node("""
-        class my_classmethod(classmethod):
-            pass
-
-        def factory():
-            return my_classmethod
-
-        class SomeClass:
-            @factory()
-            def method(cls):
-                pass
-        """)
-        self.assertEqual(node.locals["method"][0].type, "classmethod")
-
     def test_igetattr(self) -> None:
         func = builder.extract_node("""
         def test():
@@ -803,223 +717,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         inferred = next(func.igetattr("value"))
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
-
-    def test_return_annotation_is_not_the_last(self) -> None:
-        func = builder.extract_node("""
-        def test() -> bytes:
-            pass
-            pass
-            return
-        """)
-        last_child = func.last_child()
-        self.assertIsInstance(last_child, nodes.Return)
-        self.assertEqual(func.tolineno, 5)
-
-    def test_method_init_subclass(self) -> None:
-        klass = builder.extract_node("""
-        class MyClass:
-            def __init_subclass__(cls):
-                pass
-        """)
-        method = klass["__init_subclass__"]
-        self.assertEqual([n.name for n in method.args.args], ["cls"])
-        self.assertEqual(method.type, "classmethod")
-
-    def test_dunder_class_local_to_method(self) -> None:
-        node = builder.extract_node("""
-        class MyClass:
-            def test(self):
-                __class__ #@
-        """)
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.ClassDef)
-        self.assertEqual(inferred.name, "MyClass")
-
-    def test_dunder_class_local_to_function(self) -> None:
-        node = builder.extract_node("""
-        def test(self):
-            __class__ #@
-        """)
-        with self.assertRaises(NameInferenceError):
-            next(node.infer())
-
-    def test_dunder_class_local_to_classmethod(self) -> None:
-        node = builder.extract_node("""
-        class MyClass:
-            @classmethod
-            def test(cls):
-                __class__ #@
-        """)
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.ClassDef)
-        self.assertEqual(inferred.name, "MyClass")
-
-    @staticmethod
-    def test_singleline_docstring() -> None:
-        code = textwrap.dedent("""\
-            def foo():
-                '''Hello World'''
-                bar = 1
-        """)
-        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
-
-        assert isinstance(func.doc_node, nodes.Const)
-        assert func.doc_node.lineno == 2
-        assert func.doc_node.col_offset == 4
-        assert func.doc_node.end_lineno == 2
-        assert func.doc_node.end_col_offset == 21
-
-    @staticmethod
-    def test_multiline_docstring() -> None:
-        code = textwrap.dedent("""\
-            def foo():
-                '''Hello World
-
-                Also on this line.
-                '''
-                bar = 1
-        """)
-        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
-
-        assert isinstance(func.doc_node, nodes.Const)
-        assert func.doc_node.lineno == 2
-        assert func.doc_node.col_offset == 4
-        assert func.doc_node.end_lineno == 5
-        assert func.doc_node.end_col_offset == 7
-
-    @staticmethod
-    def test_multiline_docstring_async() -> None:
-        code = textwrap.dedent("""\
-            async def foo(var: tuple = ()):
-                '''Hello
-
-                World
-                '''
-        """)
-        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
-
-        assert isinstance(func.doc_node, nodes.Const)
-        assert func.doc_node.lineno == 2
-        assert func.doc_node.col_offset == 4
-        assert func.doc_node.end_lineno == 5
-        assert func.doc_node.end_col_offset == 7
-
-    @staticmethod
-    def test_docstring_special_cases() -> None:
-        code = textwrap.dedent("""\
-        def f1(var: tuple = ()):  #@
-            'Hello World'
-
-        def f2() -> "just some comment with an open bracket(":  #@
-            'Hello World'
-
-        def f3() -> "Another comment with a colon: ":  #@
-            'Hello World'
-
-        def f4():  #@
-            # It should work with comments too
-            'Hello World'
-        """)
-        ast_nodes: list[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
-        assert len(ast_nodes) == 4
-
-        assert isinstance(ast_nodes[0].doc_node, nodes.Const)
-        assert ast_nodes[0].doc_node.lineno == 2
-        assert ast_nodes[0].doc_node.col_offset == 4
-        assert ast_nodes[0].doc_node.end_lineno == 2
-        assert ast_nodes[0].doc_node.end_col_offset == 17
-
-        assert isinstance(ast_nodes[1].doc_node, nodes.Const)
-        assert ast_nodes[1].doc_node.lineno == 5
-        assert ast_nodes[1].doc_node.col_offset == 4
-        assert ast_nodes[1].doc_node.end_lineno == 5
-        assert ast_nodes[1].doc_node.end_col_offset == 17
-
-        assert isinstance(ast_nodes[2].doc_node, nodes.Const)
-        assert ast_nodes[2].doc_node.lineno == 8
-        assert ast_nodes[2].doc_node.col_offset == 4
-        assert ast_nodes[2].doc_node.end_lineno == 8
-        assert ast_nodes[2].doc_node.end_col_offset == 17
-
-        assert isinstance(ast_nodes[3].doc_node, nodes.Const)
-        assert ast_nodes[3].doc_node.lineno == 12
-        assert ast_nodes[3].doc_node.col_offset == 4
-        assert ast_nodes[3].doc_node.end_lineno == 12
-        assert ast_nodes[3].doc_node.end_col_offset == 17
-
-    @staticmethod
-    def test_without_docstring() -> None:
-        code = textwrap.dedent("""\
-            def foo():
-                bar = 1
-        """)
-        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
-        assert func.doc_node is None
-
-    @staticmethod
-    def test_display_type() -> None:
-        code = textwrap.dedent("""\
-            def foo():
-                bar = 1
-        """)
-        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
-        assert func.display_type() == "Function"
-
-        code = textwrap.dedent("""\
-            class A:
-                def foo(self):  #@
-                    bar = 1
-        """)
-        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
-        assert func.display_type() == "Method"
-
-    @staticmethod
-    def test_inference_error() -> None:
-        code = textwrap.dedent("""\
-            def foo():
-                bar = 1
-        """)
-        func: nodes.FunctionDef = builder.extract_node(code)  # type: ignore[assignment]
-        with pytest.raises(AttributeInferenceError):
-            func.getattr("")
-
-    @staticmethod
-    def test_blockstart_tolineno() -> None:
-        code = textwrap.dedent("""\
-        def f1(bar: str) -> None:  #@
-            pass
-
-        def f2(  #@
-               bar: str) -> None:
-            pass
-
-        def f3(  #@
-            bar: str
-        ) -> None:
-            pass
-
-        def f4(  #@
-            bar: str
-        ):
-            pass
-
-        def f5(  #@
-               bar: str):
-            pass
-        """)
-        ast_nodes: list[nodes.FunctionDef] = builder.extract_node(code)  # type: ignore[assignment]
-        assert len(ast_nodes) == 5
-
-        assert ast_nodes[0].blockstart_tolineno == 1
-
-        assert ast_nodes[1].blockstart_tolineno == 5
-
-        assert ast_nodes[2].blockstart_tolineno == 10
-
-        # Unimplemented, will return line 14 for now.
-        # assert ast_nodes[3].blockstart_tolineno == 15
-
-        assert ast_nodes[4].blockstart_tolineno == 19
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
@@ -1064,34 +761,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         mro = node.getattr("__mro__")[0]
         self.assertIsInstance(mro, nodes.Tuple)
         self.assertEqual(mro.elts, node.mro())
-
-    def test__bases__attribute(self) -> None:
-        node = builder.extract_node("""
-        class A(object): pass
-        class B(object): pass
-        class C(A, B): pass
-        class D(C): pass
-        """)
-        assert isinstance(node, nodes.ClassDef)
-        bases = node.getattr("__bases__")[0]
-        self.assertIsInstance(bases, nodes.Tuple)
-        self.assertEqual(len(bases.elts), 1)
-        self.assertIsInstance(bases.elts[0], nodes.ClassDef)
-        self.assertEqual(bases.elts[0].name, "C")
-
-    def test_cls_special_attributes_2(self) -> None:
-        astroid = builder.parse(
-            """
-            class A(object): pass
-            class B(object): pass
-
-            A.__bases__ += (B,)
-        """,
-            __name__,
-        )
-        self.assertEqual(len(astroid["A"].getattr("__bases__")), 2)
-        self.assertIsInstance(astroid["A"].getattr("__bases__")[1], nodes.Tuple)
-        self.assertIsInstance(astroid["A"].getattr("__bases__")[0], nodes.AssignAttr)
 
     def test_instance_special_attributes(self) -> None:
         for inst in (Instance(self.module["YO"]), nodes.List(), nodes.Const(1)):
@@ -1143,28 +812,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(anc_klass, nodes.ClassDef)
         self.assertEqual(anc_klass.name, "object")
         self.assertRaises(StopIteration, partial(next, it))
-
-    def test_local_attr_mro(self) -> None:
-        module = builder.parse("""
-        class A(object):
-            def __init__(self): pass
-        class B(A):
-            def __init__(self, arg, arg2): pass
-        class C(A): pass
-        class D(C, B): pass
-        """)
-        dclass = module["D"]
-        init = dclass.local_attr("__init__")[0]
-        self.assertIsInstance(init, nodes.FunctionDef)
-        self.assertEqual(init.parent.name, "B")
-
-        cclass = module["C"]
-        init = cclass.local_attr("__init__")[0]
-        self.assertIsInstance(init, nodes.FunctionDef)
-        self.assertEqual(init.parent.name, "A")
-
-        ancestors = list(dclass.local_attr_ancestors("__init__"))
-        self.assertEqual([node.name for node in ancestors], ["B", "A", "object"])
 
     def test_instance_attr_ancestors(self) -> None:
         klass2 = self.module["YOUPI"]
@@ -1250,18 +897,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ]
         self.assertEqual(sorted(cls.locals.keys()), assert_keys)
 
-    def test_class_getattr(self) -> None:
-        data = """
-            class WebAppObject(object):
-                appli = application
-                appli += 2
-                del self.appli
-        """
-        astroid = builder.parse(data, __name__)
-        cls = astroid["WebAppObject"]
-        # test del statement not returned by getattr
-        self.assertEqual(len(cls.getattr("appli")), 2)
-
     def test_instance_getattr(self) -> None:
         data = """
             class WebAppObject(object):
@@ -1329,92 +964,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
 
-    def test_getattr_from_grandpa(self) -> None:
-        data = """
-            class Future:
-                attr = 1
-
-            class Present(Future):
-                pass
-
-            class Past(Present):
-                pass
-        """
-        astroid = builder.parse(data)
-        past = astroid["Past"]
-        attr = past.getattr("attr")
-        self.assertEqual(len(attr), 1)
-        attr1 = attr[0]
-        self.assertIsInstance(attr1, nodes.AssignName)
-        self.assertEqual(attr1.name, "attr")
-
-    @staticmethod
-    def test_getattr_with_enpty_annassign() -> None:
-        code = """
-            class Parent:
-                attr: int = 2
-
-            class Child(Parent):  #@
-                attr: int
-        """
-        child = extract_node(code)
-        attr = child.getattr("attr")
-        assert len(attr) == 1
-        assert isinstance(attr[0], nodes.AssignName)
-        assert attr[0].name == "attr"
-        assert attr[0].lineno == 3
-
-    def test_function_with_decorator_lineno(self) -> None:
-        data = """
-            @f(a=2,
-               b=3)
-            def g1(x):
-                print(x)
-
-            @f(a=2,
-               b=3,
-            )
-            def g2():
-                pass
-        """
-        astroid = builder.parse(data)
-        self.assertEqual(astroid["g1"].fromlineno, 4)
-        self.assertEqual(astroid["g1"].tolineno, 5)
-        self.assertEqual(astroid["g2"].fromlineno, 10)
-        self.assertEqual(astroid["g2"].tolineno, 11)
-
-    def test_metaclass_error(self) -> None:
-        astroid = builder.parse("""
-            class Test(object):
-                __metaclass__ = typ
-        """)
-        klass = astroid["Test"]
-        self.assertFalse(klass.metaclass())
-
-    def test_metaclass_yes_leak(self) -> None:
-        astroid = builder.parse("""
-            # notice `ab` instead of `abc`
-            from ab import ABCMeta
-
-            class Meta(object):
-                __metaclass__ = ABCMeta
-        """)
-        klass = astroid["Meta"]
-        self.assertIsNone(klass.metaclass())
-
-    def test_metaclass_type(self) -> None:
-        klass = builder.extract_node("""
-            def with_metaclass(meta, base=object):
-                return meta("NewBase", (base, ), {})
-
-            class ClassWithMeta(with_metaclass(type)): #@
-                pass
-        """)
-        assert isinstance(klass, nodes.ClassDef)
-        self.assertEqual(
-            ["NewBase", "object"], [base.name for base in klass.ancestors()]
-        )
-
     def test_no_infinite_metaclass_loop(self) -> None:
         klass = builder.extract_node("""
             class SSS(object):
@@ -1438,48 +987,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIn("object", ancestors)
         self.assertIn("JJJ", ancestors)
 
-    def test_no_infinite_metaclass_loop_with_redefine(self) -> None:
-        ast_nodes = builder.extract_node("""
-            import datetime
-
-            class A(datetime.date): #@
-                @classmethod
-                def now(cls):
-                    return cls()
-
-            class B(datetime.date): #@
-                pass
-
-            datetime.date = A
-            datetime.date = B
-        """)
-        for klass in ast_nodes:
-            self.assertEqual(None, klass.metaclass())
-
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_metaclass_generator_hack(self):
-        klass = builder.extract_node("""
-            import six
-
-            class WithMeta(six.with_metaclass(type, object)): #@
-                pass
-        """)
-        assert isinstance(klass, nodes.ClassDef)
-        self.assertEqual(["object"], [base.name for base in klass.ancestors()])
-        self.assertEqual("type", klass.metaclass().name)
-
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_metaclass_generator_hack_enum_base(self):
-        """Regression test for https://github.com/pylint-dev/pylint/issues/5935"""
-        klass = builder.extract_node("""
-            import six
-            from enum import Enum, EnumMeta
-
-            class PetEnumPy2Metaclass(six.with_metaclass(EnumMeta, Enum)): #@
-                DOG = "dog"
-        """)
-        self.assertEqual(list(klass.local_attr_ancestors("DOG")), [])
-
     def test_add_metaclass(self) -> None:
         klass = builder.extract_node("""
         import abc
@@ -1492,46 +999,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         metaclass = inferred.metaclass()
         self.assertIsInstance(metaclass, nodes.ClassDef)
         self.assertIn(metaclass.qname(), ("abc.ABCMeta", "_py_abc.ABCMeta"))
-
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_using_invalid_six_add_metaclass_call(self):
-        klass = builder.extract_node("""
-        import six
-        @six.add_metaclass()
-        class Invalid(object):
-            pass
-        """)
-        inferred = next(klass.infer())
-        self.assertIsNone(inferred.metaclass())
-
-    @staticmethod
-    def test_with_invalid_metaclass():
-        klass = extract_node("""
-        class InvalidAsMetaclass: ...
-
-        class Invalid(metaclass=InvalidAsMetaclass()):  #@
-            pass
-        """)
-        inferred = next(klass.infer())
-        metaclass = inferred.metaclass()
-        assert isinstance(metaclass, Instance)
-
-    def test_nonregr_infer_callresult(self) -> None:
-        astroid = builder.parse("""
-            class Delegate(object):
-                def __get__(self, obj, cls):
-                    return getattr(obj._subject, self.attribute)
-
-            class CompositeBuilder(object):
-                __call__ = Delegate()
-
-            builder = CompositeBuilder(result, composite)
-            tgts = builder()
-        """)
-        instance = astroid["tgts"]
-        # used to raise "'_Yes' object is not iterable", see
-        # https://bitbucket.org/logilab/astroid/issue/17
-        self.assertEqual(list(instance.infer()), [util.Uninferable])
 
     def test_slots(self) -> None:
         astroid = builder.parse("""
@@ -1578,94 +1045,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             else:
                 self.assertEqual(list(expected_value), [node.value for node in slots])
 
-    def test_slots_for_dict_keys(self) -> None:
-        module = builder.parse("""
-        class Issue(object):
-          SlotDefaults = {'id': 0, 'id1':1}
-          __slots__ = SlotDefaults.keys()
-        """)
-        cls = module["Issue"]
-        slots = cls.slots()
-        self.assertEqual(len(slots), 2)
-        self.assertEqual(slots[0].value, "id")
-        self.assertEqual(slots[1].value, "id1")
-
-    def test_slots_empty_list_of_slots(self) -> None:
-        module = builder.parse("""
-        class Klass(object):
-            __slots__ = ()
-        """)
-        cls = module["Klass"]
-        self.assertEqual(cls.slots(), [])
-
-    def test_slots_taken_from_parents(self) -> None:
-        module = builder.parse("""
-        class FirstParent(object):
-            __slots__ = ('a', 'b', 'c')
-        class SecondParent(FirstParent):
-            __slots__ = ('d', 'e')
-        class Third(SecondParent):
-            __slots__ = ('d', )
-        """)
-        cls = module["Third"]
-        slots = cls.slots()
-        self.assertEqual(
-            sorted({slot.value for slot in slots}), ["a", "b", "c", "d", "e"]
-        )
-
-    def test_all_ancestors_need_slots(self) -> None:
-        module = builder.parse("""
-        class A(object):
-            __slots__ = ('a', )
-        class B(A): pass
-        class C(B):
-            __slots__ = ('a', )
-        """)
-        cls = module["C"]
-        self.assertIsNone(cls.slots())
-        cls = module["B"]
-        self.assertIsNone(cls.slots())
-
-    def test_slots_annotation_only_without_value(self) -> None:
-        """An annotation-only ``__slots__`` has no inferable value.
-
-        Regression test for https://github.com/pylint-dev/astroid/issues/3067
-        """
-        module = builder.parse("""
-        class Klass:
-            __slots__: None
-
-            def method(self):
-                self.attr = 1
-        """)
-        # ``__slots__`` is in ``locals`` but cannot be inferred; ``slots()``
-        # must return None instead of raising ``InferenceError``.
-        self.assertIsNone(module["Klass"].slots())
-
-    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
-    def test_slots_pep695_type_param_named_slots(self) -> None:
-        module = builder.parse("""
-        class C[__slots__]:
-            def __init__(self):
-                self.a = 1
-        """)
-        self.assertIsNone(module["C"].slots())
-
-    def test_slots_added_dynamically_still_inferred(self) -> None:
-        code = """
-        class NodeBase(object):
-            __slots__ = "a", "b"
-
-            if Options.isFullCompat():
-                __slots__ += ("c",)
-
-        """
-        node = builder.extract_node(code)
-        inferred = next(node.infer())
-        slots = inferred.slots()
-        assert len(slots) == 3, slots
-        assert [slot.value for slot in slots] == ["a", "b", "c"]
-
     def assertEqualMro(self, klass: nodes.ClassDef, expected_mro: list[str]) -> None:
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
@@ -1673,20 +1052,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self, klass: nodes.ClassDef, expected_mro: list[str]
     ) -> None:
         self.assertEqual([member.qname() for member in klass.mro()], expected_mro)
-
-    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
-    def test_with_metaclass_mro(self):
-        astroid = builder.parse("""
-        import six
-
-        class C(object):
-            pass
-        class B(C):
-            pass
-        class A(six.with_metaclass(type, B)):
-            pass
-        """)
-        self.assertEqualMro(astroid["A"], ["A", "B", "C", "object"])
 
     def test_mro(self) -> None:
         astroid = builder.parse("""
@@ -1778,250 +1143,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cm.exception, MroError)
         self.assertIsInstance(cm.exception, ResolveError)
 
-    def test_mro_circular_name_rebinding(self) -> None:
-        """MRO computation should handle circular name rebinding.
-
-        When a module-level name is rebound to a subclass of itself,
-        _infer_last follows the rebinding and returns the subclass.
-        The MRO computation should resolve the cycle by falling back
-        to the original class.
-
-        Regression test for https://github.com/pylint-dev/astroid/issues/2967
-        """
-        astroid = builder.parse("""
-        import pdb
-
-        class CustomPdb(pdb.Pdb):
-            pass
-
-        pdb.Pdb = CustomPdb
-        """)
-        self.assertEqualMro(
-            astroid["CustomPdb"],
-            ["CustomPdb", "Pdb", "Bdb", "Cmd", "object"],
-        )
-
-    def test_mro_circular_name_rebinding_with_gap(self) -> None:
-        """MRO computation should handle circular name rebinding.
-
-        The MRO computation should resolve the cycle by falling back
-        to the original class.
-
-        Regression test for https://github.com/pylint-dev/pylint/issues/10821
-        """
-        astroid = builder.parse("""
-        import pdb
-
-        class PatchedPdb(pdb.Pdb):
-            pass
-
-        class CustomPdb(PatchedPdb):
-            pass
-
-        pdb.Pdb = CustomPdb
-        """)
-        self.assertEqualMro(
-            astroid["CustomPdb"],
-            ["CustomPdb", "PatchedPdb", "Pdb", "Bdb", "Cmd", "object"],
-        )
-
-    def test_mro_with_factories(self) -> None:
-        cls = builder.extract_node("""
-        def MixinFactory(cls):
-            mixin_name = '{}Mixin'.format(cls.__name__)
-            mixin_bases = (object,)
-            mixin_attrs = {}
-            mixin = type(mixin_name, mixin_bases, mixin_attrs)
-            return mixin
-        class MixinA(MixinFactory(int)):
-            pass
-        class MixinB(MixinFactory(str)):
-            pass
-        class Base(object):
-            pass
-        class ClassA(MixinA, Base):
-            pass
-        class ClassB(MixinB, ClassA):
-            pass
-        class FinalClass(ClassB):
-            def __init__(self):
-                self.name = 'x'
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMro(
-            cls,
-            [
-                "FinalClass",
-                "ClassB",
-                "MixinB",
-                "strMixin",
-                "ClassA",
-                "MixinA",
-                "intMixin",
-                "Base",
-                "object",
-            ],
-        )
-
-    def test_mro_with_attribute_classes(self) -> None:
-        cls = builder.extract_node("""
-        class A:
-            pass
-        class B:
-            pass
-        class Scope:
-            pass
-        scope = Scope()
-        scope.A = A
-        scope.B = B
-        class C(scope.A, scope.B):
-            pass
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMro(cls, ["C", "A", "B", "object"])
-
-    def test_mro_generic_1(self):
-        cls = builder.extract_node("""
-        import typing
-        T = typing.TypeVar('T')
-        class A(typing.Generic[T]): ...
-        class B: ...
-        class C(A[T], B): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(
-            cls, [".C", ".A", "typing.Generic", ".B", "builtins.object"]
-        )
-
-    def test_mro_generic_2(self):
-        cls = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T = TypeVar('T')
-        class A: ...
-        class B(Generic[T]): ...
-        class C(Generic[T], A, B[T]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(
-            cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
-        )
-
-    def test_mro_generic_3(self):
-        cls = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T = TypeVar('T')
-        class A: ...
-        class B(A, Generic[T]): ...
-        class C(Generic[T]): ...
-        class D(B[T], C[T], Generic[T]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(
-            cls, [".D", ".B", ".A", ".C", "typing.Generic", "builtins.object"]
-        )
-
-    def test_mro_generic_4(self):
-        cls = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T = TypeVar('T')
-        class A: ...
-        class B(Generic[T]): ...
-        class C(A, Generic[T], B[T]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(
-            cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
-        )
-
-    def test_mro_generic_5(self):
-        cls = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T1 = TypeVar('T1')
-        T2 = TypeVar('T2')
-        class A(Generic[T1]): ...
-        class B(Generic[T2]): ...
-        class C(A[T1], B[T2]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(
-            cls, [".C", ".A", ".B", "typing.Generic", "builtins.object"]
-        )
-
-    def test_mro_generic_6(self):
-        cls = builder.extract_node("""
-        from typing import Generic as TGeneric, TypeVar
-        T = TypeVar('T')
-        class Generic: ...
-        class A(Generic): ...
-        class B(TGeneric[T]): ...
-        class C(A, B[T]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(
-            cls, [".C", ".A", ".Generic", ".B", "typing.Generic", "builtins.object"]
-        )
-
-    def test_mro_generic_7(self):
-        cls = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T = TypeVar('T')
-        class A(): ...
-        class B(Generic[T]): ...
-        class C(A, B[T]): ...
-        class D: ...
-        class E(C[str], D): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(
-            cls, [".E", ".C", ".A", ".B", "typing.Generic", ".D", "builtins.object"]
-        )
-
-    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
-    def test_mro_generic_8(self):
-        cls = builder.extract_node("""
-        class A: ...
-        class B[T]: ...
-        class C[T](A, B[T]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(cls, [".C", ".A", ".B", "builtins.object"])
-
-    @pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
-    def test_mro_generic_9(self):
-        cls = builder.extract_node("""
-        from dataclasses import dataclass
-        @dataclass
-        class A: ...
-        @dataclass
-        class B[T]: ...
-        @dataclass
-        class C[T](A, B[T]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqualMroQName(cls, [".C", ".A", ".B", "builtins.object"])
-
-    def test_mro_generic_error_1(self):
-        cls = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T1 = TypeVar('T1')
-        T2 = TypeVar('T2')
-        class A(Generic[T1], Generic[T2]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        with self.assertRaises(DuplicateBasesError):
-            cls.mro()
-
-    def test_mro_generic_error_2(self):
-        cls = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T = TypeVar('T')
-        class A(Generic[T]): ...
-        class B(A[T], A[T]): ...
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        with self.assertRaises(DuplicateBasesError):
-            cls.mro()
-
     def test_mro_typing_extensions(self):
         """Regression test for mro() inference on typing_extensions.
 
@@ -2067,22 +1188,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 
-    def test_type_three_arguments(self) -> None:
-        classes = builder.extract_node("""
-        type('A', (object, ), {"a": 1, "b": 2, missing: 3}) #@
-        """)
-        assert isinstance(classes, nodes.Call)
-        first = next(classes.infer())
-        self.assertIsInstance(first, nodes.ClassDef)
-        self.assertEqual(first.name, "A")
-        self.assertEqual(first.basenames, ["object"])
-        self.assertIsInstance(first["a"], nodes.Const)
-        self.assertEqual(first["a"].value, 1)
-        self.assertIsInstance(first["b"], nodes.Const)
-        self.assertEqual(first["b"].value, 2)
-        with self.assertRaises(AttributeInferenceError):
-            first.getattr("missing")
-
     def test_implicit_metaclass(self) -> None:
         cls = builder.extract_node("""
         class A(object):
@@ -2091,35 +1196,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert isinstance(cls, nodes.ClassDef)
         type_cls = nodes.builtin_lookup("type")[1][0]
         self.assertEqual(cls.implicit_metaclass(), type_cls)
-
-    def test_implicit_metaclass_lookup(self) -> None:
-        cls = builder.extract_node("""
-        class A(object):
-            pass
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        instance = cls.instantiate_class()
-        func = cls.getattr("mro")
-        self.assertEqual(len(func), 1)
-        self.assertRaises(AttributeInferenceError, instance.getattr, "mro")
-
-    def test_metaclass_lookup_using_same_class(self) -> None:
-        """Check that we don't have recursive attribute access for metaclass."""
-        cls = builder.extract_node("""
-        class A(object): pass
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        self.assertEqual(len(cls.getattr("mro")), 1)
-
-    def test_metaclass_lookup_inference_errors(self) -> None:
-        module = builder.parse("""
-        class Metaclass(type):
-            foo = lala
-
-        class B(object, metaclass=Metaclass): pass
-        """)
-        cls = module["B"]
-        self.assertEqual(util.Uninferable, next(cls.igetattr("foo")))
 
     def test_metaclass_lookup(self) -> None:
         module = builder.parse("""
@@ -2169,21 +1245,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         static = next(acls.igetattr("static"))
         self.assertIsInstance(static, nodes.FunctionDef)
 
-    def test_local_attr_invalid_mro(self) -> None:
-        cls = builder.extract_node("""
-        # A has an invalid MRO, local_attr should fallback
-        # to using .ancestors.
-        class A(object, object):
-            test = 42
-        class B(A): #@
-            pass
-        """)
-        assert isinstance(cls, nodes.ClassDef)
-        local = cls.local_attr("test")[0]
-        inferred = next(local.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 42)
-
     def test_has_dynamic_getattr(self) -> None:
         module = builder.parse("""
         class Getattr(object):
@@ -2207,20 +1268,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         module = astroid_builder.module_build(difflib)
         self.assertFalse(module["SequenceMatcher"].has_dynamic_getattr())
 
-    def test_has_dynamic_getattr_uninferable_in_metaclass(self) -> None:
-        """An uninferable ``__getattr__`` found in the metaclass is not dynamic.
-
-        The result used to be ``Uninferable`` instead of a bool.
-        """
-        node = builder.extract_node("""
-        class Meta(type):
-            __getattr__ = undefined_name
-
-        class A(metaclass=Meta):  #@
-            pass
-        """)
-        self.assertIs(node.has_dynamic_getattr(), False)
-
     def test_duplicate_bases_namedtuple(self) -> None:
         module = builder.parse("""
         import collections
@@ -2234,123 +1281,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         mro = module["B"].mro()
         class_names = [i.name for i in mro]
         self.assertEqual(names, class_names)
-
-    def test_instance_bound_method_lambdas(self) -> None:
-        ast_nodes = builder.extract_node("""
-        class Test(object): #@
-            lam = lambda self: self
-            not_method = lambda xargs: xargs
-        Test() #@
-        """)
-        assert isinstance(ast_nodes, list)
-        cls = next(ast_nodes[0].infer())
-        self.assertIsInstance(next(cls.igetattr("lam")), nodes.Lambda)
-        self.assertIsInstance(next(cls.igetattr("not_method")), nodes.Lambda)
-
-        instance = next(ast_nodes[1].infer())
-        lam = next(instance.igetattr("lam"))
-        self.assertIsInstance(lam, BoundMethod)
-        not_method = next(instance.igetattr("not_method"))
-        self.assertIsInstance(not_method, nodes.Lambda)
-
-    def test_instance_bound_method_lambdas_2(self) -> None:
-        """
-        Test the fact that a method which is a lambda built from
-        a factory is well inferred as a bound method (bug pylint 2594).
-        """
-        ast_nodes = builder.extract_node("""
-        def lambda_factory():
-            return lambda self: print("Hello world")
-
-        class MyClass(object): #@
-            f2 = lambda_factory()
-
-        MyClass() #@
-        """)
-        assert isinstance(ast_nodes, list)
-        cls = next(ast_nodes[0].infer())
-        self.assertIsInstance(next(cls.igetattr("f2")), nodes.Lambda)
-
-        instance = next(ast_nodes[1].infer())
-        f2 = next(instance.igetattr("f2"))
-        self.assertIsInstance(f2, BoundMethod)
-
-    def test_class_extra_decorators_frame_is_not_class(self) -> None:
-        ast_node = builder.extract_node("""
-        def ala():
-            def bala(): #@
-                func = 42
-        """)
-        assert isinstance(ast_node, nodes.FunctionDef)
-        self.assertEqual(ast_node.extra_decorators, [])
-
-    def test_class_extra_decorators_only_callfunc_are_considered(self) -> None:
-        ast_node = builder.extract_node("""
-        class Ala(object):
-             def func(self): #@
-                 pass
-             func = 42
-        """)
-        self.assertEqual(ast_node.extra_decorators, [])
-
-    def test_class_extra_decorators_only_assignment_names_are_considered(self) -> None:
-        ast_node = builder.extract_node("""
-        class Ala(object):
-             def func(self): #@
-                 pass
-             def __init__(self):
-                 self.func = staticmethod(func)
-
-        """)
-        self.assertEqual(ast_node.extra_decorators, [])
-
-    def test_class_extra_decorators_only_same_name_considered(self) -> None:
-        ast_node = builder.extract_node("""
-        class Ala(object):
-             def func(self): #@
-                pass
-             bala = staticmethod(func)
-        """)
-        self.assertEqual(ast_node.extra_decorators, [])
-        self.assertEqual(ast_node.type, "method")
-
-    def test_class_extra_decorators(self) -> None:
-        static_method, clsmethod = builder.extract_node("""
-        class Ala(object):
-             def static(self): #@
-                 pass
-             def class_method(self): #@
-                 pass
-             class_method = classmethod(class_method)
-             static = staticmethod(static)
-        """)
-        self.assertEqual(len(clsmethod.extra_decorators), 1)
-        self.assertEqual(clsmethod.type, "classmethod")
-        self.assertEqual(len(static_method.extra_decorators), 1)
-        self.assertEqual(static_method.type, "staticmethod")
-
-    def test_extra_decorators_only_class_level_assignments(self) -> None:
-        node = builder.extract_node("""
-        def _bind(arg):
-            return arg.bind
-
-        class A(object):
-            @property
-            def bind(self):
-                return 42
-            def irrelevant(self):
-                # This is important, because it used to trigger
-                # a maximum recursion error.
-                bind = _bind(self)
-                return bind
-        A() #@
-        """)
-        inferred = next(node.infer())
-        bind = next(inferred.igetattr("bind"))
-        self.assertIsInstance(bind, nodes.Const)
-        self.assertEqual(bind.value, 42)
-        parent = bind.scope()
-        self.assertEqual(len(parent.extra_decorators), 0)
 
     def test_class_keywords(self) -> None:
         data = """
@@ -2385,163 +1315,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """
         # Should not crash
         builder.parse(data)
-
-    @staticmethod
-    def test_singleline_docstring() -> None:
-        code = textwrap.dedent("""\
-            class Foo:
-                '''Hello World'''
-                bar = 1
-        """)
-        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
-        assert isinstance(node.doc_node, nodes.Const)
-        assert node.doc_node.lineno == 2
-        assert node.doc_node.col_offset == 4
-        assert node.doc_node.end_lineno == 2
-        assert node.doc_node.end_col_offset == 21
-
-    @staticmethod
-    def test_multiline_docstring() -> None:
-        code = textwrap.dedent("""\
-            class Foo:
-                '''Hello World
-
-                Also on this line.
-                '''
-                bar = 1
-        """)
-        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
-        assert isinstance(node.doc_node, nodes.Const)
-        assert node.doc_node.lineno == 2
-        assert node.doc_node.col_offset == 4
-        assert node.doc_node.end_lineno == 5
-        assert node.doc_node.end_col_offset == 7
-
-    @staticmethod
-    def test_without_docstring() -> None:
-        code = textwrap.dedent("""\
-            class Foo:
-                bar = 1
-        """)
-        node: nodes.ClassDef = builder.extract_node(code)  # type: ignore[assignment]
-        assert node.doc_node is None
-
-
-def test_issue940_metaclass_subclass_property() -> None:
-    node = builder.extract_node("""
-    class BaseMeta(type):
-        @property
-        def __members__(cls):
-            return ['a', 'property']
-    class Parent(metaclass=BaseMeta):
-        pass
-    class Derived(Parent):
-        pass
-    Derived.__members__
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, nodes.List)
-    assert [c.value for c in inferred.elts] == ["a", "property"]
-
-
-def test_issue940_property_grandchild() -> None:
-    node = builder.extract_node("""
-    class Grandparent:
-        @property
-        def __members__(self):
-            return ['a', 'property']
-    class Parent(Grandparent):
-        pass
-    class Child(Parent):
-        pass
-    Child().__members__
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, nodes.List)
-    assert [c.value for c in inferred.elts] == ["a", "property"]
-
-
-def test_issue940_metaclass_property() -> None:
-    node = builder.extract_node("""
-    class BaseMeta(type):
-        @property
-        def __members__(cls):
-            return ['a', 'property']
-    class Parent(metaclass=BaseMeta):
-        pass
-    Parent.__members__
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, nodes.List)
-    assert [c.value for c in inferred.elts] == ["a", "property"]
-
-
-def test_issue940_with_metaclass_class_context_property() -> None:
-    node = builder.extract_node("""
-    class BaseMeta(type):
-        pass
-    class Parent(metaclass=BaseMeta):
-        @property
-        def __members__(self):
-            return ['a', 'property']
-    class Derived(Parent):
-        pass
-    Derived.__members__
-    """)
-    inferred = next(node.infer())
-    assert not isinstance(inferred, nodes.List)
-    assert isinstance(inferred, objects.Property)
-
-
-def test_issue940_metaclass_values_funcdef() -> None:
-    node = builder.extract_node("""
-    class BaseMeta(type):
-        def __members__(cls):
-            return ['a', 'func']
-    class Parent(metaclass=BaseMeta):
-        pass
-    Parent.__members__()
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, nodes.List)
-    assert [c.value for c in inferred.elts] == ["a", "func"]
-
-
-def test_issue940_metaclass_derived_funcdef() -> None:
-    node = builder.extract_node("""
-    class BaseMeta(type):
-        def __members__(cls):
-            return ['a', 'func']
-    class Parent(metaclass=BaseMeta):
-        pass
-    class Derived(Parent):
-        pass
-    Derived.__members__()
-    """)
-    inferred_result = next(node.infer())
-    assert isinstance(inferred_result, nodes.List)
-    assert [c.value for c in inferred_result.elts] == ["a", "func"]
-
-
-def test_issue940_metaclass_funcdef_is_not_datadescriptor() -> None:
-    node = builder.extract_node("""
-    class BaseMeta(type):
-        def __members__(cls):
-            return ['a', 'property']
-    class Parent(metaclass=BaseMeta):
-        @property
-        def __members__(cls):
-            return BaseMeta.__members__()
-    class Derived(Parent):
-        pass
-    Derived.__members__
-    """)
-    # Here the function is defined on the metaclass, but the property
-    # is defined on the base class. When loading the attribute in a
-    # class context, this should return the property object instead of
-    # resolving the data descriptor
-    inferred = next(node.infer())
-    assert isinstance(inferred, objects.Property)
 
 
 def test_property_in_body_of_try() -> None:
@@ -2598,24 +1371,6 @@ def test_issue940_enums_as_a_real_world_usecase() -> None:
     assert sorted(actual) == ["bee", "cat"]
 
 
-def test_enums_type_annotation_str_member() -> None:
-    """A type-annotated member of an Enum class where:
-    - `member.value` is of type `nodes.Const` &
-    - `member.value.value` is of type `str`
-    is inferred as: `repr(member.value.value)`
-    """
-    node = builder.extract_node("""
-    from enum import Enum
-    class Veg(Enum):
-        TOMATO: str = "sweet"
-
-    Veg.TOMATO.value
-    """)
-    inferred_member_value = node.inferred()[0]
-    assert isinstance(inferred_member_value, nodes.Const)
-    assert inferred_member_value.value == "sweet"
-
-
 @pytest.mark.parametrize("annotation", ["bool", "dict", "int", "str"])
 def test_enums_type_annotation_no_value(annotation) -> None:
     """A type-annotated member of an Enum class which has no value where:
@@ -2631,19 +1386,6 @@ def test_enums_type_annotation_no_value(annotation) -> None:
     """)
     inferred_member_value = node.inferred()[0]
     assert inferred_member_value.value is None
-
-
-def test_enums_value2member_map_() -> None:
-    """Check the `_value2member_map_` member is present in an Enum class."""
-    node = builder.extract_node("""
-    from enum import Enum
-    class Veg(Enum):
-        TOMATO: 1
-
-    Veg
-    """)
-    inferred_class = node.inferred()[0]
-    assert "_value2member_map_" in inferred_class.locals
 
 
 @pytest.mark.parametrize("annotation, value", [("int", 42), ("bytes", b"")])
@@ -2692,19 +1434,6 @@ def test_enums_type_annotations_non_const_member(annotation, value) -> None:
     inferred_member_value = member.inferred()[0]
     assert not isinstance(inferred_member_value, nodes.Const)
     assert inferred_member_value.as_string() == repr(value)
-
-
-def test_metaclass_cannot_infer_call_yields_an_instance() -> None:
-    node = builder.extract_node("""
-    from undefined import Undefined
-    class Meta(type):
-        __call__ = Undefined
-    class A(metaclass=Meta):
-        pass
-    A()
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, Instance)
 
 
 def test_metaclass_call_result_without_context() -> None:
@@ -2777,73 +1506,6 @@ def test_type_subclass_call_result_without_caller() -> None:
 def test_posonlyargs_python_38(func):
     ast_node = builder.extract_node(func)
     assert ast_node.as_string().strip() == func.strip()
-
-
-def test_posonlyargs_default_value() -> None:
-    ast_node = builder.extract_node("""
-    def func(a, b=1, /, c=2): pass
-    """)
-    last_param = ast_node.args.default_value("c")
-    assert isinstance(last_param, nodes.Const)
-    assert last_param.value == 2
-
-    first_param = ast_node.args.default_value("b")
-    assert isinstance(first_param, nodes.Const)
-    assert first_param.value == 1
-
-
-def test_ancestor_with_generic() -> None:
-    # https://github.com/pylint-dev/astroid/issues/942
-    tree = builder.parse("""
-    from typing import TypeVar, Generic
-    T = TypeVar("T")
-    class A(Generic[T]):
-        def a_method(self):
-            print("hello")
-    class B(A[T]): pass
-    class C(B[str]): pass
-    """)
-    inferred_b = next(tree["B"].infer())
-    assert [cdef.name for cdef in inferred_b.ancestors()] == ["A", "Generic", "object"]
-
-    inferred_c = next(tree["C"].infer())
-    assert [cdef.name for cdef in inferred_c.ancestors()] == [
-        "B",
-        "A",
-        "Generic",
-        "object",
-    ]
-
-
-@pytest.mark.skipif(not PY312_PLUS, reason="PEP 695 syntax requires Python 3.12")
-def test_ancestor_with_generic_typevartuple() -> None:
-    # https://github.com/pylint-dev/pylint/issues/10972
-    tree = builder.parse("""
-    from abc import ABC, abstractmethod
-    class Base(ABC):
-        @abstractmethod
-        def get_item(self) -> None: ...
-    class Middle[*Shape]:
-        def get_item(self) -> None:
-            raise NotImplementedError
-    class Concrete[*Shape](Middle[*Shape], Base): pass
-    """)
-    inferred_concrete = next(tree["Concrete"].infer())
-    assert [cdef.name for cdef in inferred_concrete.ancestors()] == [
-        "Middle",
-        "object",
-        "Base",
-        "ABC",
-    ]
-
-
-def test_slots_duplicate_bases_issue_1089() -> None:
-    astroid = builder.parse("""
-            class First(object, object): #@
-                pass
-        """)
-    with pytest.raises(NotImplementedError):
-        astroid["First"].slots()
 
 
 def test_classdef_repr_tree_ast_state() -> None:

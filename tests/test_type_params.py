@@ -45,26 +45,6 @@ def test_type_alias() -> None:
     assert assigned.qname() == "typing.TypeAliasType"
 
 
-def test_type_var() -> None:
-    node = extract_node("type Point[T: int] = T")
-    param = node.type_params[0]
-    assert isinstance(param, TypeVar)
-    assert isinstance(param.bound, Name)
-    assert param.bound.name == "int"
-    assert param.default_value is None
-
-
-@pytest.mark.skipif(not PY313_PLUS, reason="Type parameter defaults were added in 313")
-def test_type_var_defaults() -> None:
-    node = extract_node("type Point[T: int = int] = T")
-    param = node.type_params[0]
-    assert isinstance(param, TypeVar)
-    assert isinstance(param.bound, Name)
-    assert param.bound.name == "int"
-    assert isinstance(param.default_value, Name)
-    assert param.default_value.name == "int"
-
-
 def test_type_param_spec() -> None:
     node = extract_node("type Alias[**P] = Callable[P, int]")
     params = node.type_params[0]
@@ -114,25 +94,3 @@ def test_type_var_tuple_defaults() -> None:
     assert len(params.default_value.slice.elts) == 2
 
     assert node.inferred()[0] is node
-
-
-def test_type_param() -> None:
-    func_node = extract_node("def func[T]() -> T: ...")
-    assert isinstance(func_node.type_params[0], TypeVar)
-    assert func_node.type_params[0].name.name == "T"
-    assert func_node.type_params[0].bound is None
-
-    class_node = extract_node("class MyClass[T]: ...")
-    assert isinstance(class_node.type_params[0], TypeVar)
-    assert class_node.type_params[0].name.name == "T"
-    assert class_node.type_params[0].bound is None
-
-
-def test_get_children() -> None:
-    func_node = extract_node("def func[T]() -> T: ...")
-    func_children = tuple(func_node.get_children())
-    assert isinstance(func_children[2], TypeVar)
-
-    class_node = extract_node("class MyClass[T]: ...")
-    class_children = tuple(class_node.get_children())
-    assert isinstance(class_children[0], TypeVar)

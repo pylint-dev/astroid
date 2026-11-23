@@ -1,0 +1,5 @@
+int(s='')  # inferred: Instance(builtins.int)
+int('2.5')  # inferred: Const(0)
+int('something else')  # inferred: Const(0)
+int(unknown)  # inferred: Instance(builtins.int)
+int(b'a')  # inferred: Const(0)

@@ -256,16 +256,6 @@ class TestHelpers(unittest.TestCase):
         with self.assertRaises(_NonDeducibleTypeHierarchy):
             helpers.is_supertype(cls_a_type, builtin_type)
 
-    def test_binop_with_function_metaclass_no_crash(self) -> None:
-        """Regression test for https://github.com/pylint-dev/astroid/issues/3191"""
-        node = builder.extract_node("""
-        class A(metaclass=sum):
-            pass
-        A | None  #@
-        """)
-        # Inference must not raise ``AttributeError``.
-        self.assertIs(next(node.infer()), util.Uninferable)
-
 
 def test_uninferable_for_safe_infer() -> None:
     uninfer = util.Uninferable

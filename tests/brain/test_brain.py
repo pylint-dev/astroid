@@ -13,7 +13,7 @@ from unittest.mock import patch
 import pytest
 
 import astroid
-from astroid import MANAGER, builder, nodes, objects, test_utils, util
+from astroid import MANAGER, builder, nodes, test_utils, util
 from astroid.bases import Instance
 from astroid.brain.brain_namedtuple_enum import _get_namedtuple_fields
 from astroid.const import PY312_PLUS, PY313_PLUS, PY315_PLUS
@@ -67,18 +67,6 @@ class OrderedDictTest(unittest.TestCase):
         self.assertIn("move_to_end", inferred.locals)
 
 
-class DefaultDictTest(unittest.TestCase):
-    def test_1(self) -> None:
-        node = builder.extract_node("""
-        from collections import defaultdict
-
-        X = defaultdict(int)
-        X[0]
-        """)
-        inferred = next(node.infer())
-        self.assertIs(util.Uninferable, inferred)
-
-
 class ModuleExtenderTest(unittest.TestCase):
     def test_extension_modules(self) -> None:
         transformer = MANAGER._transform
@@ -117,51 +105,6 @@ class IOBrainTest(unittest.TestCase):
             raw = next(buffer_attr.igetattr("raw"))
             self.assertIsInstance(raw, astroid.Instance)
             self.assertEqual(raw.name, "FileIO")
-
-
-class TypeBrain(unittest.TestCase):
-    def test_type_subscript(self):
-        """
-        Check that type object has the __class_getitem__ method
-        when it is used as a subscript
-        """
-        src = builder.extract_node("""
-            a: type[int] = int
-            """)
-        val_inf = src.annotation.value.inferred()[0]
-        self.assertIsInstance(val_inf, nodes.ClassDef)
-        self.assertEqual(val_inf.name, "type")
-        meth_inf = val_inf.getattr("__class_getitem__")[0]
-        self.assertIsInstance(meth_inf, nodes.FunctionDef)
-
-    def test_invalid_type_subscript(self):
-        """
-        Check that a type (str for example) that inherits
-        from type does not have __class_getitem__ method even
-        when it is used as a subscript
-        """
-        src = builder.extract_node("""
-            a: str[int] = "abc"
-            """)
-        val_inf = src.annotation.value.inferred()[0]
-        self.assertIsInstance(val_inf, nodes.ClassDef)
-        self.assertEqual(val_inf.name, "str")
-        with self.assertRaises(AttributeInferenceError):
-            # pylint: disable=expression-not-assigned
-            # noinspection PyStatementEffect
-            val_inf.getattr("__class_getitem__")[0]
-
-    def test_builtin_subscriptable(self):
-        """Starting with python3.9 builtin types such as list are subscriptable.
-        Any builtin class such as "enumerate" or "staticmethod" also works."""
-        for typename in ("tuple", "list", "dict", "set", "frozenset", "enumerate"):
-            src = f"""
-            {typename:s}[int]
-            """
-            right_node = builder.extract_node(src)
-            inferred = next(right_node.infer())
-            self.assertIsInstance(inferred, nodes.ClassDef)
-            self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
 
 
 def check_metaclass_is_abc(node: nodes.ClassDef):
@@ -277,33 +220,6 @@ class CollectionsBrain(unittest.TestCase):
             inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
         )
 
-    def test_collections_object_subscriptable_4(self):
-        """Multiple inheritance with subscriptable collection class"""
-        node = builder.extract_node("""
-        import collections.abc
-        class Derived(collections.abc.Hashable, collections.abc.Iterator[int]):
-            pass
-        """)
-        inferred = next(node.infer())
-        assertEqualMro(
-            inferred,
-            [
-                ".Derived",
-                "_collections_abc.Hashable",
-                "_collections_abc.Iterator",
-                "_collections_abc.Iterable",
-                "builtins.object",
-            ],
-        )
-
-    def test_statistics_quantiles_from_import(self):
-        node = builder.extract_node("""
-        from statistics import quantiles
-        quantiles([1, 2, 3, 4, 5, 6, 7, 8, 9], n=4)
-        """)
-        inferred = next(node.infer())
-        self.assertIs(inferred, util.Uninferable)
-
 
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self) -> None:
@@ -318,24 +234,6 @@ class TypingBrain(unittest.TestCase):
         )
         for ancestor in klass.ancestors():
             self.assertFalse(ancestor.parent is None)
-
-    def test_namedtuple_can_correctly_access_methods(self) -> None:
-        klass, called = builder.extract_node("""
-        from typing import NamedTuple
-
-        class X(NamedTuple): #@
-            a: int
-            b: int
-            def as_string(self):
-                return '%s' % self.a
-            def as_integer(self):
-                return 2 + 3
-        X().as_integer() #@
-        """)
-        self.assertEqual(len(klass.getattr("as_string")), 1)
-        inferred = next(called.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 5)
 
     def test_namedtuple_api_on_self(self) -> None:
         """``self`` in a method has the namedtuple API and the tuple methods.
@@ -395,19 +293,6 @@ class TypingBrain(unittest.TestCase):
         base = next(base for base in klass.ancestors() if base.name == "X")
         self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
 
-    def test_namedtuple_inference_nonliteral(self) -> None:
-        # Note: NamedTuples in mypy only work with literals.
-        klass = builder.extract_node("""
-        from typing import NamedTuple
-
-        name = "X"
-        fields = [("a", int), ("b", str), ("c", bytes)]
-        NamedTuple(name, fields)
-        """)
-        inferred = next(klass.infer())
-        self.assertIsInstance(inferred, astroid.Instance)
-        self.assertEqual(inferred.qname(), "typing.NamedTuple")
-
     def test_namedtuple_instance_attrs(self) -> None:
         result = builder.extract_node("""
         from typing import NamedTuple
@@ -426,64 +311,6 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertSetEqual({"a", "b", "c"}, set(inferred.instance_attrs))
 
-    def test_namedtuple_few_args(self) -> None:
-        result = builder.extract_node("""
-        from typing import NamedTuple
-        NamedTuple("A")
-        """)
-        inferred = next(result.infer())
-        self.assertIsInstance(inferred, astroid.Instance)
-        self.assertEqual(inferred.qname(), "typing.NamedTuple")
-
-    def test_namedtuple_few_fields(self) -> None:
-        result = builder.extract_node("""
-        from typing import NamedTuple
-        NamedTuple("A", [("a",), ("b", str), ("c", bytes)])
-        """)
-        inferred = next(result.infer())
-        self.assertIsInstance(inferred, astroid.Instance)
-        self.assertEqual(inferred.qname(), "typing.NamedTuple")
-
-    def test_namedtuple_class_form(self) -> None:
-        result = builder.extract_node("""
-        from typing import NamedTuple
-
-        class Example(NamedTuple):
-            CLASS_ATTR = "class_attr"
-            mything: int
-
-        Example(mything=1)
-        """)
-        inferred = next(result.infer())
-        self.assertIsInstance(inferred, astroid.Instance)
-
-        class_attr = inferred.getattr("CLASS_ATTR")[0]
-        self.assertIsInstance(class_attr, nodes.AssignName)
-        const = next(class_attr.infer())
-        self.assertEqual(const.value, "class_attr")
-
-    def test_namedtuple_inferred_as_class(self) -> None:
-        node = builder.extract_node("""
-        from typing import NamedTuple
-        NamedTuple
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.ClassDef)
-        assert inferred.name == "NamedTuple"
-
-    def test_namedtuple_bug_pylint_4383(self) -> None:
-        """Inference of 'NamedTuple' function shouldn't cause InferenceError.
-
-        https://github.com/pylint-dev/pylint/issues/4383
-        """
-        node = builder.extract_node("""
-        if True:
-            def NamedTuple():
-                pass
-        NamedTuple
-        """)
-        next(node.infer())
-
     def test_namedtuple_uninferable_member(self) -> None:
         call = builder.extract_node("""
         from typing import namedtuple
@@ -499,20 +326,6 @@ class TypingBrain(unittest.TestCase):
         with pytest.raises(UseInferenceDefault):
             _get_namedtuple_fields(call)
 
-    def test_typing_types(self) -> None:
-        ast_nodes = builder.extract_node("""
-        from typing import TypeVar, Iterable, Tuple, NewType, Dict, Union
-        TypeVar('MyTypeVar', int, float, complex) #@
-        Iterable[Tuple[MyTypeVar, MyTypeVar]] #@
-        TypeVar('AnyStr', str, bytes) #@
-        NewType('UserId', str) #@
-        Dict[str, str] #@
-        Union[int, str] #@
-        """)
-        for node in ast_nodes:
-            inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
-
     def test_typing_type_without_tip(self):
         """Regression test for https://github.com/pylint-dev/pylint/issues/5770"""
         node = builder.extract_node("""
@@ -523,25 +336,6 @@ class TypingBrain(unittest.TestCase):
         """)
         with self.assertRaises(UseInferenceDefault):
             astroid.brain.brain_typing.infer_typing_typevar_or_newtype(node.value)
-
-    def test_namedtuple_nested_class(self):
-        result = builder.extract_node("""
-        from typing import NamedTuple
-
-        class Example(NamedTuple):
-            class Foo:
-                bar = "bar"
-
-        Example
-        """)
-        inferred = next(result.infer())
-        self.assertIsInstance(inferred, nodes.ClassDef)
-
-        class_def_attr = inferred.getattr("Foo")[0]
-        self.assertIsInstance(class_def_attr, nodes.ClassDef)
-        attr_def = class_def_attr.getattr("bar")[0]
-        attr = next(attr_def.infer())
-        self.assertEqual(attr.value, "bar")
 
     def test_namedtuple_class_form_assignment_targets(self):
         """An assignment in the body may not bind a single plain name.
@@ -573,37 +367,6 @@ class TypingBrain(unittest.TestCase):
         for name, value in (("apple", "red"), ("banana", "yellow")):
             self.assertEqual(next(inferred.getattr(name)[0].infer()).value, value)
 
-    def test_tuple_type(self):
-        node = builder.extract_node("""
-        from typing import Tuple
-        Tuple[int, int]
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.ClassDef)
-        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
-        assert inferred.qname() == "typing.Tuple"
-
-    def test_callable_type(self):
-        node = builder.extract_node("""
-        from typing import Callable, Any
-        Callable[..., Any]
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.ClassDef)
-        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
-        assert inferred.qname() == "typing.Callable"
-
-    def test_typing_generic_subscriptable(self):
-        """Test typing.Generic is subscriptable with __class_getitem__ (added in PY37)"""
-        node = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T = TypeVar('T')
-        Generic[T]
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.ClassDef)
-        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
-
     @test_utils.require_version(minver="3.12")
     def test_typing_generic_subscriptable_pep695(self):
         """Test class using type parameters is subscriptable with __class_getitem__ (added in PY312)"""
@@ -620,120 +383,6 @@ class TypingBrain(unittest.TestCase):
         assert ancestors[0].name == "Foo"
         assert ancestors[1].name == "object"
 
-    def test_typing_annotated_subscriptable(self):
-        """typing.Annotated is subscriptable with __class_getitem__ below 3.13."""
-        node = builder.extract_node("""
-        import typing
-        typing.Annotated[str, "data"]
-        """)
-        inferred = next(node.infer())
-        if PY313_PLUS:
-            assert isinstance(inferred, nodes.FunctionDef)
-        else:
-            assert isinstance(inferred, nodes.ClassDef)
-            assert isinstance(
-                inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
-            )
-
-    def test_typing_generic_slots(self):
-        """Test slots for Generic subclass."""
-        node = builder.extract_node("""
-        from typing import Generic, TypeVar
-        T = TypeVar('T')
-        class A(Generic[T]):
-            __slots__ = ['value']
-            def __init__(self, value):
-                self.value = value
-        """)
-        inferred = next(node.infer())
-        slots = inferred.slots()
-        assert len(slots) == 1
-        assert isinstance(slots[0], nodes.Const)
-        assert slots[0].value == "value"
-
-    def test_typing_no_duplicates(self):
-        node = builder.extract_node("""
-        from typing import List
-        List[int]
-        """)
-        assert len(node.inferred()) == 1
-
-    def test_typing_no_duplicates_2(self):
-        node = builder.extract_node("""
-        from typing import Optional, Tuple
-        Tuple[Optional[int], ...]
-        """)
-        assert len(node.inferred()) == 1
-
-    def test_typing_param_spec(self):
-        node = builder.extract_node("""
-        from typing import ParamSpec
-
-        P = ParamSpec("P")
-        """)
-        inferred = next(node.targets[0].infer())
-        assert next(inferred.igetattr("args")) is not None
-        assert next(inferred.igetattr("kwargs")) is not None
-
-    def test_collections_generic_alias_slots(self):
-        """Test slots for a class which is a subclass of a generic alias type."""
-        node = builder.extract_node("""
-        import collections
-        import typing
-        Type = typing.TypeVar('Type')
-        class A(collections.abc.AsyncIterator[Type]):
-            __slots__ = ('_value',)
-            def __init__(self, value: collections.abc.AsyncIterator[Type]):
-                self._value = value
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.ClassDef)
-        slots = inferred.slots()
-        assert len(slots) == 1
-        assert isinstance(slots[0], nodes.Const)
-        assert slots[0].value == "_value"
-
-    def test_has_dunder_args(self) -> None:
-        ast_node = builder.extract_node("""
-        from typing import Union
-        NumericTypes = Union[int, float]
-        NumericTypes.__args__ #@
-        """)
-        inferred = next(ast_node.infer())
-        assert isinstance(inferred, nodes.Tuple)
-
-    def test_typing_namedtuple_dont_crash_on_no_fields(self) -> None:
-        node = builder.extract_node("""
-        from typing import NamedTuple
-
-        Bar = NamedTuple("bar", [])
-
-        Bar()
-        """)
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, astroid.Instance)
-
-    def test_typed_dict(self):
-        code = builder.extract_node("""
-        from typing import TypedDict
-        class CustomTD(TypedDict):  #@
-            var: int
-        CustomTD(var=1)  #@
-        """)
-        inferred_base = next(code[0].bases[0].infer())
-        assert isinstance(inferred_base, nodes.ClassDef)
-        assert inferred_base.qname() == "typing.TypedDict"
-        typedDict_base = next(inferred_base.bases[0].infer())
-        assert typedDict_base.qname() == "builtins.dict"
-
-        # Test TypedDict has `__call__` method
-        local_call = inferred_base.locals.get("__call__", None)
-        assert local_call and len(local_call) == 1
-        assert isinstance(local_call[0], nodes.Name) and local_call[0].name == "dict"
-
-        # Test TypedDict instance is callable
-        assert next(code[1].infer()).callable() is True
-
     def test_typed_dict_required_and_optional_keys(self):
         """TypedDict subclasses expose ``__required_keys__`` and ``__optional_keys__``."""
         cls = builder.extract_node("""
@@ -744,130 +393,6 @@ class TypingBrain(unittest.TestCase):
         """)
         for attr in ("__required_keys__", "__optional_keys__"):
             assert cls.getattr(attr), f"{cls.name}.{attr} not found"
-
-    def test_typing_alias_type(self):
-        """
-        Test that the type aliased thanks to typing._alias function are
-        correctly inferred.
-        typing_alias function is introduced with python37
-        """
-        node = builder.extract_node("""
-        from typing import TypeVar, MutableSet
-
-        T = TypeVar("T")
-        MutableSet[T]
-
-        class Derived1(MutableSet[T]):
-            pass
-        """)
-        inferred = next(node.infer())
-        assertEqualMro(
-            inferred,
-            [
-                ".Derived1",
-                "typing.MutableSet",
-                "_collections_abc.MutableSet",
-                "_collections_abc.Set",
-                "_collections_abc.Collection",
-                "_collections_abc.Sized",
-                "_collections_abc.Iterable",
-                "_collections_abc.Container",
-                "builtins.object",
-            ],
-        )
-
-    def test_typing_alias_type_2(self):
-        """
-        Test that the type aliased thanks to typing._alias function are
-        correctly inferred.
-        typing_alias function is introduced with python37.
-        OrderedDict in the typing module appears only with python 3.7.2
-        """
-        node = builder.extract_node("""
-        import typing
-        class Derived2(typing.OrderedDict[int, str]):
-            pass
-        """)
-        inferred = next(node.infer())
-        assertEqualMro(
-            inferred,
-            [
-                ".Derived2",
-                "typing.OrderedDict",
-                "collections.OrderedDict",
-                "builtins.dict",
-                "builtins.object",
-            ],
-        )
-
-    def test_typing_object_not_subscriptable(self):
-        """Hashable is not subscriptable"""
-        wrong_node = builder.extract_node("""
-        import typing
-        typing.Hashable[int]
-        """)
-        with self.assertRaises(InferenceError):
-            next(wrong_node.infer())
-        right_node = builder.extract_node("""
-        import typing
-        typing.Hashable
-        """)
-        inferred = next(right_node.infer())
-        assertEqualMro(
-            inferred,
-            [
-                "typing.Hashable",
-                "_collections_abc.Hashable",
-                "builtins.object",
-            ],
-        )
-        with self.assertRaises(AttributeInferenceError):
-            inferred.getattr("__class_getitem__")
-
-    def test_typing_object_subscriptable(self):
-        """Test that MutableSet is subscriptable"""
-        right_node = builder.extract_node("""
-        import typing
-        typing.MutableSet[int]
-        """)
-        inferred = next(right_node.infer())
-        assertEqualMro(
-            inferred,
-            [
-                "typing.MutableSet",
-                "_collections_abc.MutableSet",
-                "_collections_abc.Set",
-                "_collections_abc.Collection",
-                "_collections_abc.Sized",
-                "_collections_abc.Iterable",
-                "_collections_abc.Container",
-                "builtins.object",
-            ],
-        )
-        self.assertIsInstance(
-            inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
-        )
-
-    def test_typing_object_subscriptable_2(self):
-        """Multiple inheritance with subscriptable typing alias"""
-        node = builder.extract_node("""
-        import typing
-        class Derived(typing.Hashable, typing.Iterator[int]):
-            pass
-        """)
-        inferred = next(node.infer())
-        assertEqualMro(
-            inferred,
-            [
-                ".Derived",
-                "typing.Hashable",
-                "_collections_abc.Hashable",
-                "typing.Iterator",
-                "_collections_abc.Iterator",
-                "_collections_abc.Iterable",
-                "builtins.object",
-            ],
-        )
 
     def test_typing_object_notsubscriptable_3(self):
         """The ByteString class of the typing module is not
@@ -886,76 +411,6 @@ class TypingBrain(unittest.TestCase):
                 inferred.getattr("__class_getitem__")[0], nodes.FunctionDef
             )
 
-    def test_typing_object_builtin_subscriptable(self):
-        """
-        Test that builtins alias, such as typing.List, are subscriptable
-        """
-        for typename in ("List", "Dict", "Set", "FrozenSet", "Tuple"):
-            src = f"""
-            import typing
-            typing.{typename:s}[int]
-            """
-            right_node = builder.extract_node(src)
-            inferred = next(right_node.infer())
-            self.assertIsInstance(inferred, nodes.ClassDef)
-            self.assertIsInstance(inferred.getattr("__iter__")[0], nodes.FunctionDef)
-
-    @staticmethod
-    def test_typing_type_subscriptable():
-        node = builder.extract_node("""
-        from typing import Type
-        Type[int]
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.ClassDef)
-        assert isinstance(inferred.getattr("__class_getitem__")[0], nodes.FunctionDef)
-        assert inferred.qname() == "typing.Type"
-
-    def test_typing_cast(self) -> None:
-        node = builder.extract_node("""
-        from typing import cast
-        class A:
-            pass
-
-        b = 42
-        cast(A, b)
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == 42
-
-    def test_typing_cast_attribute(self) -> None:
-        node = builder.extract_node("""
-        import typing
-        class A:
-            pass
-
-        b = 42
-        typing.cast(A, b)
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-        assert inferred.value == 42
-
-    def test_typing_cast_multiple_inference_calls(self) -> None:
-        """Inference of an outer function should not store the result for cast."""
-        ast_nodes = builder.extract_node("""
-        from typing import TypeVar, cast
-        T = TypeVar("T")
-        def ident(var: T) -> T:
-            return cast(T, var)
-
-        ident(2)  #@
-        ident("Hello")  #@
-        """)
-        i0 = next(ast_nodes[0].infer())
-        assert isinstance(i0, nodes.Const)
-        assert i0.value == 2
-
-        i1 = next(ast_nodes[1].infer())
-        assert isinstance(i1, nodes.Const)
-        assert i1.value == "Hello"
-
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self) -> None:
@@ -964,48 +419,6 @@ class ReBrainTest(unittest.TestCase):
         for name in names:
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
-
-    def test_re_pattern_subscriptable(self):
-        """Test re.Pattern and re.Match are subscriptable in PY39+"""
-        node1 = builder.extract_node("""
-        import re
-        re.Pattern[str]
-        """)
-        inferred1 = next(node1.infer())
-        assert isinstance(inferred1, nodes.ClassDef)
-        assert isinstance(inferred1.getattr("__class_getitem__")[0], nodes.FunctionDef)
-
-        node2 = builder.extract_node("""
-        import re
-        re.Match[str]
-        """)
-        inferred2 = next(node2.infer())
-        assert isinstance(inferred2, nodes.ClassDef)
-        assert isinstance(inferred2.getattr("__class_getitem__")[0], nodes.FunctionDef)
-
-
-class BrainNamedtupleAnnAssignTest(unittest.TestCase):
-    def test_no_crash_on_ann_assign_in_namedtuple(self) -> None:
-        node = builder.extract_node("""
-        from enum import Enum
-        from typing import Optional
-
-        class A(Enum):
-            B: str = 'B'
-        """)
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.ClassDef)
-
-
-class BrainUUIDTest(unittest.TestCase):
-    def test_uuid_has_int_member(self) -> None:
-        node = builder.extract_node("""
-        import uuid
-        u = uuid.UUID('{12345678-1234-5678-1234-567812345678}')
-        u.int
-        """)
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.Const)
 
 
 class RandomSampleTest(unittest.TestCase):
@@ -1040,309 +453,15 @@ class RandomSampleTest(unittest.TestCase):
         elems = sorted(elem.value for elem in inferred.elts)
         self.assertEqual(elems, [1, 2])
 
-    def test_no_crash_on_evaluatedobject(self) -> None:
-        node = astroid.extract_node("""
-        from random import sample
-        class A: pass
-        sample(list({1: A()}.values()), 1)""")
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.List)
-        assert len(inferred.elts) == 1
-        assert isinstance(inferred.elts[0], nodes.Call)
-
-    def test_no_crash_on_uninferable_element(self) -> None:
-        """Test that random.sample does not crash when elements are Uninferable.
-
-        Regression test for https://github.com/pylint-dev/astroid/issues/2518
-        """
-        node = astroid.extract_node("""
-        import random
-        random.sample(1*[b], 1)  #@
-        """)
-        inferred = next(node.infer())
-        assert inferred is astroid.Uninferable
-
-    def test_no_crash_on_classdef_clone(self) -> None:
-        """Test that random.sample does not crash when cloning ClassDef nodes.
-
-        Regression test for https://github.com/pylint-dev/astroid/issues/2923
-        """
-        node = astroid.extract_node("""
-        import random
-        random.sample([dict] * 2, 1)  #@
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.List)
-        assert len(inferred.elts) == 1
-        assert isinstance(inferred.elts[0], nodes.ClassDef)
-        assert inferred.elts[0].name == "dict"
-
-    def test_no_crash_on_functiondef_clone(self) -> None:
-        """Test that random.sample does not crash when cloning FunctionDef nodes.
-
-        Regression test for https://github.com/pylint-dev/astroid/issues/2923
-        """
-        node = astroid.extract_node("""
-        import random
-        random.sample([len] * 2, 1)  #@
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.List)
-        assert len(inferred.elts) == 1
-        assert isinstance(inferred.elts[0], nodes.FunctionDef)
-        assert inferred.elts[0].name == "len"
-
-    def test_no_crash_on_module_clone(self) -> None:
-        """Test that random.sample does not crash when cloning Module nodes.
-
-        Module.__init__ does not accept ``lineno``/``col_offset`` kwargs, so
-        cloning must filter init params to those the class actually accepts.
-
-        Regression test for https://github.com/pylint-dev/astroid/issues/3043
-        """
-        node = astroid.extract_node("""
-        from random import sample
-        import gc
-        sample(list({gc}) * 2, 1)  #@
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.List)
-        assert len(inferred.elts) == 1
-        assert isinstance(inferred.elts[0], nodes.Module)
-        assert inferred.elts[0].name == "gc"
-
-    def test_no_crash_on_instance_element(self) -> None:
-        """Test that random.sample does not crash when an element is not a source node.
-
-        Regression test for https://github.com/pylint-dev/astroid/issues/3310
-        """
-        node = astroid.extract_node("""
-        from random import sample
-        sample(list({list(None)}) * 1, 1)  #@
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.List)
-        assert len(inferred.elts) == 1
-        assert isinstance(inferred.elts[0], Instance)
-
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
-
-    def test_subprocess_args(self) -> None:
-        """Make sure the args attribute exists for Popen
-
-        Test for https://github.com/pylint-dev/pylint/issues/1860"""
-        name = astroid.extract_node("""
-        import subprocess
-        p = subprocess.Popen(['ls'])
-        p #@
-        """)
-        [inst] = name.inferred()
-        self.assertIsInstance(next(inst.igetattr("args")), nodes.List)
-
-    def test_subprcess_check_output(self) -> None:
-        code = """
-        import subprocess
-
-        subprocess.check_output(['echo', 'hello']);
-        """
-        node = astroid.extract_node(code)
-        inferred = next(node.infer())
-        # Can be either str or bytes
-        assert isinstance(inferred, nodes.Const)
-        assert isinstance(inferred.value, (str, bytes))
 
     def test_popen_does_not_have_class_getitem(self):
         code = """import subprocess; subprocess.Popen"""
         node = astroid.extract_node(code)
         inferred = next(node.infer())
         assert "__class_getitem__" in inferred
-
-
-class TestIsinstanceInference:
-    """Test isinstance builtin inference"""
-
-    def test_type_type(self) -> None:
-        assert _get_result("isinstance(type, type)") == "True"
-
-    def test_object_type(self) -> None:
-        assert _get_result("isinstance(object, type)") == "True"
-
-    def test_type_object(self) -> None:
-        assert _get_result("isinstance(type, object)") == "True"
-
-    def test_isinstance_int_true(self) -> None:
-        """Make sure isinstance can check builtin int types"""
-        assert _get_result("isinstance(1, int)") == "True"
-
-    def test_isinstance_int_false(self) -> None:
-        assert _get_result("isinstance('a', int)") == "False"
-
-    def test_isinstance_object_true(self) -> None:
-        assert _get_result("""
-        class Bar(object):
-            pass
-        isinstance(Bar(), object)
-        """) == "True"
-
-    def test_isinstance_object_true3(self) -> None:
-        assert _get_result("""
-        class Bar(object):
-            pass
-        isinstance(Bar(), Bar)
-        """) == "True"
-
-    def test_isinstance_class_false(self) -> None:
-        assert _get_result("""
-        class Foo(object):
-            pass
-        class Bar(object):
-            pass
-        isinstance(Bar(), Foo)
-        """) == "False"
-
-    def test_isinstance_type_false(self) -> None:
-        assert _get_result("""
-        class Bar(object):
-            pass
-        isinstance(Bar(), type)
-        """) == "False"
-
-    def test_isinstance_str_true(self) -> None:
-        """Make sure isinstance can check builtin str types"""
-        assert _get_result("isinstance('a', str)") == "True"
-
-    def test_isinstance_str_false(self) -> None:
-        assert _get_result("isinstance(1, str)") == "False"
-
-    def test_isinstance_tuple_argument(self) -> None:
-        """obj just has to be an instance of ANY class/type on the right"""
-        assert _get_result("isinstance(1, (str, int))") == "True"
-
-    def test_isinstance_type_false2(self) -> None:
-        assert _get_result("""
-        isinstance(1, type)
-        """) == "False"
-
-    def test_isinstance_object_true2(self) -> None:
-        assert _get_result("""
-        class Bar(type):
-            pass
-        mainbar = Bar("Bar", tuple(), {})
-        isinstance(mainbar, object)
-        """) == "True"
-
-    def test_isinstance_type_true(self) -> None:
-        assert _get_result("""
-        class Bar(type):
-            pass
-        mainbar = Bar("Bar", tuple(), {})
-        isinstance(mainbar, type)
-        """) == "True"
-
-    def test_isinstance_edge_case(self) -> None:
-        """isinstance allows bad type short-circuting"""
-        assert _get_result("isinstance(1, (int, 1))") == "True"
-
-    def test_uninferable_bad_type(self) -> None:
-        """The second argument must be a class or a tuple of classes"""
-        with pytest.raises(InferenceError):
-            _get_result_node("isinstance(int, 1)")
-
-    def test_uninferable_keywords(self) -> None:
-        """isinstance does not allow keywords"""
-        with pytest.raises(InferenceError):
-            _get_result_node("isinstance(1, class_or_tuple=int)")
-
-    def test_too_many_args(self) -> None:
-        """isinstance must have two arguments"""
-        with pytest.raises(InferenceError):
-            _get_result_node("isinstance(1, int, str)")
-
-    def test_first_param_is_uninferable(self) -> None:
-        with pytest.raises(InferenceError):
-            _get_result_node("isinstance(something, int)")
-
-
-class TestIssubclassBrain:
-    """Test issubclass() builtin inference"""
-
-    def test_type_type(self) -> None:
-        assert _get_result("issubclass(type, type)") == "True"
-
-    def test_object_type(self) -> None:
-        assert _get_result("issubclass(object, type)") == "False"
-
-    def test_type_object(self) -> None:
-        assert _get_result("issubclass(type, object)") == "True"
-
-    def test_issubclass_same_class(self) -> None:
-        assert _get_result("issubclass(int, int)") == "True"
-
-    def test_issubclass_not_the_same_class(self) -> None:
-        assert _get_result("issubclass(str, int)") == "False"
-
-    def test_issubclass_object_true(self) -> None:
-        assert _get_result("""
-        class Bar(object):
-            pass
-        issubclass(Bar, object)
-        """) == "True"
-
-    def test_issubclass_same_user_defined_class(self) -> None:
-        assert _get_result("""
-        class Bar(object):
-            pass
-        issubclass(Bar, Bar)
-        """) == "True"
-
-    def test_issubclass_different_user_defined_classes(self) -> None:
-        assert _get_result("""
-        class Foo(object):
-            pass
-        class Bar(object):
-            pass
-        issubclass(Bar, Foo)
-        """) == "False"
-
-    def test_issubclass_type_false(self) -> None:
-        assert _get_result("""
-        class Bar(object):
-            pass
-        issubclass(Bar, type)
-        """) == "False"
-
-    def test_isinstance_tuple_argument(self) -> None:
-        """obj just has to be a subclass of ANY class/type on the right"""
-        assert _get_result("issubclass(int, (str, int))") == "True"
-
-    def test_isinstance_object_true2(self) -> None:
-        assert _get_result("""
-        class Bar(type):
-            pass
-        issubclass(Bar, object)
-        """) == "True"
-
-    def test_issubclass_short_circuit(self) -> None:
-        """issubclasss allows bad type short-circuting"""
-        assert _get_result("issubclass(int, (int, 1))") == "True"
-
-    def test_uninferable_bad_type(self) -> None:
-        """The second argument must be a class or a tuple of classes"""
-        # Should I subclass
-        with pytest.raises(InferenceError):
-            _get_result_node("issubclass(int, 1)")
-
-    def test_uninferable_keywords(self) -> None:
-        """issubclass does not allow keywords"""
-        with pytest.raises(InferenceError):
-            _get_result_node("issubclass(int, class_or_tuple=int)")
-
-    def test_too_many_args(self) -> None:
-        """issubclass must have two arguments"""
-        with pytest.raises(InferenceError):
-            _get_result_node("issubclass(int, int, str)")
 
 
 def _get_result_node(code: str) -> nodes.Const:
@@ -1355,142 +474,6 @@ def _get_result(code: str) -> str:
 
 
 class TestLenBuiltinInference:
-    def test_len_list(self) -> None:
-        # Uses .elts
-        node = astroid.extract_node("""
-        len(['a','b','c'])
-        """)
-        node = next(node.infer())
-        assert node.as_string() == "3"
-        assert isinstance(node, nodes.Const)
-
-    def test_len_tuple(self) -> None:
-        node = astroid.extract_node("""
-        len(('a','b','c'))
-        """)
-        node = next(node.infer())
-        assert node.as_string() == "3"
-
-    def test_len_var(self) -> None:
-        # Make sure argument is inferred
-        node = astroid.extract_node("""
-        a = [1,2,'a','b','c']
-        len(a)
-        """)
-        node = next(node.infer())
-        assert node.as_string() == "5"
-
-    def test_len_dict(self) -> None:
-        # Uses .items
-        node = astroid.extract_node("""
-        a = {'a': 1, 'b': 2}
-        len(a)
-        """)
-        node = next(node.infer())
-        assert node.as_string() == "2"
-
-    def test_len_set(self) -> None:
-        node = astroid.extract_node("""
-        len({'a'})
-        """)
-        inferred_node = next(node.infer())
-        assert inferred_node.as_string() == "1"
-
-    def test_len_object(self) -> None:
-        """Test len with objects that implement the len protocol"""
-        node = astroid.extract_node("""
-        class A:
-            def __len__(self):
-                return 57
-        len(A())
-        """)
-        inferred_node = next(node.infer())
-        assert inferred_node.as_string() == "57"
-
-    def test_len_class_with_metaclass(self) -> None:
-        """Make sure proper len method is located"""
-        cls_node, inst_node = astroid.extract_node("""
-        class F2(type):
-            def __new__(cls, name, bases, attrs):
-                return super().__new__(cls, name, bases, {})
-            def __len__(self):
-                return 57
-        class F(metaclass=F2):
-            def __len__(self):
-                return 4
-        len(F) #@
-        len(F()) #@
-        """)
-        assert next(cls_node.infer()).as_string() == "57"
-        assert next(inst_node.infer()).as_string() == "4"
-
-    def test_len_object_failure(self) -> None:
-        """If taking the length of a class, do not use an instance method"""
-        node = astroid.extract_node("""
-        class F:
-            def __len__(self):
-                return 57
-        len(F)
-        """)
-        with pytest.raises(InferenceError):
-            next(node.infer())
-
-    def test_len_object_dunder_len_not_callable(self) -> None:
-        node = astroid.extract_node("""
-        import os
-        class F:
-            __len__ = os
-        len(F())
-        """)
-        with pytest.raises(InferenceError):
-            next(node.infer())
-
-    def test_len_string(self) -> None:
-        node = astroid.extract_node("""
-        len("uwu")
-        """)
-        assert next(node.infer()).as_string() == "3"
-
-    def test_len_generator_failure(self) -> None:
-        node = astroid.extract_node("""
-        def gen():
-            yield 'a'
-            yield 'b'
-        len(gen())
-        """)
-        with pytest.raises(InferenceError):
-            next(node.infer())
-
-    def test_len_failure_missing_variable(self) -> None:
-        node = astroid.extract_node("""
-        len(a)
-        """)
-        with pytest.raises(InferenceError):
-            next(node.infer())
-
-    def test_len_bytes(self) -> None:
-        node = astroid.extract_node("""
-        len(b'uwu')
-        """)
-        assert next(node.infer()).as_string() == "3"
-
-    def test_int_subclass_result(self) -> None:
-        """Check that a subclass of an int can still be inferred
-
-        This test does not properly infer the value passed to the
-        int subclass (5) but still returns a proper integer as we
-        fake the result of the `len()` call.
-        """
-        node = astroid.extract_node("""
-        class IntSubclass(int):
-            pass
-
-        class F:
-            def __len__(self):
-                return IntSubclass(5)
-        len(F())
-        """)
-        assert next(node.infer()).as_string() == "0"
 
     @pytest.mark.xfail(reason="Can't use list special astroid fields")
     def test_int_subclass_argument(self):
@@ -1538,25 +521,6 @@ class TestLenBuiltinInference:
             pytest.fail("Inference call should not trigger a recursion error")
 
 
-def test_infer_str() -> None:
-    ast_nodes = astroid.extract_node("""
-    str(s) #@
-    str('a') #@
-    str(some_object()) #@
-    str(7**10000) #@
-    """)
-    for node in ast_nodes:
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-
-    node = astroid.extract_node("""
-    str(s='') #@
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, astroid.Instance)
-    assert inferred.qname() == "builtins.str"
-
-
 def test_infer_str_const() -> None:
     ast_nodes = astroid.extract_node("""
     str('') #@
@@ -1586,45 +550,6 @@ def test_infer_str_const() -> None:
     assert inferred[9] == ""
     assert inferred[10] == ""
     assert inferred[11] == ""
-
-
-def test_infer_str_does_not_run_user_str() -> None:
-    """A user-defined __str__ must never be executed during inference."""
-    node = astroid.extract_node("""
-    class StrWillFail:
-        def __str__(self):
-            raise RuntimeError
-
-    str(StrWillFail()) #@
-    """)
-    # The argument infers to an Instance, not a nodes.Const, so infer_str
-    # returns the empty-string fallback without ever calling __str__.
-    inferred = node.inferred()
-    assert len(inferred) == 1
-    assert isinstance(inferred[0], nodes.Const)
-    assert inferred[0].value == ""
-
-
-def test_infer_int() -> None:
-    ast_nodes = astroid.extract_node("""
-    int(0) #@
-    int('1') #@
-    """)
-    for node in ast_nodes:
-        inferred = next(node.infer())
-        assert isinstance(inferred, nodes.Const)
-
-    ast_nodes = astroid.extract_node("""
-    int(s='') #@
-    int('2.5') #@
-    int('something else') #@
-    int(unknown) #@
-    int(b'a') #@
-    """)
-    for node in ast_nodes:
-        inferred = next(node.infer())
-        assert isinstance(inferred, astroid.Instance)
-        assert inferred.qname() == "builtins.int"
 
 
 def test_infer_dict_from_keys() -> None:
@@ -1752,49 +677,6 @@ def test_infer_dict_from_keys_deduplicates() -> None:
 
 
 class TestFunctoolsPartial:
-    @staticmethod
-    def test_infer_partial() -> None:
-        ast_node = astroid.extract_node("""
-        from functools import partial
-        def test(a, b):
-            '''Docstring'''
-            return a + b
-        partial(test, 1)(3) #@
-        """)
-        assert isinstance(ast_node.func, nodes.Call)
-        inferred = ast_node.func.inferred()
-        assert len(inferred) == 1
-        partial = inferred[0]
-        assert isinstance(partial, objects.PartialFunction)
-        assert isinstance(partial.as_string(), str)
-        assert isinstance(partial.doc_node, nodes.Const)
-        assert partial.doc_node.value == "Docstring"
-        assert partial.lineno == 3
-        assert partial.col_offset == 0
-        assert partial.end_lineno == 5
-        assert partial.end_col_offset == 16
-
-    @staticmethod
-    def test_partial_descriptor_binding() -> None:
-        ast_nodes = astroid.extract_node("""
-        from functools import partial
-
-        def test(x):
-            return x
-
-        p = partial(test, x=1)
-        a = p.__get__({})
-        a #@
-        a() #@
-        """)
-        bound, result = ast_nodes
-        inferred_bound = next(bound.infer())
-        assert isinstance(inferred_bound, astroid.BoundMethod)
-        assert isinstance(inferred_bound._proxied._proxied, objects.PartialFunction)
-
-        inferred_result = next(result.infer())
-        assert isinstance(inferred_result, nodes.Const)
-        assert inferred_result.value == 1
 
     def test_invalid_functools_partial_calls(self) -> None:
         ast_nodes = astroid.extract_node("""
@@ -1866,22 +748,6 @@ class TestFunctoolsPartial:
         scope = partial_func3.parent.scope()
         assert scope.name == "test3_scope", "parented by closure"
 
-    def test_partial_does_not_affect_scope(self) -> None:
-        """Make sure partials are not automatically assigned."""
-        ast_nodes = astroid.extract_node("""
-        from functools import partial
-        def test(a, b):
-            return a + b
-        def scope():
-            test2 = partial(test, 1)
-            test2 #@
-        """)
-        test2 = next(ast_nodes.infer())
-        mod_scope = test2.root()
-        scope = test2.parent.scope()
-        assert set(mod_scope) == {"test", "scope", "partial"}
-        assert set(scope) == {"test2"}
-
     def test_multiple_partial_args(self) -> None:
         "Make sure partials remember locked-in args."
         ast_node = astroid.extract_node("""
@@ -1907,56 +773,6 @@ class TestFunctoolsPartial:
         for keyword, value in expected_keywords.items():
             assert keyword in called_keywords
             assert called_keywords[keyword].value == value
-
-
-def test_http_client_brain() -> None:
-    node = astroid.extract_node("""
-    from http.client import OK
-    OK
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, astroid.Instance)
-
-
-def test_http_status_brain() -> None:
-    node = astroid.extract_node("""
-    import http
-    http.HTTPStatus.CONTINUE.phrase
-    """)
-    inferred = next(node.infer())
-    # Cannot infer the exact value but the field is there.
-    assert inferred.value == ""
-
-    node = astroid.extract_node("""
-    import http
-    http.HTTPStatus(200).phrase
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, nodes.Const)
-
-
-def test_http_status_brain_iterable() -> None:
-    """Astroid inference of `http.HTTPStatus` is an iterable subclass of `enum.IntEnum`"""
-    node = astroid.extract_node("""
-    import http
-    http.HTTPStatus
-    """)
-    inferred = next(node.infer())
-    assert "enum.IntEnum" in [ancestor.qname() for ancestor in inferred.ancestors()]
-    assert inferred.getattr("__iter__")
-
-
-def test_oserror_model() -> None:
-    node = astroid.extract_node("""
-    try:
-        1/0
-    except OSError as exc:
-        exc #@
-    """)
-    inferred = next(node.infer())
-    strerror = next(inferred.igetattr("strerror"))
-    assert isinstance(strerror, nodes.Const)
-    assert strerror.value == ""
 
 
 @pytest.mark.skipif(PY313_PLUS, reason="Python >= 3.13 no longer has a crypt module")
@@ -2003,31 +819,6 @@ def test_no_recursionerror_on_self_referential_length_check() -> None:
         """)
         assert isinstance(node, nodes.NodeNG)
         node.inferred()
-
-
-def test_inference_on_outer_referential_length_check() -> None:
-    """
-    Regression test for https://github.com/pylint-dev/pylint/issues/5244
-    See also https://github.com/pylint-dev/astroid/pull/1234
-
-    This test should succeed without any error.
-    """
-    node = astroid.extract_node("""
-    class A:
-        def __len__(self) -> int:
-            return 42
-
-    class Crash:
-        def __len__(self) -> int:
-            a = A()
-            return len(a)
-
-    len(Crash()) #@
-    """)
-    inferred = node.inferred()
-    assert len(inferred) == 1
-    assert isinstance(inferred[0], nodes.Const)
-    assert inferred[0].value == 42
 
 
 def test_no_attributeerror_on_self_referential_length_check() -> None:

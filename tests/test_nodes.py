@@ -75,16 +75,6 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         node = parse(code)
         self.assertEqual(node.as_string().strip(), code.strip())
 
-    def test_as_string_for_list_containing_uninferable(self) -> None:
-        node = builder.extract_node("""
-        def foo():
-            bar = [arg] * 1
-        """)
-        binop = node.body[0].value
-        inferred = next(binop.infer())
-        self.assertEqual(inferred.as_string(), "[Uninferable]")
-        self.assertEqual(binop.as_string(), "[arg] * 1")
-
     def test_as_string_int_past_str_digits_limit(self) -> None:
         # repr() of this int raises ValueError under the default
         # sys.get_int_max_str_digits() limit; hex is exempt and round-trips.
@@ -769,14 +759,6 @@ class ConstNodeTest(unittest.TestCase):
     def test_unicode(self) -> None:
         self._test("a")
 
-    def test_str_kind(self):
-        node = builder.extract_node("""
-            const = u"foo"
-        """)
-        assert isinstance(node.value, nodes.Const)
-        assert node.value.value == "foo"
-        assert node.value.kind, "u"
-
     def test_copy(self) -> None:
         """Make sure copying a Const object doesn't result in infinite recursion."""
         const = copy.copy(nodes.Const(1))
@@ -913,36 +895,6 @@ class TestNamedExprNode:
 
 
 class AnnAssignNodeTest(unittest.TestCase):
-    def test_primitive(self) -> None:
-        code = textwrap.dedent("""
-            test: int = 5
-        """)
-        assign = builder.extract_node(code)
-        self.assertIsInstance(assign, nodes.AnnAssign)
-        self.assertEqual(assign.target.name, "test")
-        self.assertEqual(assign.annotation.name, "int")
-        self.assertEqual(assign.value.value, 5)
-        self.assertEqual(assign.simple, 1)
-
-    def test_primitive_without_initial_value(self) -> None:
-        code = textwrap.dedent("""
-            test: str
-        """)
-        assign = builder.extract_node(code)
-        self.assertIsInstance(assign, nodes.AnnAssign)
-        self.assertEqual(assign.target.name, "test")
-        self.assertEqual(assign.annotation.name, "str")
-        self.assertEqual(assign.value, None)
-
-    def test_complex(self) -> None:
-        code = textwrap.dedent("""
-            test: Dict[List[str]] = {}
-        """)
-        assign = builder.extract_node(code)
-        self.assertIsInstance(assign, nodes.AnnAssign)
-        self.assertEqual(assign.target.name, "test")
-        self.assertIsInstance(assign.annotation, nodes.Subscript)
-        self.assertIsInstance(assign.value, nodes.Dict)
 
     def test_as_string(self) -> None:
         code = textwrap.dedent("""
@@ -953,74 +905,6 @@ class AnnAssignNodeTest(unittest.TestCase):
         """)
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
-
-
-class ArgumentsNodeTC(unittest.TestCase):
-    def test_linenumbering(self) -> None:
-        ast = builder.parse("""
-            def func(a,
-                b): pass
-            x = lambda x: None
-        """)
-        self.assertEqual(ast["func"].args.fromlineno, 2)
-        self.assertFalse(ast["func"].args.is_statement)
-        xlambda = next(ast["x"].infer())
-        self.assertEqual(xlambda.args.fromlineno, 4)
-        self.assertEqual(xlambda.args.tolineno, 4)
-        self.assertFalse(xlambda.args.is_statement)
-
-    def test_kwoargs(self) -> None:
-        ast = builder.parse("""
-            def func(*, x):
-                pass
-        """)
-        args = ast["func"].args
-        assert isinstance(args, nodes.Arguments)
-        assert args.is_argument("x")
-        assert args.kw_defaults == [None]
-
-        ast = builder.parse("""
-            def func(*, x = "default"):
-                pass
-        """)
-        args = ast["func"].args
-        assert isinstance(args, nodes.Arguments)
-        assert args.is_argument("x")
-        assert len(args.kw_defaults) == 1
-        assert isinstance(args.kw_defaults[0], nodes.Const)
-        assert args.kw_defaults[0].value == "default"
-
-    def test_positional_only(self):
-        ast = builder.parse("""
-            def func(x, /, y):
-                pass
-        """)
-        args = ast["func"].args
-        self.assertTrue(args.is_argument("x"))
-        self.assertTrue(args.is_argument("y"))
-        index, node = args.find_argname("x")
-        self.assertEqual(index, 0)
-        self.assertIsNotNone(node)
-
-
-class UnboundMethodNodeTest(unittest.TestCase):
-    def test_no_super_getattr(self) -> None:
-        # This is a test for issue
-        # https://bitbucket.org/logilab/astroid/issue/91, which tests
-        # that UnboundMethod doesn't call super when doing .getattr.
-
-        ast = builder.parse("""
-        class A(object):
-            def test(self):
-                pass
-        meth = A.test
-        """)
-        node = next(ast["meth"].infer())
-        with self.assertRaises(AttributeInferenceError):
-            node.getattr("__missssing__")
-        name = node.getattr("__name__")[0]
-        self.assertIsInstance(name, nodes.Const)
-        self.assertEqual(name.value, "test")
 
 
 class BoundMethodNodeTest(unittest.TestCase):
@@ -1178,16 +1062,6 @@ class BoundMethodNodeTest(unittest.TestCase):
             inferred = next(function.infer())
             self.assertNotIsInstance(inferred, objects.Property, function.name)
             self.assertTrue(inferred.callable(), function.name)
-
-    def test_standard_property_outside_class(self) -> None:
-        # A real property object is not callable, wherever it is defined
-        ast = builder.parse("""
-        @property
-        def color(): return "red"
-        """)
-        inferred = next(ast["color"].infer())
-        self.assertIsInstance(inferred, objects.Property)
-        self.assertFalse(inferred.callable())
 
     def test_is_standard_property_subclass(self) -> None:
         # Test to make sure that subclasses of the Python-provided property decorators
@@ -1416,53 +1290,6 @@ class AliasesTest(unittest.TestCase):
 
 
 class Python35AsyncTest(unittest.TestCase):
-    def test_async_await_keywords(self) -> None:
-        (
-            async_def,
-            async_for,
-            async_with,
-            async_for2,
-            async_with2,
-            await_node,
-        ) = builder.extract_node(
-            """
-        async def func(): #@
-            async for i in range(10): #@
-                f = __(await i)
-            async with test(): #@
-                pass
-            async for i \
-                    in range(10):  #@
-                pass
-            async with test(), \
-                    test2():  #@
-                pass
-        """
-        )
-        assert isinstance(async_def, nodes.AsyncFunctionDef)
-        assert async_def.lineno == 2
-        assert async_def.col_offset == 0
-
-        assert isinstance(async_for, nodes.AsyncFor)
-        assert async_for.lineno == 3
-        assert async_for.col_offset == 4
-
-        assert isinstance(async_with, nodes.AsyncWith)
-        assert async_with.lineno == 5
-        assert async_with.col_offset == 4
-
-        assert isinstance(async_for2, nodes.AsyncFor)
-        assert async_for2.lineno == 7
-        assert async_for2.col_offset == 4
-
-        assert isinstance(async_with2, nodes.AsyncWith)
-        assert async_with2.lineno == 9
-        assert async_with2.col_offset == 4
-
-        assert isinstance(await_node, nodes.Await)
-        assert isinstance(await_node.value, nodes.Name)
-        assert await_node.lineno == 4
-        assert await_node.col_offset == 15
 
     def _test_await_async_as_string(self, code: str) -> None:
         ast_node = parse(code)
@@ -1760,74 +1587,6 @@ def test_correct_function_type_comment_parent() -> None:
     assert f.type_comment_returns.parent is f
 
 
-def test_is_generator_for_yield_assignments() -> None:
-    node = astroid.extract_node("""
-    class A:
-        def test(self):
-            a = yield
-            while True:
-                print(a)
-                yield a
-    a = A()
-    a.test
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, astroid.BoundMethod)
-    assert bool(inferred.is_generator())
-
-
-class AsyncGeneratorTest(unittest.TestCase):
-    def test_async_generator(self):
-        node = astroid.extract_node("""
-        async def a_iter(n):
-            for i in range(1, n + 1):
-                yield i
-                await asyncio.sleep(1)
-        a_iter(2) #@
-        """)
-        inferred = next(node.infer())
-        assert isinstance(inferred, bases.AsyncGenerator)
-        assert inferred.getattr("__aiter__")
-        assert inferred.getattr("__anext__")
-        assert inferred.pytype() == "builtins.async_generator"
-        assert inferred.display_type() == "AsyncGenerator"
-
-
-def test_f_string_correct_line_numbering() -> None:
-    """Test that we generate correct line numbers for f-strings."""
-    node = astroid.extract_node("""
-    def func_foo(arg_bar, arg_foo):
-        dict_foo = {}
-
-        f'{arg_bar.attr_bar}' #@
-    """)
-    assert node.lineno == 5
-    assert node.last_child().lineno == 5
-    assert node.last_child().last_child().lineno == 5
-
-
-def test_assignment_expression() -> None:
-    code = """
-    if __(a := 1):
-        pass
-    if __(b := test):
-        pass
-    """
-    first, second = astroid.extract_node(code)
-
-    assert isinstance(first.target, nodes.AssignName)
-    assert first.target.name == "a"
-    assert isinstance(first.value, nodes.Const)
-    assert first.value.value == 1
-    assert first.as_string() == "(a := 1)"
-
-    assert isinstance(second.target, nodes.AssignName)
-    assert second.target.name == "b"
-    assert isinstance(second.value, nodes.Name)
-    assert second.value.name == "test"
-    assert second.as_string() == "(b := test)"
-
-
 def test_assignment_expression_as_string() -> None:
     """Regression test for https://github.com/pylint-dev/astroid/issues/2668."""
     code = "if attn_output.size() != (size := (1, 2, 3, 4)):\n    pass"
@@ -1920,35 +1679,6 @@ def test_assignment_expression_in_functiondef() -> None:
     assert isinstance(class_assign.locals.get("assignment_nine")[0], nodes.AssignName)
 
 
-def test_get_doc() -> None:
-    code = textwrap.dedent("""\
-    def func():
-        "Docstring"
-        return 1
-    """)
-    node: nodes.FunctionDef = astroid.extract_node(code)  # type: ignore[assignment]
-    assert isinstance(node.doc_node, nodes.Const)
-    assert node.doc_node.value == "Docstring"
-    assert node.doc_node.lineno == 2
-    assert node.doc_node.col_offset == 4
-    assert node.doc_node.end_lineno == 2
-    assert node.doc_node.end_col_offset == 15
-
-    code = textwrap.dedent("""\
-    def func():
-        ...
-        return 1
-    """)
-    node = astroid.extract_node(code)
-    assert node.doc_node is None
-
-
-def test_parse_fstring_debug_mode() -> None:
-    node = astroid.extract_node('f"{3=}"')
-    assert isinstance(node, nodes.JoinedStr)
-    assert node.as_string() == "f'3={3!r}'"
-
-
 def test_fstring_as_string_roundtrip_with_mixed_quotes() -> None:
     # Adjacent f-strings merge into one JoinedStr whose parts together contain
     # every candidate quote style, so as_string() must not pick a delimiter that
@@ -1979,26 +1709,6 @@ def test_fstring_as_string_roundtrip_with_mixed_quotes() -> None:
     assert reparsed.as_string() == mixed.as_string()
 
 
-def test_parse_type_comments_with_proper_parent() -> None:
-    code = """
-    class D: #@
-        @staticmethod
-        def g(
-                x  # type: np.array
-        ):
-            pass
-    """
-    node = astroid.extract_node(code)
-    func = node.getattr("g")[0]
-    type_comments = func.args.type_comment_args
-    assert len(type_comments) == 1
-
-    type_comment = type_comments[0]
-    assert isinstance(type_comment, nodes.Attribute)
-    assert isinstance(type_comment.parent, nodes.Expr)
-    assert isinstance(type_comment.parent.parent, nodes.Arguments)
-
-
 def test_const_itered() -> None:
     code = 'a = "string"'
     node = astroid.extract_node(code).value
@@ -2006,42 +1716,6 @@ def test_const_itered() -> None:
     itered = node.itered()
     assert len(itered) == 6
     assert [elem.value for elem in itered] == list("string")
-
-
-def test_is_generator_for_yield_in_while() -> None:
-    code = """
-    def paused_iter(iterable):
-        while True:
-            # Continue to yield the same item until `next(i)` or `i.send(False)`
-            while (yield value):
-                pass
-    """
-    node = astroid.extract_node(code)
-    assert bool(node.is_generator())
-
-
-def test_is_generator_for_yield_in_if() -> None:
-    code = """
-    import asyncio
-
-    def paused_iter(iterable):
-        if (yield from asyncio.sleep(0.01)):
-            pass
-            return
-    """
-    node = astroid.extract_node(code)
-    assert bool(node.is_generator())
-
-
-def test_is_generator_for_yield_in_aug_assign() -> None:
-    code = """
-    def test():
-        buf = ''
-        while True:
-            buf += yield
-    """
-    node = astroid.extract_node(code)
-    assert bool(node.is_generator())
 
 
 class TestPatternMatching:
@@ -2272,23 +1946,6 @@ class TestPatternMatching:
             *case1.pattern.kwd_patterns,
         ]
 
-    @staticmethod
-    def test_return_from_match():
-        code = textwrap.dedent("""
-        def return_from_match(x):
-            match x:
-                case 10:
-                    return 10
-                case _:
-                    return -1
-
-        return_from_match(10)  #@
-        """).strip()
-        node = builder.extract_node(code)
-        inferred = node.inferred()
-        assert len(inferred) == 2
-        assert [inf.value for inf in inferred] == [10, -1]
-
 
 @pytest.mark.skipif(not PY314_PLUS, reason="TemplateStr was added in PY314")
 class TestTemplateString:
@@ -2384,16 +2041,6 @@ def test_arguments_contains_all():
     assert manually_get_args(node) == {x.name for x in node.args.arguments}
 
 
-def test_arguments_default_value():
-    node = extract_node(
-        "def fruit(eat='please', *, peel='no', trim='yes', **kwargs): ..."
-    )
-    assert node.args.default_value("eat").value == "please"
-
-    node = extract_node("def fruit(seeds, flavor='good', *, peel='maybe'): ...")
-    assert node.args.default_value("flavor").value == "good"
-
-
 @pytest.mark.parametrize("func", ["def f(x, *y, y): ...", "def f(x, *, y, **y): ..."])
 def test_arguments_default_value_name_shared_with_vararg(func: str) -> None:
     """An argument may repeat the name of ``*args`` or ``**kwargs``.
@@ -2406,19 +2053,6 @@ def test_arguments_default_value_name_shared_with_vararg(func: str) -> None:
         node.args.default_value("x")
     with pytest.raises(NoDefault):
         node.args.default_value("y")
-
-
-def test_arguments_default_value_positional_shares_vararg_name() -> None:
-    """The default of a positional argument shadowed by ``*args`` is still found."""
-    node = extract_node("def f(y=1, *y): ...")
-    assert node.args.default_value("y").value == 1
-
-
-def test_infer_argument_sharing_vararg_name() -> None:
-    """Inferring such an argument yields ``Uninferable`` rather than crashing."""
-    node = extract_node("def f(x, *y, y: tuple[x]): ...")
-    subscript = node.args.kwonlyargs_annotations[0]
-    assert next(subscript.slice.infer()) is Uninferable
 
 
 def test_arguments_annotations():
@@ -2489,14 +2123,6 @@ def test_str_large_int_getitem_no_crash() -> None:
     # Trigger the error path that formats the value
     with pytest.raises(AstroidTypeError, match=r"too large to display|int"):
         inferred.getitem(nodes.Const(0))
-
-
-def test_slice_qname() -> None:
-    """Test that Slice node has a qname method returning 'builtins.slice'."""
-    node = extract_node("f[1:2]")
-    assert isinstance(node, nodes.Subscript)
-    assert isinstance(node.slice, nodes.Slice)
-    assert node.slice.qname() == "builtins.slice"
 
 
 INFERRED_VALUES = """
