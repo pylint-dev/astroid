@@ -109,3 +109,36 @@ pytest --cov --cov-branch --cov-report=term-missing tests/<test file>.py -k "<te
 
 Each new or changed line in the diff should be absent from the `Missing` column, and no
 branch involving it should be listed as partial.
+
+## Writing tests
+
+### Prefer functional tests
+
+When a test only needs to parse some code and check what astroid finds in it, write it
+as a functional test: a python file under `tests/functional/`, whose comments say what
+is expected for the node on their line.
+
+```python
+class Cat:
+    def speak(self):
+        return "meow"
+
+
+Cat().speak()  # inferred: Const('meow')
+```
+
+To add a check, write the comment with nothing after the colon (`# inferred:`) and run
+`pytest tests/test_functional.py --remaster`. The answer is filled in: review it in the
+diff like any other change. The docstring of `tests/test_functional.py` lists what a
+comment can ask.
+
+Add the case to the existing file of the same topic when there is one, otherwise create
+a file in the directory named after the unit test module it would have gone in.
+
+Keep a unit test when a functional test does not fit:
+
+- the test is parametrized, or builds its code or its nodes by hand;
+- it checks lines and columns (`tests/test_nodes_lineno.py`,
+  `tests/test_nodes_position.py`);
+- it needs the manager, the file system, a mock or a warning;
+- it asserts the order of the inferred results (a functional test sorts them).
