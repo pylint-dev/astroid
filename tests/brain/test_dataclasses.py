@@ -755,7 +755,9 @@ def test_non_dataclass_is_not_dataclass() -> None:
 
 
 def test_kw_only_sentinel() -> None:
-    """Test that the KW_ONLY sentinel doesn't get added to the fields."""
+    """Test that the KW_ONLY sentinel doesn't get added to the fields, and that the
+    fields after it are keyword-only.
+    """
     node_one, node_two, node_three = astroid.extract_node("""
     import dataclasses
     from dataclasses import dataclass, KW_ONLY
@@ -782,10 +784,72 @@ def test_kw_only_sentinel() -> None:
 
     C.__init__  #@
     """)
-    expected = ["self", "y"]
     for node in (node_one, node_two, node_three):
         init = next(node.infer())
-        assert [a.name for a in init.args.args] == expected
+        assert [a.name for a in init.args.args] == ["self"]
+        assert [a.name for a in init.args.kwonlyargs] == ["y"]
+
+
+def test_kw_only_sentinel_fields_before_and_after() -> None:
+    """Test that the fields before the KW_ONLY sentinel stay positional, and that the
+    fields after it are keyword-only unless their ``field()`` call sets ``kw_only``.
+    """
+    node = astroid.extract_node("""
+    from dataclasses import KW_ONLY, dataclass, field
+
+    @dataclass
+    class A:
+        x: int
+        _: KW_ONLY
+        y: int = 1
+        z: str
+        w: str = field(kw_only=False, default="w")
+
+    A.__init__  #@
+    """)
+    init = next(node.infer())
+    assert [a.name for a in init.args.args] == ["self", "x", "w"]
+    assert [a.name for a in init.args.kwonlyargs] == ["y", "z"]
+
+
+def test_kw_only_sentinel_inheritance() -> None:
+    """Test that a subclass keeps the keyword-only fields of a base with the KW_ONLY
+    sentinel, and that the sentinel in a subclass follows the fields of its base.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/9040.
+    """
+    child, rewards_plotter = astroid.extract_node("""
+    import dataclasses
+    from dataclasses import KW_ONLY, dataclass, field
+
+    @dataclasses.dataclass
+    class Parent:
+        _: dataclasses.KW_ONLY
+        id: int | None = None
+
+    @dataclasses.dataclass
+    class Child(Parent):
+        name: str
+
+    @dataclass
+    class Plotter:
+        node_names: list[str] = field(default_factory=list)
+
+    @dataclass
+    class RewardsPlotter(Plotter):
+        _: KW_ONLY
+        smoothing: float
+
+    Child.__init__  #@
+    RewardsPlotter.__init__  #@
+    """)
+    child_init = next(child.infer())
+    assert [a.name for a in child_init.args.args] == ["self", "name"]
+    assert [a.name for a in child_init.args.kwonlyargs] == ["id"]
+
+    rewards_plotter_init = next(rewards_plotter.infer())
+    assert [a.name for a in rewards_plotter_init.args.args] == ["self", "node_names"]
+    assert [a.name for a in rewards_plotter_init.args.kwonlyargs] == ["smoothing"]
 
 
 def test_kw_only_sentinel_other_dataclasses_attr() -> None:

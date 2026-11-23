@@ -139,6 +139,20 @@ def _get_dataclass_attributes(
         yield assign_node
 
 
+def _get_statements_after_kw_only_sentinel(node: nodes.ClassDef) -> list[nodes.NodeNG]:
+    """Return the statements of the class body after its ``_: KW_ONLY`` pseudo-field.
+
+    The dataclass fields defined there are keyword-only, unless their ``field()``
+    call sets ``kw_only``.
+    """
+    for index, statement in enumerate(node.body):
+        if isinstance(statement, nodes.AnnAssign) and _is_keyword_only_sentinel(
+            statement.annotation
+        ):
+            return node.body[index + 1 :]
+    return []
+
+
 def _check_generate_dataclass_init(node: nodes.ClassDef) -> bool:
     """Return True if we should generate an __init__ method for node.
 
@@ -274,6 +288,7 @@ def _generate_dataclass_init(
     assignments: list[str] = []
 
     prev_pos_only_store, prev_kw_only_store = _find_arguments_from_base_classes(node)
+    after_kw_only_sentinel = _get_statements_after_kw_only_sentinel(node)
 
     for assign in assigns:
         name, annotation, value = assign.target.name, assign.annotation, assign.value
@@ -371,8 +386,9 @@ def _generate_dataclass_init(
                 else:
                     params.append(param_str)
                 continue
-        # If kw_only decorated, we need to add all parameters to the kw_only_params
-        if kw_only_decorated:
+        # If kw_only decorated, we need to add all parameters to the kw_only_params.
+        # The same goes for the fields after a ``_: KW_ONLY`` pseudo-field.
+        if kw_only_decorated or assign in after_kw_only_sentinel:
             if name in prev_kw_only_store:
                 prev_kw_only_store[name] = (ann_str, default_str)
             else:
