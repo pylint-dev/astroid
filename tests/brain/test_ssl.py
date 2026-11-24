@@ -9,7 +9,7 @@ import ssl
 import pytest
 
 from astroid import bases, nodes, parse
-from astroid.const import PY312_PLUS
+from astroid.const import IS_PYPY, PY312_PLUS
 
 
 def test_ssl_brain() -> None:
@@ -75,6 +75,9 @@ def test_ssl_brain_py312() -> None:
         "VERIFY_X509_PARTIAL_CHAIN",
         "VERIFY_X509_TRUSTED_FIRST",
     ],
+)
+@pytest.mark.skipif(
+    IS_PYPY, reason="PyPy's _ssl sets these from cffi, which astroid can't infer"
 )
 def test_ssl_brain_options_and_verify_flags(name: str) -> None:
     """The ``OP_*`` and ``VERIFY_*`` constants are module attributes and enum members."""
