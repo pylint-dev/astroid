@@ -1,0 +1,4 @@
+Infer a union of a PEP 695 type parameter, such as ``T | None``, as a ``UnionType``.
+A class with a base like ``Parent[T | float]`` now gets its ancestors.
+
+Closes #3488

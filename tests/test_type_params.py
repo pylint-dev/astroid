@@ -5,6 +5,7 @@
 import pytest
 
 from astroid import extract_node
+from astroid.bases import UnionType
 from astroid.const import PY312_PLUS, PY313_PLUS
 from astroid.nodes import (
     AssignName,
@@ -17,6 +18,7 @@ from astroid.nodes import (
     TypeVar,
     TypeVarTuple,
 )
+from astroid.util import UninferableBase
 
 if not PY312_PLUS:
     pytest.skip("Requires Python 3.12 or higher", allow_module_level=True)
@@ -136,3 +138,33 @@ def test_get_children() -> None:
     class_node = extract_node("class MyClass[T]: ...")
     class_children = tuple(class_node.get_children())
     assert isinstance(class_children[0], TypeVar)
+
+
+def test_type_var_union() -> None:
+    node = extract_node("""
+    class Parent[T]: ...
+
+    class Child[U](Parent[U | None]): ...
+
+    def func[T]():
+        T | 1  #@
+    """)
+    assert isinstance(node.inferred()[0], UninferableBase)
+
+    child = node.root()["Child"]
+    union = child.bases[0].slice.inferred()[0]
+    assert isinstance(union, UnionType)
+    assert isinstance(union.left, TypeVar)
+    assert union.right.value is None
+    assert [ancestor.name for ancestor in child.ancestors()] == ["Parent", "object"]
+
+
+def test_type_var_union_with_itself() -> None:
+    # CPython evaluates ``T | T`` to ``T`` itself, not to a union.
+    node = extract_node("""
+    def func[T]():
+        T | T  #@
+    """)
+    inferred = node.inferred()[0]
+    assert isinstance(inferred, TypeVar)
+    assert inferred.name.name == "T"

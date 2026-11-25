@@ -796,8 +796,8 @@ class UnionType(BaseInstance):
 
     def __init__(
         self,
-        left: UnionType | nodes.ClassDef | nodes.Const,
-        right: UnionType | nodes.ClassDef | nodes.Const,
+        left: UnionType | nodes.ClassDef | nodes.Const | nodes.TypeVar,
+        right: UnionType | nodes.ClassDef | nodes.Const | nodes.TypeVar,
         parent: nodes.NodeNG | None = None,
     ) -> None:
         super().__init__()
