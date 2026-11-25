@@ -349,7 +349,9 @@ def test_object_type_pep695_type_params() -> None:
         value: _T | None = None  #@
         return var
     """).annotation
-    assert helpers.object_type(binop) is util.Uninferable
+    assert helpers.object_type(binop.left) is util.Uninferable
+    # ``_T | None`` itself is a union, whose type can be determined.
+    assert helpers.object_type(binop).name == "UnionType"
 
     for code in (
         "type Alias[*Ts] = tuple[*Ts]",

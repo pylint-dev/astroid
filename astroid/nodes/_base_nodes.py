@@ -508,8 +508,8 @@ class OperatorNode(NodeNG):
 
     @staticmethod
     def _bin_op_or_union_type(
-        left: bases.UnionType | nodes.ClassDef | nodes.Const,
-        right: bases.UnionType | nodes.ClassDef | nodes.Const,
+        left: bases.UnionType | nodes.ClassDef | nodes.Const | nodes.TypeVar,
+        right: bases.UnionType | nodes.ClassDef | nodes.Const | nodes.TypeVar,
     ) -> Generator[InferenceResult]:
         """Create a new UnionType instance for binary or, e.g. int | str."""
         yield bases.UnionType(left, right)
@@ -619,6 +619,18 @@ class OperatorNode(NodeNG):
         from astroid import helpers  # pylint: disable=import-outside-toplevel
 
         op = binary_opnode.op
+        is_union = (
+            op == "|"
+            and OperatorNode._is_union_type_operand(left)
+            and OperatorNode._is_union_type_operand(right)
+        )
+        if is_union and (
+            isinstance(left, nodes.TypeVar) or isinstance(right, nodes.TypeVar)
+        ):
+            # A PEP 695 type parameter has no inferable type, so the type
+            # checks below cannot be done for it: ``T | int`` is a union.
+            return [partial(OperatorNode._bin_op_or_union_type, left, right)]
+
         if OperatorNode._same_type(left_type, right_type):
             methods = [OperatorNode._bin_op(left, binary_opnode, op, right, context)]
         elif helpers.is_subtype(left_type, right_type):
@@ -638,20 +650,16 @@ class OperatorNode(NodeNG):
                 ),
             ]
 
-        # pylint: disable = too-many-boolean-expressions
-        if (
-            op == "|"
-            and (
-                isinstance(left, (bases.UnionType, nodes.ClassDef))
-                or (isinstance(left, nodes.Const) and left.value is None)
-            )
-            and (
-                isinstance(right, (bases.UnionType, nodes.ClassDef))
-                or (isinstance(right, nodes.Const) and right.value is None)
-            )
-        ):
+        if is_union:
             methods.extend([partial(OperatorNode._bin_op_or_union_type, left, right)])
         return methods
+
+    @staticmethod
+    def _is_union_type_operand(value: InferenceResult) -> bool:
+        """Whether *value* can be an operand of a ``X | Y`` type union."""
+        return isinstance(value, (bases.UnionType, nodes.ClassDef, nodes.TypeVar)) or (
+            isinstance(value, nodes.Const) and value.value is None
+        )
 
     @staticmethod
     def _infer_binary_operation(
