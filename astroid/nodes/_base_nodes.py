@@ -512,6 +512,11 @@ class OperatorNode(NodeNG):
         right: bases.UnionType | nodes.ClassDef | nodes.Const | nodes.TypeVar,
     ) -> Generator[InferenceResult]:
         """Create a new UnionType instance for binary or, e.g. int | str."""
+        if left is right:
+            # CPython evaluates ``X | X`` to ``X`` itself, e.g. ``T | T``
+            # keeps the type parameter instead of building a union.
+            yield left
+            return
         yield bases.UnionType(left, right)
 
     @staticmethod

@@ -157,3 +157,14 @@ def test_type_var_union() -> None:
     assert isinstance(union.left, TypeVar)
     assert union.right.value is None
     assert [ancestor.name for ancestor in child.ancestors()] == ["Parent", "object"]
+
+
+def test_type_var_union_with_itself() -> None:
+    # CPython evaluates ``T | T`` to ``T`` itself, not to a union.
+    node = extract_node("""
+    def func[T]():
+        T | T  #@
+    """)
+    inferred = node.inferred()[0]
+    assert isinstance(inferred, TypeVar)
+    assert inferred.name.name == "T"
