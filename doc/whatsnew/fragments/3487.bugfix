@@ -1,0 +1,6 @@
+The machine limits that NumPy 2.4 and later set in C on ``numpy.finfo`` instances
+(``eps``, ``max``, ``min`` and the others) are now known, so pylint no longer reports
+``no-member`` on them.
+
+Refs #3487
+Closes pylint-dev/pylint#10806
