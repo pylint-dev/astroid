@@ -240,6 +240,12 @@ def infer_typedDict(  # pylint: disable=invalid-name
     for attr in ("__required_keys__", "__optional_keys__"):
         func_to_add = _extract_single_node("dict")
         class_def.locals[attr] = [func_to_add]
+    # Infer this ``TypedDict`` FunctionDef to the class built above every time it
+    # is seen again. The inference tip cache is keyed on the inference context as
+    # well as on the node, so the tip would otherwise build a new class per use.
+    # A class deriving from several TypedDicts would then have distinct
+    # ``TypedDict`` classes in its MRO, reported as duplicate bases.
+    node._explicit_inference = lambda node, context: iter([class_def])
     return iter([class_def])
 
 
