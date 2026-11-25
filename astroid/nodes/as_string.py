@@ -725,16 +725,26 @@ class AsStringVisitor:
 
     def visit_templatestr(self, node: nodes.TemplateStr) -> str:
         """Return an nodes.TemplateStr node as string."""
+        fields = [
+            value.accept(self)
+            for value in node.values
+            if isinstance(value, nodes.Interpolation)
+        ]
+        # Pick a delimiter absent from the {fields}: a quote in the literal
+        # text of a format spec (``{x:'>10}``) would end the string. The
+        # literal parts escape the delimiter, so they never constrain it.
+        # Since Python 3.12 (PEP 701) an expression may reuse the enclosing
+        # quote, so single quotes are the fallback.
+        quote = next(
+            (q for q in ("'", '"') if not any(q in field for field in fields)), "'"
+        )
         string = ""
+        fields_iter = iter(fields)
         for value in node.values:
-            match value:
-                case nodes.Interpolation():
-                    string += "{" + value.accept(self) + "}"
-                case _:
-                    string += value.accept(self)[1:-1]
-        for quote in ("'", '"', '"""', "'''"):
-            if quote not in string:
-                break
+            if isinstance(value, nodes.Interpolation):
+                string += "{" + next(fields_iter) + "}"
+            else:
+                string += _escaped_fstring_literal(value.value, quote)
         return "t" + quote + string + quote
 
     def visit_interpolation(self, node: nodes.Interpolation) -> str:
