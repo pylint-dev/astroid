@@ -1,0 +1,4 @@
+Fixed ``isinstance()`` and ``issubclass()`` inference constraint when the classinfo is a
+PEP 604 union, e.g. ``isinstance(x, int | str)``.
+
+Refs #3453
