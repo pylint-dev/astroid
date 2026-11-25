@@ -1,0 +1,4 @@
+Infer all possible return values of an instance's ``__getitem__`` method
+when inferring a subscript.
+
+Closes #1335
