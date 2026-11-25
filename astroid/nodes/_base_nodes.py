@@ -427,12 +427,23 @@ class OperatorNode(NodeNG):
         other: InferenceResult,
         context: InferenceContext,
         method_name: str,
+        reverse: bool = False,
     ) -> Generator[InferenceResult]:
         """Invoke binary operation inference on the given instance."""
         methods = dunder_lookup.lookup(instance, method_name)
         context = bind_context_to_node(context, instance)
         method = methods[0]
         context.callcontext.callee = method
+
+        if reverse and isinstance(instance, nodes.Const):
+            # Const.infer_binary_op() evaluates ``instance <op> other``, but the
+            # reflected method of a builtin evaluates ``other <op> instance``.
+            # str.__rmod__ and bytes.__rmod__ never do any formatting.
+            if isinstance(other, nodes.Const) and not (
+                isinstance(instance.value, (str, bytes)) and op == "%"
+            ):
+                return other.infer_binary_op(opnode, op, instance, context, method)
+            return (result for result in (nodes.Const(NotImplemented),))
 
         if (
             isinstance(instance, nodes.Const)
@@ -504,6 +515,7 @@ class OperatorNode(NodeNG):
             other=other,
             context=context,
             method_name=method_name,
+            reverse=reverse,
         )
 
     @staticmethod
