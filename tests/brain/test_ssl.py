@@ -4,10 +4,12 @@
 
 """Tests for the ssl brain."""
 
+import ssl
+
 import pytest
 
 from astroid import bases, nodes, parse
-from astroid.const import PY312_PLUS
+from astroid.const import IS_PYPY, PY312_PLUS
 
 
 def test_ssl_brain() -> None:
@@ -51,6 +53,41 @@ def test_ssl_brain_py312() -> None:
     import ssl
     ssl.OP_LEGACY_SERVER_CONNECT
     ssl.Options.OP_LEGACY_SERVER_CONNECT
+    """)
+
+    inferred_constant = next(module.body[1].value.infer())
+    assert isinstance(inferred_constant, nodes.Const)
+
+    inferred_instance = next(module.body[2].value.infer())
+    assert isinstance(inferred_instance, bases.Instance)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "OP_ENABLE_KTLS",
+        "OP_ENABLE_MIDDLEBOX_COMPAT",
+        "OP_IGNORE_UNEXPECTED_EOF",
+        "OP_NO_RENEGOTIATION",
+        "OP_NO_TICKET",
+        "OP_NO_TLSv1_3",
+        "VERIFY_ALLOW_PROXY_CERTS",
+        "VERIFY_X509_PARTIAL_CHAIN",
+        "VERIFY_X509_TRUSTED_FIRST",
+    ],
+)
+@pytest.mark.skipif(
+    IS_PYPY, reason="PyPy's _ssl sets these from cffi, which astroid can't infer"
+)
+def test_ssl_brain_options_and_verify_flags(name: str) -> None:
+    """The ``OP_*`` and ``VERIFY_*`` constants are module attributes and enum members."""
+    if not hasattr(ssl, name):
+        pytest.skip(f"ssl.{name} depends on the Python and OpenSSL versions")
+    enum = "Options" if name.startswith("OP_") else "VerifyFlags"
+    module = parse(f"""
+    import ssl
+    ssl.{name}
+    ssl.{enum}.{name}
     """)
 
     inferred_constant = next(module.body[1].value.infer())

@@ -42,9 +42,12 @@ def _options_enum() -> str:
         OP_NO_TICKET = 12
         OP_NO_RENEGOTIATION = 13
         OP_ENABLE_MIDDLEBOX_COMPAT = 14
+        OP_IGNORE_UNEXPECTED_EOF = 15
         """
     if PY312_PLUS:
-        enum += "OP_LEGACY_SERVER_CONNECT = 15"
+        enum += """OP_LEGACY_SERVER_CONNECT = 16
+        OP_ENABLE_KTLS = 17
+        """
     return enum
 
 
@@ -68,11 +71,12 @@ def ssl_transform() -> nodes.Module:
         # LibreSSL does not provide RAND_egd
         pass
     from _ssl import (OP_ALL, OP_CIPHER_SERVER_PREFERENCE,
-                      OP_NO_COMPRESSION, OP_NO_SSLv2, OP_NO_SSLv3,
-                      OP_NO_TLSv1, OP_NO_TLSv1_1, OP_NO_TLSv1_2,
-                      OP_SINGLE_DH_USE, OP_SINGLE_ECDH_USE)
+                      OP_ENABLE_MIDDLEBOX_COMPAT, OP_IGNORE_UNEXPECTED_EOF,
+                      OP_NO_COMPRESSION, OP_NO_RENEGOTIATION, OP_NO_SSLv2, OP_NO_SSLv3,
+                      OP_NO_TICKET, OP_NO_TLSv1, OP_NO_TLSv1_1, OP_NO_TLSv1_2,
+                      OP_NO_TLSv1_3, OP_SINGLE_DH_USE, OP_SINGLE_ECDH_USE)
 
-    {"from _ssl import OP_LEGACY_SERVER_CONNECT" if PY312_PLUS else ""}
+    {"from _ssl import OP_ENABLE_KTLS, OP_LEGACY_SERVER_CONNECT" if PY312_PLUS else ""}
 
     from _ssl import (ALERT_DESCRIPTION_ACCESS_DENIED, ALERT_DESCRIPTION_BAD_CERTIFICATE,
                       ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE,
@@ -102,7 +106,9 @@ def ssl_transform() -> nodes.Module:
     from _ssl import (SSL_ERROR_EOF, SSL_ERROR_INVALID_ERROR_CODE, SSL_ERROR_SSL,
                       SSL_ERROR_SYSCALL, SSL_ERROR_WANT_CONNECT, SSL_ERROR_WANT_READ,
                       SSL_ERROR_WANT_WRITE, SSL_ERROR_WANT_X509_LOOKUP, SSL_ERROR_ZERO_RETURN)
-    from _ssl import VERIFY_CRL_CHECK_CHAIN, VERIFY_CRL_CHECK_LEAF, VERIFY_DEFAULT, VERIFY_X509_STRICT
+    from _ssl import (VERIFY_ALLOW_PROXY_CERTS, VERIFY_CRL_CHECK_CHAIN, VERIFY_CRL_CHECK_LEAF,
+                      VERIFY_DEFAULT, VERIFY_X509_PARTIAL_CHAIN, VERIFY_X509_STRICT,
+                      VERIFY_X509_TRUSTED_FIRST)
     from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
     from _ssl import _OPENSSL_API_VERSION
     from _ssl import PROTOCOL_SSLv23, PROTOCOL_TLSv1, PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
