@@ -768,3 +768,47 @@ class EnumBrainTest(unittest.TestCase):
             "OrderedDict",
             "RED",
         }
+
+    def test_enum_nonmember_is_not_a_member(self) -> None:
+        """``enum.nonmember`` values must not appear in ``__members__``.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/6887
+        """
+        node = builder.extract_node("""
+        import enum
+        from enum import nonmember
+
+        class Mixed(enum.Enum):  #@
+            FLAG = enum.nonmember(True)
+            ANNOTATED: bool = nonmember(False)
+            RED = 1
+        """)
+        members = node.locals["__members__"][0]
+        assert [key.value for key, _ in members.items] == ["RED"]
+        assert isinstance(node.locals["FLAG"][0], nodes.AssignName)
+        assert isinstance(node.locals["ANNOTATED"][0], nodes.AssignName)
+        assert isinstance(node.locals["RED"][0], bases.Instance)
+
+    def test_enum_with_only_nonmembers_can_be_extended(self) -> None:
+        """A base with nothing but ``enum.nonmember`` values has no members."""
+        node = builder.extract_node("""
+        import enum
+
+        class Base(enum.Enum):  #@
+            FLAG = enum.nonmember(True)
+        """)
+        assert not node.locals["__members__"][0].items
+
+    def test_enum_nonmember_lookalike_is_a_member(self) -> None:
+        """Only ``enum.nonmember`` excludes a value from the members."""
+        node = builder.extract_node("""
+        import enum
+
+        def nonmember(value):
+            return value
+
+        class Color(enum.Enum):  #@
+            RED = nonmember(1)
+        """)
+        members = node.locals["__members__"][0]
+        assert [key.value for key, _ in members.items] == ["RED"]
