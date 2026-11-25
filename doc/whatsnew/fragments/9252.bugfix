@@ -1,0 +1,6 @@
+Fix inference of the value bound by ``with`` when a ``@contextmanager``
+function uses ``yield from``. The values produced by the sub-generator, list or
+tuple are now inferred instead of the sub-generator object itself, which caused
+false positives such as ``no-member`` in pylint.
+
+Closes pylint-dev/pylint#9252
