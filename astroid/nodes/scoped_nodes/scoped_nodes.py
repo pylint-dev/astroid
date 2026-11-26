@@ -18,6 +18,7 @@ from functools import cached_property, lru_cache
 from typing import TYPE_CHECKING, ClassVar, Literal, NoReturn, Self
 
 from astroid import bases, protocols, util
+from astroid.const import PY314_PLUS
 from astroid.context import (
     CallContext,
     InferenceContext,
@@ -164,6 +165,14 @@ def function_to_method(n, klass):
         if n.type == "property":
             return n
         if n.type != "staticmethod":
+            # pylint: disable-next=import-outside-toplevel
+            from astroid import objects
+
+            # Before Python 3.14, accessing a ``functools.partial`` through an
+            # instance does not bind ``self`` (3.13 defines ``__get__`` but warns
+            # and returns the same partial).
+            if isinstance(n, objects.PartialFunction) and not PY314_PLUS:
+                return n
             return bases.UnboundMethod(n)
     return n
 
