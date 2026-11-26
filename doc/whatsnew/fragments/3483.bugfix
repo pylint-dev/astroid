@@ -1,0 +1,5 @@
+Prevent unraisable ``ValueError: generator already executing`` errors when
+attribute inference iterators are finalized during nested iterator cleanup.
+
+Refs #3483
+Closes pylint-dev/pylint#11860
