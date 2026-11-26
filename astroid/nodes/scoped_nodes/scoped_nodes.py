@@ -1658,9 +1658,12 @@ class FunctionDef(
             if returnnode.value is None:
                 yield node_classes.Const(None)
             else:
+                inference_error = False
                 try:
                     yield from returnnode.value.infer(context)
                 except InferenceError:
+                    inference_error = True
+                if inference_error:
                     yield util.Uninferable
 
     def bool_value(self, context: InferenceContext | None = None) -> bool:

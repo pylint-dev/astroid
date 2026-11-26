@@ -1,0 +1,6 @@
+Prevent ``ValueError: generator already executing`` during interpreter shutdown
+when partially consumed inference generators suspend inside ``except`` blocks
+and pin exception tracebacks in a reference cycle.
+
+Refs #3492
+Closes pylint-dev/pylint#11860

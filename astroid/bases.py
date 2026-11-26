@@ -191,6 +191,7 @@ def _infer_stmts(
             inferred = True
             continue
         context.lookupname = stmt._infer_name(frame, name)
+        inference_error = False
         try:
             stmt_constraints: set[Constraint] = set()
             for constraint_stmt, potential_constraints in constraints.items():
@@ -213,6 +214,10 @@ def _infer_stmts(
         except NameInferenceError:
             continue
         except InferenceError:
+            inference_error = True
+        if inference_error:
+            # Yield outside the except block so the caught InferenceError and its
+            # traceback chain do not stay pinned on this suspended frame.
             yield Uninferable
             inferred = True
 
@@ -309,17 +314,21 @@ class BaseInstance(Proxy):
             yield from _infer_stmts(
                 self._wrap_attr(get_attr, context), context, frame=self
             )
-        except AttributeInferenceError:
-            try:
-                # fallback to class.igetattr since it has some logic to handle
-                # descriptors
-                # But only if the _proxied is the Class.
-                if self._proxied.__class__.__name__ != "ClassDef":
-                    raise
-                attrs = self._proxied.igetattr(name, context, class_context=False)
-                yield from self._wrap_attr(attrs, context)
-            except AttributeInferenceError as error:
+            return
+        except AttributeInferenceError as error:
+            if self._proxied.__class__.__name__ != "ClassDef":
                 raise InferenceError(**vars(error)) from error
+
+        # Fall back to the class outside the except block so inner exceptions
+        # cannot chain to the caught AttributeInferenceError and pin this frame.
+        try:
+            # fallback to class.igetattr since it has some logic to handle
+            # descriptors
+            # But only if the _proxied is the Class.
+            attrs = self._proxied.igetattr(name, context, class_context=False)
+            yield from self._wrap_attr(attrs, context)
+        except AttributeInferenceError as error:
+            raise InferenceError(**vars(error)) from error
 
     def _wrap_attr(
         self, attrs: Iterable[InferenceResult], context: InferenceContext | None = None

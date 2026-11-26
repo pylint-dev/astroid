@@ -2,10 +2,13 @@
 # For details: https://github.com/pylint-dev/astroid/blob/main/LICENSE
 # Copyright (c) https://github.com/pylint-dev/astroid/blob/main/CONTRIBUTORS.txt
 
+import gc
 import platform
 import sys
 import textwrap
+import types
 import unittest
+import weakref
 from importlib.metadata import PackageNotFoundError, version
 from unittest import mock
 
@@ -18,6 +21,7 @@ from astroid.context import InferenceContext
 from astroid.exceptions import AstroidSyntaxError, InferenceError
 from astroid.manager import AstroidManager
 from astroid.raw_building import build_module
+from astroid.typing import InferenceResult
 from astroid.util import Uninferable
 
 from . import resources
@@ -637,3 +641,63 @@ def test_relative_import_call_infers_to_target(tmp_path) -> None:
     finally:
         sys.path.remove(str(tmp_path))
         MANAGER.clear_cache()
+
+
+def test_no_generator_cycle_or_reentry_on_partial_inference(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression test for https://github.com/pylint-dev/pylint/issues/11860.
+
+    Partial inference (calling ``next()`` without exhausting generators) of a
+    self-referential property whose lookup triggers an internal ``InferenceError``
+    used to pin exception tracebacks inside ``except`` blocks across ``yield``,
+    forming a generator reference cycle that raised
+    ``ValueError: generator already executing`` during finalization.
+    """
+    unraisable_errors: list[tuple[type[BaseException], BaseException | None]] = []
+    monkeypatch.setattr(
+        sys,
+        "unraisablehook",
+        lambda u: unraisable_errors.append((u.exc_type, u.exc_value)),
+    )
+
+    def _run_partial_inference() -> InferenceResult:
+        node = _extract_single_node("""
+            class A:
+                @property
+                def prop(self):
+                    parts = self._val
+                    return parts[-1]
+
+                def make(self, args):
+                    _, parts = self._parse(args)
+                    self._val = parts
+
+            A().prop #@
+        """)
+        return next(node.infer())
+
+    inferred = _run_partial_inference()
+    assert inferred is Uninferable
+
+    # Any suspended inference generators from _run_partial_inference should not be
+    # trapped in traceback reference cycles; on CPython they are reclaimed at once,
+    # and closing/collecting them must never raise ``ValueError``.
+    target_refs = [
+        weakref.ref(obj)
+        for obj in gc.get_objects()
+        if isinstance(obj, types.GeneratorType)
+        and obj.gi_frame is not None
+        and obj.gi_code.co_name == "_infer_stmts"
+        and "AssignAttr._val" in repr(obj.gi_frame.f_locals.get("stmt", ""))
+    ]
+    if platform.python_implementation() == "CPython":
+        assert not target_refs
+
+    for ref in target_refs:
+        gen = ref()
+        if gen is not None:
+            gen.close()
+    del target_refs
+    gc.collect()
+    assert not unraisable_errors

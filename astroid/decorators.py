@@ -57,11 +57,14 @@ def yes_if_nothing_inferred(
 ) -> Callable[_P, Generator[InferenceResult]]:
     def inner(*args: _P.args, **kwargs: _P.kwargs) -> Generator[InferenceResult]:
         generator = func(*args, **kwargs)
+        empty = False
 
         try:
             yield next(generator)
         except StopIteration:
-            # generator is empty
+            empty = True
+        if empty:
+            # Yield outside the except block so StopIteration.__context__ is cleared.
             yield util.Uninferable
             return
 
