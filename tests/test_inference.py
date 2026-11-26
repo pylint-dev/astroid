@@ -1069,6 +1069,125 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(raw), 1)
         self.assertEqual(raw[0].name, "os")
 
+    def test_truncated_inference_is_not_cached(self) -> None:
+        """A result truncated by the inference budget must not be cached.
+
+        Regression test for https://github.com/pylint-dev/pylint/issues/11582.
+        ``NodeNG.infer`` appends an ``Uninferable`` placeholder once the
+        per-inference budget (``InferenceContext.max_inferred``) runs out, and
+        used to cache that truncated tuple in the process-wide inference cache.
+        Because the cache is shared by every module, a later inference of the
+        same node with a fresh budget then wrongly returned ``Uninferable``,
+        which made the outcome depend on the order the files were analysed in.
+        """
+        module = parse(textwrap.dedent("""
+                a = 1 + 1
+                b = a + a
+                """))
+        b_node = module.body[1].value
+
+        # Exhaust the budget before it can resolve ``b`` at all.
+        with patch.object(InferenceContext, "max_inferred", -1):
+            assert list(b_node.infer(InferenceContext())) == [Uninferable]
+
+        # With the normal budget restored, ``b`` must resolve to 4. Before the
+        # fix the truncated ``Uninferable`` was cached above, so this returned
+        # ``Uninferable`` instead.
+        inferred = list(b_node.infer())
+        assert len(inferred) == 1
+        assert isinstance(inferred[0], nodes.Const)
+        assert inferred[0].value == 4
+
+    def test_truncated_inference_is_not_cached_across_warm_up(self) -> None:
+        """Inferring a method first must not poison a later inference.
+
+        Reproduction reported by Mark Mayo on
+        https://github.com/pylint-dev/astroid/issues/3383: inferring a method
+        whose body exhausts the budget pins the truncated ``Uninferable`` for
+        ``self.options`` in the shared inference cache, so inferring that very
+        node afterwards with a fresh budget replayed it instead of resolving
+        it.
+        """
+        # Enough chained comparisons to exhaust the default budget of 100
+        # inferred nodes through a normal inference, no mocking involved.
+        attr_count = 30
+        assignments = "\n".join(
+            f"        self.attr{i} = None" for i in range(attr_count)
+        )
+        checks = " and ".join(f"self.attr{i} is None" for i in range(attr_count))
+        code = (
+            "class Entity:\n"
+            "    def __init__(self):\n"
+            "        self._options = []\n"
+            f"{assignments}\n"
+            "\n"
+            "    @property\n"
+            "    def options(self):\n"
+            "        return self._options\n"
+            "\n"
+            "    def is_default(self):\n"
+            f"        return ({checks} and self.options == [])\n"
+        )
+
+        def infer_options(warm_up: bool) -> list[nodes.NodeNG]:
+            module = parse(code)
+            method = module["Entity"]["is_default"]
+            target = next(
+                node
+                for node in method.nodes_of_class(nodes.Compare)
+                if node.ops[0][0] == "=="
+            ).left
+            if warm_up:
+                list(method.infer_call_result(caller=method))
+            return list(target.infer())
+
+        for label, inferred in (
+            ("cold", infer_options(False)),
+            ("warm", infer_options(True)),
+        ):
+            assert len(inferred) == 1, f"{label} inference: {inferred}"
+            assert isinstance(inferred[0], nodes.List), f"{label} inference: {inferred}"
+
+    def test_truncated_base_inference_does_not_hide_ancestors(self) -> None:
+        """A truncated base class must not wipe out the inherited members.
+
+        Reproducer from https://github.com/pylint-dev/astroid/issues/3464,
+        itself a duplicate of https://github.com/pylint-dev/astroid/issues/3383:
+        when the truncated result is a class base, ``ancestors()`` comes back
+        empty and the inherited ``__class_getitem__`` disappears, which shows
+        up as ``E1136`` on SQLAlchemy ``Mapped`` in
+        https://github.com/pylint-dev/pylint/issues/9549.
+        """
+        module = parse(textwrap.dedent("""
+                class Base:
+                    @classmethod
+                    def __class_getitem__(cls, item):
+                        return cls
+
+                class Child(Base):
+                    pass
+                """))
+        child = module["Child"]
+
+        # ``parse`` already inferred these nodes and filled the process-wide
+        # cache, which would short-circuit the budget check below. Drop it and
+        # restore it afterwards so the rest of the suite is unaffected.
+        cache = InferenceContext().inferred
+        saved = dict(cache)
+        cache.clear()
+        try:
+            exhausted = InferenceContext()
+            exhausted.nodes_inferred = exhausted.max_inferred + 1
+            assert list(child.bases[0].infer(exhausted)) == [Uninferable]
+
+            # The truncated result was not cached, so the base still resolves
+            # for real and the inherited member stays reachable.
+            assert [base.name for base in child.ancestors()] == ["Base", "object"]
+            assert child.getattr("__class_getitem__")
+        finally:
+            cache.clear()
+            cache.update(saved)
+
     def _test_const_inferred(self, node: nodes.AssignName, value: float | str) -> None:
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
