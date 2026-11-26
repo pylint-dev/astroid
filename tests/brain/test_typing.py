@@ -270,3 +270,20 @@ class TestSpecialAlias:
             base,
             "builtins.object",
         ]
+
+
+def test_subscripted_subclass_of_typing_alias_infers_class() -> None:
+    """Subscripting a subclass of a subscripted typing alias yields the class.
+
+    Regression test for https://github.com/pylint-dev/pylint/issues/10042.
+    """
+    node = builder.extract_node("""
+    import typing
+    class Z(typing.IO[typing.AnyStr]):
+        pass
+    Z[str] #@
+    """)
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    assert isinstance(inferred[0], nodes.ClassDef)
+    assert inferred[0].name == "Z"
