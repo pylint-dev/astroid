@@ -1,0 +1,4 @@
+Fix length inference counting duplicate elements of literal sets or dictionary keys.
+Count statically resolved hashable values, including nested tuples and frozensets.
+
+Refs #3382
