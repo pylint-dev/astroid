@@ -1,0 +1,5 @@
+Recognize ``orjson.dumps`` and ``orjson.loads`` without importing the native extension,
+preventing false-positive ``no-member`` messages. Infer the result of ``dumps`` as bytes.
+
+Refs #3403
+Closes pylint-dev/pylint#9762
