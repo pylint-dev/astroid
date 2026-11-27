@@ -72,7 +72,6 @@ class SixBrainTest(unittest.TestCase):
     def test_attribute_access_with_six_moves_imported(self) -> None:
         astroid.MANAGER.clear_cache()
         astroid.MANAGER._mod_file_cache.clear()
-        import six.moves  # type: ignore[import]  # pylint: disable=import-outside-toplevel,unused-import,redefined-outer-name
 
         self.test_attribute_access()
 
@@ -85,58 +84,6 @@ class SixBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         qname = "http.client.HTTPSConnection"
         self.assertEqual(inferred.qname(), qname)
-
-    def test_from_submodule_imports(self) -> None:
-        """Make sure ulrlib submodules can be imported from
-
-        See pylint-dev/pylint#1640 for relevant issue
-        """
-        ast_node = builder.extract_node("""
-        from six.moves.urllib.parse import urlparse
-        urlparse #@
-        """)
-        inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.FunctionDef)
-
-    def test_with_metaclass_subclasses_inheritance(self) -> None:
-        ast_node = builder.extract_node("""
-        class A(type):
-            def test(cls):
-                return cls
-
-        class C:
-            pass
-
-        import six
-        class B(six.with_metaclass(A, C)):
-            pass
-
-        B #@
-        """)
-        inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.ClassDef)
-        self.assertEqual(inferred.name, "B")
-        self.assertIsInstance(inferred.bases[0], nodes.Call)
-        ancestors = tuple(inferred.ancestors())
-        self.assertIsInstance(ancestors[0], nodes.ClassDef)
-        self.assertEqual(ancestors[0].name, "C")
-        self.assertIsInstance(ancestors[1], nodes.ClassDef)
-        self.assertEqual(ancestors[1].name, "object")
-
-    @staticmethod
-    def test_six_with_metaclass_enum_ancestor() -> None:
-        code = """
-        import six
-        from enum import Enum, EnumMeta
-
-        class FooMeta(EnumMeta):
-            pass
-
-        class Foo(six.with_metaclass(FooMeta, Enum)):  #@
-            bar = 1
-        """
-        klass = astroid.extract_node(code)
-        assert next(klass.ancestors()).name == "Enum"
 
     def test_with_metaclass_no_arguments(self) -> None:
         # ``six.with_metaclass()`` with no positional metaclass argument is

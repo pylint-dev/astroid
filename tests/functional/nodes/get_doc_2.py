@@ -1,0 +1,3 @@
+def func():  # doc_node: None
+    ...
+    return 1

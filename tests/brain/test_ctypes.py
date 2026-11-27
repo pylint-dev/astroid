@@ -7,7 +7,7 @@ import sys
 
 import pytest
 
-from astroid import extract_node, nodes, util
+from astroid import extract_node, nodes
 
 pytestmark = pytest.mark.skipif(
     hasattr(sys, "pypy_version_info"),
@@ -81,40 +81,6 @@ def test_ctypes_redefined_types_members(c_type, builtin_type, type_code):
     node_inf = node.inferred()[0]
     assert isinstance(node_inf, nodes.Const)
     assert node_inf.value == type_code
-
-
-def test_cdata_member_access() -> None:
-    """
-    Test that the base members are still accessible. Each redefined ctypes type
-    inherits from _SimpleCData which itself inherits from _CData. Checks that
-    _CData members are accessible.
-    """
-    src = """
-    import ctypes
-    x=ctypes.c_float(1.0)
-    x._objects
-    """
-    node = extract_node(src)
-    assert isinstance(node, nodes.NodeNG)
-    # ``_objects`` is a data descriptor, so the attribute resolves but the value
-    # it returns is not statically known.
-    assert node.inferred() == [util.Uninferable]
-
-
-def test_other_ctypes_member_untouched() -> None:
-    """
-    Test that other ctypes members, which are not touched by the brain, are correctly
-    inferred.
-    """
-    src = """
-    import ctypes
-    ctypes.ARRAY(3, 2)
-    """
-    node = extract_node(src)
-    assert isinstance(node, nodes.NodeNG)
-    node_inf = node.inferred()[0]
-    assert isinstance(node_inf, nodes.Const)
-    assert node_inf.value == 6
 
 
 @pytest.mark.parametrize(

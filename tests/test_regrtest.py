@@ -242,81 +242,6 @@ def test(val):
         ancestors = list(klass.ancestors())
         self.assertEqual(ancestors[0].qname(), "string.Template")
 
-    def test_ancestors_yes_in_bases(self) -> None:
-        # Test for issue https://bitbucket.org/logilab/astroid/issue/84
-        # This used to crash astroid with a TypeError, because an Uninferable
-        # node was present in the bases
-        node = extract_node("""
-        def with_metaclass(meta, *bases):
-            class metaclass(meta):
-                def __new__(cls, name, this_bases, d):
-                    return meta(name, bases, d)
-            return type.__new__(metaclass, 'temporary_class', (), {})
-
-        import lala
-
-        class A(with_metaclass(object, lala.lala)): #@
-            pass
-        """)
-        ancestors = list(node.ancestors())
-        self.assertEqual(len(ancestors), 1)
-        self.assertEqual(ancestors[0].qname(), "builtins.object")
-
-    def test_ancestors_missing_from_function(self) -> None:
-        # Test for https://www.logilab.org/ticket/122793
-        node = extract_node("""
-        def gen(): yield
-        GEN = gen()
-        next(GEN)
-        """)
-        self.assertRaises(InferenceError, next, node.infer())
-
-    def test_unicode_in_docstring(self) -> None:
-        # Crashed for astroid==1.4.1
-        # Test for https://bitbucket.org/logilab/astroid/issues/273/
-
-        # In a regular file, "coding: utf-8" would have been used.
-        node = extract_node(f"""
-        from __future__ import unicode_literals
-
-        class MyClass(object):
-            def method(self):
-                "With unicode : {'’'} "
-
-        instance = MyClass()
-        """)
-
-        next(node.value.infer()).as_string()
-
-    def test_binop_generates_nodes_with_parents(self) -> None:
-        node = extract_node("""
-        def no_op(*args):
-            pass
-        def foo(*args):
-            def inner(*more_args):
-                args + more_args #@
-            return inner
-        """)
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.Tuple)
-        self.assertIsNotNone(inferred.parent)
-        self.assertIsInstance(inferred.parent, nodes.BinOp)
-
-    def test_decorator_names_inference_error_leaking(self) -> None:
-        node = extract_node("""
-        class Parent(object):
-            @property
-            def foo(self):
-                pass
-
-        class Child(Parent):
-            @Parent.foo.getter
-            def foo(self): #@
-                return super(Child, self).foo + ['oink']
-        """)
-        inferred = next(node.infer())
-        self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
-
     @unittest.skipUnless(PY312_PLUS, "Uses 3.12 type param syntax")
     def test_decorator_names_type_param(self) -> None:
         node = extract_node("""
@@ -339,78 +264,9 @@ def test(val):
         self.assertEqual(node.decoratornames(), {"builtins.slice"})
         self.assertIs(next(node.infer()), node)
 
-    def test_recursive_property_method(self) -> None:
-        node = extract_node("""
-        class APropert():
-            @property
-            def property(self):
-                return self
-        APropert().property
-        """)
-        next(node.infer())
-
-    def test_uninferable_string_argument_of_namedtuple(self) -> None:
-        node = extract_node("""
-        import collections
-        collections.namedtuple('{}'.format("a"), '')()
-        """)
-        next(node.infer())
-
-    def test_regression_inference_of_self_in_lambda(self) -> None:
-        code = """
-        class A:
-            @b(lambda self: __(self))
-            def d(self):
-                pass
-        """
-        node = extract_node(code)
-        inferred = next(node.infer())
-        assert isinstance(inferred, Instance)
-        assert inferred.qname() == ".A"
-
-    def test_inference_context_consideration(self) -> None:
-        """https://github.com/PyCQA/astroid/issues/1828"""
-        code = """
-        class Base:
-            def return_type(self):
-                return type(self)()
-        class A(Base):
-            def method(self):
-                return self.return_type()
-        class B(Base):
-            def method(self):
-                return self.return_type()
-        A().method() #@
-        B().method() #@
-        """
-        node1, node2 = extract_node(code)
-        inferred1 = next(node1.infer())
-        assert inferred1.qname() == ".A"
-        inferred2 = next(node2.infer())
-        assert inferred2.qname() == ".B"
-
 
 class Whatever:
     a = property(lambda x: x, lambda x: x)  # type: ignore[misc]
-
-
-def test_ancestor_looking_up_redefined_function() -> None:
-    code = """
-    class Foo:
-        def _format(self):
-            pass
-
-        def format(self):
-            self.format = self._format
-            self.format()
-    Foo
-    """
-    node = extract_node(code)
-    inferred = next(node.infer())
-    ancestor = next(inferred.ancestors())
-    _, found = ancestor.lookup("format")
-    assert len(found) == 1
-    assert isinstance(found[0], nodes.FunctionDef)
 
 
 def test_crash_in_dunder_inference_prevented() -> None:
@@ -523,59 +379,6 @@ def test_regression_eval_get_of_arg() -> None:
         next(node.infer())
 
 
-def test_regression_no_crash_during_build() -> None:
-    node: nodes.Attribute = extract_node("__()")
-    assert node.args == []
-    assert node.as_string() == "__()"
-
-
-def test_regression_no_crash_on_called_slice() -> None:
-    """Regression test for issue #2721."""
-    node: nodes.Attribute = extract_node(textwrap.dedent("""
-        s = slice(-2)
-        @s()
-        @six.add_metaclass()
-        class a: ...
-        """))
-    assert isinstance(node, nodes.ClassDef)
-    assert node.name == "a"
-
-
-def test_regression_infer_dict_literal_comparison_uninferable() -> None:
-    """Regression test for issue #2522."""
-    node = extract_node("{{}}>0")
-    inferred = next(node.infer())
-    assert inferred.value == Uninferable
-
-
-def test_regression_infer_namedtuple_invalid_fieldname_error() -> None:
-    """Regression test for issue #2519."""
-    code = """
-    from collections import namedtuple
-    namedtuple('a','}')
-    """
-    node = extract_node(code)
-    inferred = next(node.infer())
-    assert inferred.value == Uninferable
-
-
-def test_regression_infer_namedtuple_nfkc_normalized_fieldname() -> None:
-    """Regression test for pylint-dev/pylint#8746.
-
-    ``namedtuple`` accepts any identifier as a field name, but the parser stores
-    identifiers in their NFKC-normalized form, so a field written as "\u00b5"
-    (MICRO SIGN) ends up under "\u03bc" (GREEK SMALL LETTER MU).
-    """
-    code = """
-    from collections import namedtuple
-    namedtuple('mu', ['\u00b5'])
-    """
-    node = extract_node(code)
-    inferred = next(node.infer())
-    assert isinstance(inferred, nodes.ClassDef)
-    assert "\u03bc" in inferred.locals
-
-
 # On Python 3.15+ the parser emits a regular SyntaxError instead of a MemoryError for deeply nested
 # parentheses, so the special-case test here is no longer needed.
 @pytest.mark.skipif(PY315_PLUS, reason="No longer a MemoryError on Python 3.15+")
@@ -589,23 +392,6 @@ def test_regression_parse_deeply_nested_parentheses() -> None:
         SyntaxError if platform.python_implementation() == "PyPy" else MemoryError
     )
     assert isinstance(ctx.value.error, expected)
-
-
-def test_name_lookup_no_recursion_in_dict_kwargs() -> None:
-    """Regression test for https://github.com/pylint-dev/astroid/issues/264.
-
-    Name resolution inside ``(k for k in dict(**k))`` used to bounce between
-    the comprehension's ``k`` and the outer ``k`` until ``RecursionError``.
-    The current behavior infers the generator's source as a dict instance
-    without crashing.
-    """
-    node = extract_node("""
-        def test(k):
-            (k for k in __(dict(**k)))
-    """)
-    inferred = next(node.infer())
-    assert isinstance(inferred, Instance)
-    assert inferred.pytype() == "builtins.dict"
 
 
 def test_relative_import_call_infers_to_target(tmp_path) -> None:

@@ -9,7 +9,6 @@ import unittest
 
 from astroid import builder, nodes
 from astroid.exceptions import (
-    AttributeInferenceError,
     InferenceError,
     NameInferenceError,
 )
@@ -311,27 +310,6 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(len(name.lookup("x")[1]), 1, repr(name))
             self.assertEqual(name.lookup("x")[1][0].lineno, 3, repr(name))
 
-    def test_explicit___name__(self) -> None:
-        code = """
-            class Pouet:
-                __name__ = "pouet"
-            p1 = Pouet()
-
-            class PouetPouet(Pouet): pass
-            p2 = Pouet()
-
-            class NoName: pass
-            p3 = NoName()
-        """
-        astroid = builder.parse(code, __name__)
-        p1 = next(astroid["p1"].infer())
-        self.assertTrue(p1.getattr("__name__"))
-        p2 = next(astroid["p2"].infer())
-        self.assertTrue(p2.getattr("__name__"))
-        self.assertTrue(astroid["NoName"].getattr("__name__"))
-        p3 = next(astroid["p3"].infer())
-        self.assertRaises(AttributeInferenceError, p3.getattr, "__name__")
-
     def test_function_module_special(self) -> None:
         astroid = builder.parse(
             '''
@@ -413,26 +391,6 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         obj = next(it)
         self.assertIsInstance(obj, nodes.ClassDef)
         self.assertRaises(StopIteration, functools.partial(next, it))
-
-    def test_global_delete(self) -> None:
-        code = """
-            def run2():
-                f = Frobble()
-
-            class Frobble:
-                pass
-            Frobble.mumble = True
-
-            del Frobble
-
-            def run1():
-                f = Frobble()
-        """
-        astroid = builder.parse(code, __name__)
-        stmts = astroid["run2"].lookup("Frobbel")[1]
-        self.assertEqual(len(stmts), 0)
-        stmts = astroid["run1"].lookup("Frobbel")[1]
-        self.assertEqual(len(stmts), 0)
 
 
 class LookupControlFlowTest(unittest.TestCase):

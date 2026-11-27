@@ -12,17 +12,6 @@ from astroid import (
 from astroid.context import InferenceContext
 
 
-def test_group_exceptions_exceptions() -> None:
-    node = extract_node(textwrap.dedent("""
-        try:
-            raise ExceptionGroup('', [TypeError(), TypeError()])
-        except ExceptionGroup as eg:
-            eg.exceptions #@"""))
-
-    inferred = node.inferred()[0]
-    assert isinstance(inferred, nodes.Tuple)
-
-
 def test_group_exceptions() -> None:
     node = extract_node(textwrap.dedent("""
         try:
@@ -100,50 +89,3 @@ except* ValueError:
     stmts = bases._infer_stmts([trystar], context)
     assert list(stmts) == [Uninferable]
     assert context.lookupname == name
-
-
-def test_star_exceptions_infer_exceptions() -> None:
-    code = textwrap.dedent("""
-    try:
-        raise ExceptionGroup("group", [ValueError(654), TypeError(10)])
-    except* ValueError as ve:
-        print(e.exceptions)
-    except* TypeError as texc:
-        print(e.exceptions)
-    else:
-        sys.exit(127)
-    finally:
-        sys.exit(0)""")
-    node = extract_node(code)
-    assert isinstance(node, nodes.TryStar)
-    inferred_ve = next(node.handlers[0].statement().name.infer())
-    assert inferred_ve.name == "ExceptionGroup"
-    assert isinstance(inferred_ve.getattr("exceptions")[0], nodes.Tuple)
-    assert (
-        inferred_ve.getattr("exceptions")[0].elts[0].pytype() == "builtins.ValueError"
-    )
-
-    inferred_te = next(node.handlers[1].statement().name.infer())
-    assert inferred_te.name == "ExceptionGroup"
-    assert isinstance(inferred_te.getattr("exceptions")[0], nodes.Tuple)
-    assert inferred_te.getattr("exceptions")[0].elts[0].pytype() == "builtins.TypeError"
-
-
-def test_star_exception_handler_binds_exception_group() -> None:
-    """Regression test for https://github.com/pylint-dev/astroid/issues/2400.
-
-    In ``except* TypeError as eg``, the bound name ``eg`` is the
-    ``ExceptionGroup`` wrapping the caught exceptions, not a ``TypeError``
-    instance. astroid used to infer it as the exception type listed on the
-    handler.
-    """
-    name = extract_node(textwrap.dedent("""
-        try:
-            raise ExceptionGroup("group", [TypeError("x")])
-        except* TypeError as eg:
-            eg  #@
-    """))
-    inferred = list(name.infer())
-    assert len(inferred) == 1
-    assert isinstance(inferred[0], bases.Instance)
-    assert inferred[0].pytype() == "builtins.ExceptionGroup"

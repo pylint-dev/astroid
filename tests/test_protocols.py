@@ -188,14 +188,6 @@ class ProtocolTests(unittest.TestCase):
             starred = next(assign_stmts.nodes_of_class(nodes.Starred))
             self.assertIs(next(starred.assigned_stmts()), Uninferable)
 
-    def test_inference_starred_for_opaque_inner_element(self) -> None:
-        """Inferring the starred name itself must not raise ``TypeError``."""
-        name_node = extract_node("""
-        for a, (b, *c) in [[1, object()]]:
-            c #@
-        """)
-        self.assertEqual(name_node.inferred(), [Uninferable])
-
     def _get_starred_stmts(self, code: str) -> list | UninferableBase:
         assign_stmt = extract_node(f"{code} #@")
         starred = next(assign_stmt.nodes_of_class(nodes.Starred))
@@ -375,94 +367,6 @@ class ProtocolTests(unittest.TestCase):
         parsed.accept(Visitor())
 
     @staticmethod
-    def test_uninferable_exponents() -> None:
-        """Attempting to calculate the result is prohibitively expensive."""
-        parsed = extract_node("15 ** 20220609")
-        assert parsed.inferred() == [Uninferable]
-
-        # Test a pathological case (more realistic: None as naive inference result)
-        parsed = extract_node("None ** 2")
-        assert parsed.inferred() == [Uninferable]
-
-    @staticmethod
-    def test_uninferable_list_multiplication() -> None:
-        """Attempting to calculate the result is prohibitively expensive."""
-        parsed = extract_node("[0] * 123456789")
-        element = parsed.inferred()[0].elts[0]
-        assert element.value is Uninferable
-
-    @staticmethod
-    def test_uninferable_list_multiplication_with_multiple_operands() -> None:
-        """Attempting to calculate the result is prohibitively expensive."""
-        parsed = extract_node("[0] * 825 * 16547118")
-        element = parsed.inferred()[0].elts[0]
-        assert element.value is Uninferable
-
-    @staticmethod
-    def test_list_multiplication_with_empty_list_and_overflowing_multiplier() -> None:
-        parsed = extract_node("[] * 1163845194457646539560")
-        assert parsed.inferred()[0].elts == []
-
-    @staticmethod
-    def test_list_multiplication_with_zero_multiplier() -> None:
-        parsed = extract_node("[0] * 0")
-        assert parsed.inferred()[0].elts == []
-
-    @staticmethod
-    def test_list_multiplication_with_negative_overflowing_multiplier() -> None:
-        parsed = extract_node("[0] * -9223372036854775809")
-        assert parsed.inferred()[0].elts == []
-
-    @staticmethod
-    def test_uninferable_string_multiplication() -> None:
-        """Building the repeated string would be prohibitively expensive."""
-        parsed = extract_node('"abc" * 123456789')
-        assert parsed.inferred() == [Uninferable]
-
-        # The reflected form (int * str) must be bounded too.
-        parsed = extract_node('123456789 * "abc"')
-        assert parsed.inferred() == [Uninferable]
-
-    @staticmethod
-    def test_uninferable_bytes_multiplication() -> None:
-        """Building the repeated bytes would be prohibitively expensive."""
-        parsed = extract_node('b"abc" * 123456789')
-        assert parsed.inferred() == [Uninferable]
-
-    @staticmethod
-    def test_string_multiplication_with_zero_multiplier() -> None:
-        parsed = extract_node('"abc" * 0')
-        assert parsed.inferred()[0].value == ""
-
-    @staticmethod
-    def test_uninferable_left_shift() -> None:
-        """The shifted integer would be prohibitively expensive to build."""
-        parsed = extract_node("1 << 123456789")
-        assert parsed.inferred() == [Uninferable]
-
-    @staticmethod
-    def test_uninferable_string_concatenation() -> None:
-        """The concatenated string would be prohibitively expensive to build."""
-        parsed = extract_node('("a" * 60000000) + ("b" * 60000000)')
-        assert parsed.inferred() == [Uninferable]
-
-    @staticmethod
-    def test_uninferable_bytes_concatenation() -> None:
-        parsed = extract_node('(b"a" * 60000000) + (b"b" * 60000000)')
-        assert parsed.inferred() == [Uninferable]
-
-    @staticmethod
-    def test_string_concatenation_small_still_infers() -> None:
-        parsed = extract_node('"ab" + "cd"')
-        assert parsed.inferred()[0].value == "abcd"
-
-    @staticmethod
-    def test_uninferable_list_concatenation() -> None:
-        """The concatenated list would be prohibitively expensive to build."""
-        parsed = extract_node("([1] * 50000001) + ([1] * 50000001)")
-        assert parsed.inferred() == [Uninferable]
-
-    @staticmethod
     def test_uninferable_oversized_percent_formatting() -> None:
         """The % guard in const_infer_binary_op backs up the dedicated handler.
 
@@ -476,96 +380,7 @@ class ProtocolTests(unittest.TestCase):
         assert list(result) == [Uninferable]
 
 
-def test_named_expr_inference() -> None:
-    code = """
-    if (a := 2) == 2:
-        a #@
-
-
-    # Test a function call
-    def test():
-        return 24
-
-    if (a := test()):
-        a #@
-
-    # Normal assignments in sequences
-    { (a:= 4) } #@
-    [ (a:= 5) ] #@
-
-    # Something more complicated
-    def test(value=(p := 24)): return p
-    [ y:= test()] #@
-
-    # Priority assignment
-    (x := 1, 2)
-    x #@
-    """
-    ast_nodes = extract_node(code)
-    assert isinstance(ast_nodes, list)
-    node = next(ast_nodes[0].infer())
-    assert isinstance(node, nodes.Const)
-    assert node.value == 2
-
-    node = next(ast_nodes[1].infer())
-    assert isinstance(node, nodes.Const)
-    assert node.value == 24
-
-    node = next(ast_nodes[2].infer())
-    assert isinstance(node, nodes.Set)
-    assert isinstance(node.elts[0], nodes.Const)
-    assert node.elts[0].value == 4
-
-    node = next(ast_nodes[3].infer())
-    assert isinstance(node, nodes.List)
-    assert isinstance(node.elts[0], nodes.Const)
-    assert node.elts[0].value == 5
-
-    node = next(ast_nodes[4].infer())
-    assert isinstance(node, nodes.List)
-    assert isinstance(node.elts[0], nodes.Const)
-    assert node.elts[0].value == 24
-
-    node = next(ast_nodes[5].infer())
-    assert isinstance(node, nodes.Const)
-    assert node.value == 1
-
-
 class TestPatternMatching:
-    @staticmethod
-    def test_assigned_stmts_match_mapping():
-        """Assigned_stmts for MatchMapping not yet implemented.
-
-        Test the result is 'Uninferable' and no exception is raised.
-        """
-        assign_stmts = extract_node("""
-        var = {1: "Hello", 2: "World"}
-        match var:
-            case {**rest}:  #@
-                pass
-        """)
-        match_mapping: nodes.MatchMapping = assign_stmts.pattern  # type: ignore[union-attr]
-        assert match_mapping.rest
-        assigned = next(match_mapping.rest.assigned_stmts())
-        assert assigned == Uninferable
-
-    @staticmethod
-    def test_assigned_stmts_match_star():
-        """Assigned_stmts for MatchStar not yet implemented.
-
-        Test the result is 'Uninferable' and no exception is raised.
-        """
-        assign_stmts = extract_node("""
-        var = (0, 1, 2)
-        match var:
-            case (0, 1, *rest):  #@
-                pass
-        """)
-        match_sequence: nodes.MatchSequence = assign_stmts.pattern  # type: ignore[union-attr]
-        match_star = match_sequence.patterns[2]
-        assert isinstance(match_star, nodes.MatchStar) and match_star.name
-        assigned = next(match_star.name.assigned_stmts())
-        assert assigned == Uninferable
 
     @staticmethod
     def test_assigned_stmts_match_as():

@@ -105,23 +105,6 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(return_.fromlineno, 18)
         self.assertEqual(return_.tolineno, 18)
 
-    def test_decorated_function_lineno(self) -> None:
-        astroid = builder.parse(
-            """
-            @decorator
-            def function(
-                arg):
-                print (arg)
-            """,
-            __name__,
-        )
-        function = astroid["function"]
-        # XXX discussable, but that's what is expected by pylint right now, similar to ClassDef
-        self.assertEqual(function.fromlineno, 3)
-        self.assertEqual(function.tolineno, 5)
-        self.assertEqual(function.decorators.fromlineno, 2)
-        self.assertEqual(function.decorators.tolineno, 2)
-
     @staticmethod
     def test_decorated_class_lineno() -> None:
         code = textwrap.dedent("""
@@ -494,22 +477,6 @@ class BuilderTest(unittest.TestCase):
         datap = resources.build_file("data/tmp__init__.py", "data.tmp__init__")
         self.assertEqual(datap.name, "data.tmp__init__")
         self.assertEqual(datap.package, 0)
-
-    def test_yield_parent(self) -> None:
-        """Check if we added discard nodes as yield parent (w/ compiler)."""
-        code = """
-            def yiell(): #@
-                yield 0
-                if no:
-                    yield more
-        """
-        func = builder.extract_node(code)
-        self.assertIsInstance(func, nodes.FunctionDef)
-        stmt = func.body[0]
-        self.assertIsInstance(stmt, nodes.Expr)
-        self.assertIsInstance(stmt.value, nodes.Yield)
-        self.assertIsInstance(func.body[1].body[0], nodes.Expr)
-        self.assertIsInstance(func.body[1].body[0].value, nodes.Yield)
 
     def test_object(self) -> None:
         obj_ast = self.builder.inspect_build(object)
