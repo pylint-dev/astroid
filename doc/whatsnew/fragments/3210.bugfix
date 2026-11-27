@@ -1,0 +1,4 @@
+Calls through an overridable factory class attribute (for example ``self.data_class()``)
+now also infer ``Uninferable`` alongside the resolved base class. Subclasses can override
+the class attribute, so asserting only the base class produced false ``no-member``
+positives in pylint (for example in astropy's ``astropy.io.ascii`` readers).
