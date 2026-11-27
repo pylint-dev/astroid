@@ -8,6 +8,7 @@ import inspect
 import random
 
 from astroid import nodes
+from astroid.bases import BoundMethod
 from astroid.context import InferenceContext
 from astroid.exceptions import UseInferenceDefault
 from astroid.inference_tip import inference_tip
@@ -59,6 +60,13 @@ def _clone_node_with_lineno(node, parent, lineno):
 
 def infer_random_sample(node, context: InferenceContext | None = None):
     if len(node.args) != 2:
+        raise UseInferenceDefault
+
+    inferred_func = safe_infer(node.func, context=context)
+    if (
+        not isinstance(inferred_func, BoundMethod)
+        or inferred_func.qname() != "random.Random.sample"
+    ):
         raise UseInferenceDefault
 
     inferred_length = safe_infer(node.args[1], context=context)
