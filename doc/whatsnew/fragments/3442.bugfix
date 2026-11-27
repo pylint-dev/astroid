@@ -1,0 +1,7 @@
+Undecorated class statements without an explicit metaclass or extra class keywords now
+infer as the result of calling the shared type of compatible instance bases. This improves
+inference for interfaces such as those from ``zope.interface`` when the type has a
+compatible ``__init__`` and does not define ``__mro_entries__``.
+
+Refs #3442
+Refs pylint-dev/pylint#11651
