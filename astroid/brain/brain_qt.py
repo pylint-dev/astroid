@@ -45,7 +45,7 @@ def transform_pyqt_signal(node: nodes.FunctionDef) -> None:
     node.instance_attrs["connect"] = [signal_cls["connect"]]
 
 
-def transform_pyside_signal(node: nodes.FunctionDef) -> None:
+def transform_pyside_signal(node: nodes.ClassDef) -> None:
     module = parse("""
     class NotPySideSignal(object):
         def connect(self, receiver, type=None):
