@@ -1,0 +1,7 @@
+Support ``functools.Placeholder`` (Python 3.14) in ``functools.partial``: placeholders
+are no longer counted as filled arguments, and the call arguments fill them first.
+This fixes false positives such as ``redundant-keyword-arg`` and
+``too-many-function-args``.
+
+Refs #3456
+Closes pylint-dev/pylint#11757
