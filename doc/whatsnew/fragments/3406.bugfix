@@ -1,0 +1,4 @@
+The ``exceptions`` attribute of ``ExceptionGroup`` and ``BaseExceptionGroup`` caught
+by ordinary ``except`` handlers is inferred as a tuple with unknown contents.
+
+Closes #3406
