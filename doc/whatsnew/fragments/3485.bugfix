@@ -1,0 +1,10 @@
+Fields declared after a ``_: KW_ONLY`` pseudo-field of a dataclass are now
+keyword-only in the inferred ``__init__``. They used to be positional, so a
+required field after one with a default made that ``__init__`` invalid, and the
+``__init__`` of a base class was used instead. pylint no longer reports
+``unexpected-keyword-arg`` or ``redundant-keyword-arg`` for such dataclasses and
+their subclasses.
+
+Refs #3485
+Refs pylint-dev/pylint#9040
+Refs pylint-dev/pylint#7881
