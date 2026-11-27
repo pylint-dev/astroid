@@ -133,6 +133,12 @@ class CallSite:
                 if not hasattr(inferred, "elts"):
                     values.append(Uninferable)
                     continue
+                if isinstance(inferred, nodes.List) and inferred is not arg.value:
+                    # A list reached through a name may have been mutated
+                    # (append, extend, ...) after it was built, so its length
+                    # is unknown.
+                    values.append(Uninferable)
+                    continue
                 values.extend(inferred.elts)
             else:
                 values.append(arg)

@@ -1,0 +1,9 @@
+Starred arguments that come from a list bound to a name are no longer unpacked
+using the elements of the original list literal, since the list may have been
+appended to or extended after it was built. This fixes a false positive
+``no-value-for-parameter`` in pylint on calls like ``f(*lst)`` after
+``lst.append(...)``.
+
+Refs #3478
+Closes pylint-dev/pylint#4546
+Refs pylint-dev/pylint#4554

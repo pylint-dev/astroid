@@ -5349,6 +5349,30 @@ class CallSiteTest(unittest.TestCase):
         values = ["f()", "f(*(1, ))", "f(1, 2, *(2, 3))"]
         self._test_call_site_valid_arguments(values, invalid=False)
 
+    def test_call_site_starred_list_through_name(self) -> None:
+        # A list literal passed directly is unpacked as usual.
+        self._test_call_site([("f(*[1, 2])", [1, 2], {})])
+
+        # A list reached through a name may have been mutated after it was
+        # built, so its length is unknown. Tuples are still unpacked.
+        code = """
+            def two(a, b):
+                return a, b
+
+            def build(xs):
+                lst = []
+                for x in xs:
+                    lst.append(x)
+                tup = (1, 2)
+                two(*lst)  #@
+                two(*tup)  #@
+        """
+        list_call, tuple_call = extract_node(code)
+        self.assertTrue(self._call_site_from_call(list_call).has_invalid_arguments())
+        tuple_site = self._call_site_from_call(tuple_call)
+        self.assertFalse(tuple_site.has_invalid_arguments())
+        self.assertEqual([arg.value for arg in tuple_site.positional_arguments], [1, 2])
+
     def test_duplicated_keyword_arguments(self) -> None:
         ast_node = extract_node('f(f=24, **{"f": 25})')
         site = self._call_site_from_call(ast_node)
