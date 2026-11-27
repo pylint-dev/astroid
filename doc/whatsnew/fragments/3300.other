@@ -1,0 +1,5 @@
+Make the C3 merge used by ``ClassDef.mro()`` linear in the size of the merged
+sequences. Computing the mro of a class at the bottom of a deep inheritance
+chain was cubic in the chain's length.
+
+Refs #3300
