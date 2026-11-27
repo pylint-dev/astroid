@@ -286,7 +286,7 @@ class ZipFinder(Finder):
         submodule_path: tuple[str, ...] | None,
     ) -> ModuleSpec | None:
         try:
-            file_type, filename, path = _search_zip(module_parts)
+            file_type, filename, path = _search_zip(module_parts, submodule_path)
         except ImportError:
             return None
 
@@ -359,16 +359,20 @@ def _is_setuptools_namespace(location: pathlib.Path) -> bool:
     return extend_path or declare_namespace
 
 
-def _get_zipimporters() -> Iterator[tuple[str, zipimport.zipimporter]]:
-    for filepath, importer in sys.path_importer_cache.items():
-        if importer is not None and isinstance(importer, zipimport.zipimporter):
+def _get_zipimporters(
+    path: Sequence[str],
+) -> Iterator[tuple[str, zipimport.zipimporter]]:
+    for filepath in path:
+        importer = sys.path_importer_cache.get(filepath)
+        if isinstance(importer, zipimport.zipimporter):
             yield filepath, importer
 
 
 def _search_zip(
     modpath: tuple[str, ...],
+    path: Sequence[str] | None = None,
 ) -> tuple[Literal[ModuleType.PY_ZIPMODULE], str, str]:
-    for filepath, importer in _get_zipimporters():
+    for filepath, importer in _get_zipimporters(path or sys.path):
         found = importer.find_spec(modpath[0])
         if found:
             if not importer.find_spec(os.path.sep.join(modpath)):
@@ -394,7 +398,9 @@ def _find_spec_with_path(
 ) -> tuple[Finder | _MetaPathFinder, ModuleSpec]:
     for finder in _SPEC_FINDERS:
         finder_instance = finder(search_path)
-        mod_spec = finder.find_module(modname, module_parts, processed, submodule_path)
+        # Zip finders resolve the full module path from the original search roots.
+        finder_path = tuple(search_path) if finder is ZipFinder else submodule_path
+        mod_spec = finder.find_module(modname, module_parts, processed, finder_path)
         if mod_spec is None:
             continue
         return finder_instance, mod_spec
