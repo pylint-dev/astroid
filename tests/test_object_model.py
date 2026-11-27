@@ -688,6 +688,20 @@ class FunctionModelTest(unittest.TestCase):
         ast_node = builder.extract_node("def func(): pass")
         self.assertIs(ast_node.is_lambda, False)
 
+    def test_lambda_doc(self) -> None:
+        """A lambda has no docstring, so its ``__doc__`` is None."""
+        ast_node = builder.extract_node("lambda: 42")
+        [doc] = ast_node.getattr("__doc__")
+        self.assertIsInstance(doc, nodes.Const)
+        self.assertIsNone(doc.value)
+
+    def test_lambda_annotations(self) -> None:
+        """A lambda cannot annotate its return, so ``__annotations__`` is empty."""
+        ast_node = builder.extract_node("lambda arg: arg")
+        [annotations] = ast_node.getattr("__annotations__")
+        self.assertIsInstance(annotations, nodes.Dict)
+        self.assertEqual(annotations.items, [])
+
 
 class TestContextManagerModel:
     def test_model(self) -> None:
