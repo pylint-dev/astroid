@@ -1979,6 +1979,35 @@ def test_fstring_as_string_roundtrip_with_mixed_quotes() -> None:
     assert reparsed.as_string() == mixed.as_string()
 
 
+def test_fstring_as_string_trailing_delimiter() -> None:
+    """A body that ends with the delimiter character must not run into it.
+
+    ``as_string()`` moves on to a triple-quoted delimiter when both single
+    quotes occur in the body, but the ``repr()`` used for the literal parts only
+    escapes the quote it picked itself.  A trailing ``"`` then ends up right in
+    front of the closing delimiter and the result is read as four quotes in a
+    row: an unterminated literal instead of a body ending in ``"``.
+    """
+    node = astroid.extract_node("""f'{"b"}a"'""")
+    assert isinstance(node, nodes.JoinedStr)
+    rendered = node.as_string()
+    assert rendered == "f'''{'b'}a\"'''"
+    reparsed = astroid.extract_node(rendered)
+    assert isinstance(reparsed, nodes.JoinedStr)
+    assert reparsed.as_string() == rendered
+
+    # Every triple quote is unusable here: a '"""' occurs in the body and
+    # "'''" would follow the trailing "'", so the escaping fallback has to take
+    # over instead.
+    node = astroid.extract_node(r'''f"""a\"\"\"b {"v"}x'"""''')
+    assert isinstance(node, nodes.JoinedStr)
+    rendered = node.as_string()
+    assert rendered == 'f"a\\"\\"\\"b {\'v\'}x\'"'
+    reparsed = astroid.extract_node(rendered)
+    assert isinstance(reparsed, nodes.JoinedStr)
+    assert reparsed.as_string() == rendered
+
+
 def test_parse_type_comments_with_proper_parent() -> None:
     code = """
     class D: #@
