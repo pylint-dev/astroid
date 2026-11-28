@@ -333,8 +333,14 @@ class AsStringVisitor:
         # Because the formatted values inside {} can't contain backslash (\)
         # using a triple quote is sometimes necessary.
         for quote in ("'", '"', '"""', "'''"):
-            if quote not in string:
-                return "f" + quote + string + quote
+            # A triple-quoted delimiter that follows its own character is read
+            # as four quotes in a row, so the literal never terminates:
+            # f"""a"""" is unterminated. repr() above only escapes the quote it
+            # picked itself, so a trailing '"' can still end up next to a '"""'
+            # delimiter, and a trailing "'" right before "'''".
+            if quote in string or (len(quote) == 3 and string.endswith(quote[0])):
+                continue
+            return "f" + quote + string + quote
 
         # Every candidate quote is present in the body. Pick a delimiter absent
         # from the {expression} parts (which cannot hold a backslash) and

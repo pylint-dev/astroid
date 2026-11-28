@@ -1,0 +1,7 @@
+``as_string()`` no longer renders an unterminated f-string when the body ends
+with the character of the triple-quoted delimiter it picked. A trailing ``"``
+right before the closing delimiter was read as four quotes in a row, so
+``f'{"b"}a"'`` came out as ``f"""...a""""`` and neither ``parse()`` nor
+``brain_dataclasses`` / ``brain_namedtuple_enum`` could use the result.
+
+Refs #3235
